@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego del Lokitrono de Barrios de Bilbao</title>
+    <title>LokiTrono de Barrios</title>
     <link rel="stylesheet" href="css/style.css">
     <!-- Carga del SDK oficial de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <header class="hero">
-        <h1>⚔️ JUEGO DEL LOKITRONO DE BILBAO ⚔️</h1>
+        <h1>⚔️ LokiTrono de Barrios ⚔️</h1>
         <p>«En la justa por el Honor, o se conquista el Reino... o se vuelve con la garganta seca»</p>
         
         <!-- PANTALLA INICIAL DE ACCESO / LOGIN (Teléfono + PIN de 4 dígitos) -->
         <div id="pantalla-login-inicio" style="margin: 20px auto; max-width: 380px; background: rgba(10, 10, 10, 0.95); border: var(--borde-oro-brillante); padding: 25px; border-radius: 12px; box-shadow: var(--sombra-oro);">
-            <h3 style="color: var(--oro-real); font-family: 'Cinzel', serif; margin-top: 0; font-size: 1.4rem; text-align: center;">📜 Acceso a la Corte</h3>
+            <h3 style="color: var(--oro-real); font-family: 'Cinzel', serif; margin-top: 0; font-size: 1.4rem; text-align: center;">Acceder</h3>
             <div id="login-step-phone">
                 <input type="tel" id="input-phone-inicio" placeholder="Teléfono (ej: 123456789)" class="input-medieval" style="text-align: center; margin-bottom: 12px;">
                 <input type="text" id="input-pin-inicio" placeholder="PIN de 4 dígitos" class="input-medieval" maxlength="4" style="text-align: center; margin-bottom: 18px;">
-                <button class="btn-cuervo" style="width: 100%;" onclick="iniciarSesionDirecta()">👑 Entrar al Reino</button>
+                <button class="btn-cuervo" style="width: 100%;" onclick="iniciarSesionDirecta()">Entrar</button>
             </div>
             <p id="login-inicio-message" style="margin-top: 10px; font-size: 0.85rem; color: #f87171; min-height: 20px;"></p>
         </div>
@@ -38,7 +38,7 @@
                 <option value="pestana-clasificacion">🏆 Clasificación Real</option>
                 <option value="pestana-tronistas">👑 Tronistas de Barrios</option>
                 <option value="pestana-calendario">📅 Calendario Eventos</option>
-                <option value="pestana-usuarios" id="option-menu-usuarios" style="display: none;">👥 Control de Usuarios (Superadmin)</option>
+                <option value="pestana-usuarios" id="option-menu-usuarios">👥 Alta y Control de Usuarios</option>
                 <option value="pestana-barrios">🏰 Barrios y Poblaciones</option>
                 <option value="pestana-evento-final">🎉 Evento Final</option>
             </select>
@@ -256,6 +256,22 @@
                         </thead>
                         <tbody id="tabla-usuarios-body"></tbody>
                     </table>
+                </div>
+
+                <!-- PANEL DE CONFIGURACIÓN INTEGRACIÓN MAKE.COM & WHATSAPP AUTOMÁTICO -->
+                <div id="seccion-configuracion-make" style="margin-top: 35px; background: rgba(15, 23, 42, 0.95); border: 2px solid var(--oro-real); padding: 20px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="color: var(--oro-brillante); margin: 0; font-family: 'Cinzel', serif;">⚡ Integración Make.com & Envío Automático por WhatsApp</h3>
+                        <span id="badge-make-webhook-status" style="font-size: 0.85rem; padding: 4px 10px; border-radius: 20px; background: #eab308; color: #000; font-weight: bold;">🟡 No Configurado</span>
+                    </div>
+                    <p style="font-size: 0.85rem; color: #d6d3d1; margin-top: 8px;">Configura la URL de tu Webhook receptor en Make.com para disparar el envío automático de mensajes de bienvenida por WhatsApp con el PIN de 4 dígitos y notificaciones a Superadministradores.</p>
+
+                    <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                        <input type="url" id="input-make-webhook-url" class="input-medieval" placeholder="https://hook.eu1.make.com/tu-webhook-id" style="flex: 1; min-width: 250px;">
+                        <button type="button" onclick="guardarWebhookMakeConfig()" class="btn-cuervo">💾 Guardar Webhook</button>
+                        <button type="button" onclick="probarEnvioWebhookMake()" class="btn-cuervo" style="background: #166534;">🧪 Probar Envío WhatsApp</button>
+                    </div>
+                    <p id="make-webhook-test-status" style="font-size: 0.85rem; color: #93c5fd; margin-top: 8px; margin-bottom: 0;"></p>
                 </div>
 
                 <!-- VISTA EXCLUSIVA SUPERADMIN: LISTADO GENERAL DE 135 PARTICIPANTES Y AUDITORÍA DE VOTOS -->

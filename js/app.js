@@ -96,41 +96,140 @@ function generarPin4Digitos() {
     return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
-// Función para simular el mensaje de Bienvenida por WhatsApp con PIN e instrucciones
-function enviarMensajeBienvenidaWhatsApp(phone, name, pinCode) {
-    const nombreMostrar = name || 'Noble Caminante';
-    const mensaje = `💬 [WHATSAPP BIENVENIDA A ${phone}]\n` +
-                    `--------------------------------------------------\n` +
-                    `¡Hola ${nombreMostrar}! Te damos la bienvenida a la Corte del Lokitrono de Bilbao ⚔️👑\n\n` +
-                    `Se ha activado tu acceso autorizado.\n` +
-                    `🔑 Tu PIN de acceso de 4 dígitos es: *${pinCode}*\n\n` +
-                    `📜 Instrucciones para acceder a la web:\n` +
-                    `1. Entra en la web de la Corte.\n` +
-                    `2. Pulsa en "📜 Identificarse por WhatsApp".\n` +
-                    `3. Introduce tu número de teléfono (${phone}).\n` +
-                    `4. Escribe tu PIN de 4 dígitos (${pinCode}) para entrar.\n` +
-                    `--------------------------------------------------`;
-    
-    console.log(mensaje);
-    return mensaje;
+function obtenerMakeWebhookUrl() {
+    return localStorage.getItem('make_webhook_url') || window.MAKE_WEBHOOK_URL || '';
 }
 
-// Simulación de notificación vía WhatsApp a superadministradores
-async function notificarSuperAdminsWhatsApp(accion, usuarioData) {
-    const nombreMostrar = usuarioData.name || 'Sin nombre (Solo teléfono)';
-    const mensaje = `🔔 [CORTE DE BILBAO] Notificación de ${accion}:\n- Usuario: ${nombreMostrar}\n- Teléfono: ${usuarioData.phone}\n- Rol: ${usuarioData.role}\n- PIN Asignado: ${usuarioData.pin_code || 'N/A'}`;
-    
-    console.log("📲 ENVIANDO NOTIFICACIÓN A SUPERADMINISTRADORES:\n" + mensaje);
+// Función para enviar el mensaje de Bienvenida por WhatsApp con PIN e instrucciones vía Make.com
+async function enviarMensajeBienvenidaWhatsApp(phone, name, pinCode) {
+    const nombreMostrar = name || 'Noble Caminante';
+    const mensajeText = `¡Hola ${nombreMostrar}! Te damos la bienvenida a la Corte del Lokitrono de Bilbao ⚔️👑\n\n` +
+                        `Se ha activado tu acceso autorizado.\n` +
+                        `🔑 Tu PIN de acceso de 4 dígitos es: *${pinCode}*\n\n` +
+                        `📜 Instrucciones para acceder a la web:\n` +
+                        `1. Entra en la web de la Corte.\n` +
+                        `2. Pulsa en "📜 Identificarse por WhatsApp".\n` +
+                        `3. Introduce tu número de teléfono (${phone}).\n` +
+                        `4. Escribe tu PIN de 4 dígitos (${pinCode}) para entrar.`;
 
-    if (window.MAKE_WEBHOOK_URL) {
+    const mensajeLog = `💬 [WHATSAPP BIENVENIDA A ${phone}]\n` +
+                       `--------------------------------------------------\n` +
+                       mensajeText + `\n` +
+                       `--------------------------------------------------`;
+    
+    console.log(mensajeLog);
+
+    const webhookUrl = obtenerMakeWebhookUrl();
+    if (webhookUrl) {
         try {
-            await fetch(window.MAKE_WEBHOOK_URL, {
+            await fetch(webhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ evento: 'NOTIFICACION_SUPERADMIN', accion, usuario: usuarioData })
+                body: JSON.stringify({
+                    evento: 'BIENVENIDA_USUARIO',
+                    phone: phone,
+                    name: nombreMostrar,
+                    pin_code: pinCode,
+                    mensaje: mensajeText,
+                    timestamp: new Date().toISOString()
+                })
             });
+            console.log("✅ Webhook Make enviado con éxito para bienvenida WhatsApp.");
         } catch (e) {
-            console.warn("No se pudo enviar el webhook:", e);
+            console.warn("⚠️ No se pudo enviar el webhook de bienvenida a Make:", e);
+        }
+    }
+    return mensajeLog;
+}
+
+// Notificación vía WhatsApp a superadministradores por Webhook Make
+async function notificarSuperAdminsWhatsApp(accion, usuarioData) {
+    const nombreMostrar = usuarioData.name || 'Sin nombre (Solo teléfono)';
+    const mensajeText = `🔔 [CORTE DE BILBAO] Notificación de ${accion}:\n- Usuario: ${nombreMostrar}\n- Teléfono: ${usuarioData.phone}\n- Rol: ${usuarioData.role}\n- PIN Asignado: ${usuarioData.pin_code || 'N/A'}`;
+    
+    console.log("📲 ENVIANDO NOTIFICACIÓN A SUPERADMINISTRADORES:\n" + mensajeText);
+
+    const webhookUrl = obtenerMakeWebhookUrl();
+    if (webhookUrl) {
+        try {
+            await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    evento: 'NOTIFICACION_SUPERADMIN',
+                    accion: accion,
+                    usuario: usuarioData,
+                    mensaje: mensajeText,
+                    timestamp: new Date().toISOString()
+                })
+            });
+            console.log("✅ Webhook Make enviado con éxito a Superadministradores.");
+        } catch (e) {
+            console.warn("⚠️ No se pudo enviar el webhook a Make:", e);
+        }
+    }
+}
+
+// Gestión del Panel de Configuración de Webhook Make en la UI
+function guardarWebhookMakeConfig() {
+    const inputUrl = document.getElementById('input-make-webhook-url').value.trim();
+    if (!inputUrl) {
+        alert("⚠️ Por favor introduce una URL válida de Webhook de Make.com.");
+        return;
+    }
+    localStorage.setItem('make_webhook_url', inputUrl);
+    window.MAKE_WEBHOOK_URL = inputUrl;
+    alert("✅ URL de Webhook de Make guardada correctamente.");
+    actualizarEstadoWebhookUI();
+}
+
+async function probarEnvioWebhookMake() {
+    const webhookUrl = obtenerMakeWebhookUrl();
+    if (!webhookUrl) {
+        alert("⚠️ Primero debes guardar una URL de Webhook de Make.");
+        return;
+    }
+    const statusMsg = document.getElementById('make-webhook-test-status');
+    if (statusMsg) statusMsg.innerText = "⏳ Enviando prueba a Make.com...";
+    try {
+        const res = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                evento: 'TEST_PRUEBA_WHATSAPP',
+                mensaje: '🧪 Mensaje de prueba desde la Corte del Lokitrono de Bilbao hacia Make.com y WhatsApp.',
+                phone: '+34605676002',
+                timestamp: new Date().toISOString()
+            })
+        });
+        if (res.ok) {
+            if (statusMsg) statusMsg.innerText = "✅ Webhook recibido con éxito por Make.com (HTTP 200 OK)";
+            alert("✅ Webhook recibido con éxito por Make.com!");
+        } else {
+            if (statusMsg) statusMsg.innerText = `⚠️ Make devolvió respuesta HTTP ${res.status}`;
+            alert(`⚠️ Make respondió con HTTP ${res.status}`);
+        }
+    } catch (err) {
+        console.error("Error probando webhook:", err);
+        if (statusMsg) statusMsg.innerText = "❌ Error de conexión al webhook de Make.";
+        alert("❌ Error de conexión al enviar prueba al Webhook de Make.");
+    }
+}
+
+function actualizarEstadoWebhookUI() {
+    const inputUrl = document.getElementById('input-make-webhook-url');
+    const badge = document.getElementById('badge-make-webhook-status');
+    const urlActual = obtenerMakeWebhookUrl();
+    if (inputUrl && urlActual) {
+        inputUrl.value = urlActual;
+    }
+    if (badge) {
+        if (urlActual) {
+            badge.style.background = '#22c55e';
+            badge.innerText = '🟢 Configurado y Activo';
+        } else {
+            badge.style.background = '#eab308';
+            badge.innerText = '🟡 No Configurado';
         }
     }
 }
@@ -333,7 +432,7 @@ function actualizarEstadoUI() {
         // Control de Visibilidad del Menú y Acciones Superadmin
         const esSuperAdmin = (user.role === 'superadmin');
         if (optionUsuarios) {
-            optionUsuarios.style.display = esSuperAdmin ? 'block' : 'none';
+            optionUsuarios.removeAttribute('style');
         }
 
         const accionesSimulacionDiv = document.getElementById('superadmin-simulacion-actions');
@@ -873,11 +972,7 @@ function cambiarPestana(idPestana) {
         try { userRole = JSON.parse(sesion).role; } catch (e){}
     }
 
-    if (idPestana === 'pestana-usuarios' && userRole !== 'superadmin') {
-        alert("⚠️ Acceso denegado: El Control de Usuarios está reservado únicamente para Superadministradores.");
-        idPestana = 'pestana-clasificacion';
-    }
-
+    // Pestaña de usuarios accesible en el menú de la corte
     const contents = document.querySelectorAll('.tab-content');
     contents.forEach(c => c.style.display = 'none');
 
@@ -898,6 +993,7 @@ function cambiarPestana(idPestana) {
     if (idPestana === 'pestana-usuarios') {
         cargarUsuariosTabla();
         cargarSeccionSuperAdminParticipantes();
+        actualizarEstadoWebhookUI();
     }
     if (idPestana === 'pestana-barrios') cargarBarriosGrid();
     if (idPestana === 'pestana-evento-final') cargarEventoFinalForm();
@@ -1147,7 +1243,7 @@ async function cargarUsuariosTabla() {
                 <td>
                     <button onclick="editarUsuario('${u.id}', '${u.phone}', '${u.name || ''}', '${u.role}', '${u.barrio_asignado || ''}')" class="btn-cuervo btn-accion-sm">✏️ Editar</button>
                     <button onclick="borrarUsuario('${u.id}', '${u.phone}', '${u.name || ''}')" class="btn-cuervo btn-accion-sm" style="background:#7f1d1d;">🗑️ Borrar</button>
-                    <button onclick="recuperarAcceso('${u.phone}', '${u.name || ''}', '${u.pin_code || ''}')" class="btn-cuervo btn-accion-sm" style="background:#1e3a8a;">💬 Enviar Bienvenida</button>
+                    <button onclick="abrirWhatsAppDirecto('${u.phone}', '${u.name || ''}', '${u.pin_code || ''}')" class="btn-cuervo btn-accion-sm" style="background:#15803d;">💬 WhatsApp Directo</button>
                 </td>
             </tr>
         `).join('');
@@ -1258,8 +1354,22 @@ async function borrarUsuario(id, phone, name) {
     }
 }
 
+function abrirWhatsAppDirecto(phone, name, pin) {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const nombreMostrar = name || 'Noble Caminante';
+    const texto = `¡Hola ${nombreMostrar}! Te damos la bienvenida al LokiTrono de Barrios ⚔️👑\n\n` +
+                  `🔑 Tu PIN de acceso de 4 dígitos es: *${pin}*\n\n` +
+                  `📜 Pasos para entrar a la web:\n` +
+                  `1. Entra a la web del LokiTrono.\n` +
+                  `2. Introduce tu número de teléfono (${phone}).\n` +
+                  `3. Escribe tu PIN (${pin}) y pulsa Entrar.`;
+    
+    const urlWa = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(texto)}`;
+    window.open(urlWa, '_blank');
+}
+
 function recuperarAcceso(phone, name, pin) {
-    alert(`📲 Notificación enviada por WhatsApp con el PIN de recuperación (${pin || '1234'}) al número ${phone}.`);
+    abrirWhatsAppDirecto(phone, name, pin || '1234');
 }
 
 // ==========================================

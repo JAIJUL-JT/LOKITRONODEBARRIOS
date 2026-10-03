@@ -1,0 +1,49 @@
+{
+  "name": "Trono del Pintxo - Escenario D: Código de Sello Diario",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 0, "y": 0, "name": "Webhook Solicitud de Sello" }
+      }
+    },
+    {
+      "id": 2,
+      "module": "util:SetVariable",
+      "version": 1,
+      "parameters": {
+        "variableName": "codigo_generado",
+        "variableValue": "PIN-{{upper(substring(uuid; 0; 4))}}"
+      },
+      "metadata": {
+        "designer": { "x": 220, "y": 0, "name": "Generar Código Aleatorio" }
+      }
+    },
+    {
+      "id": 3,
+      "module": "supabase:ExecuteSql",
+      "version": 1,
+      "parameters": {
+        "sql": "INSERT INTO codigos_diarios (casa_id, codigo, fecha, activo) VALUES ('{{1.casa_id}}'::uuid, '{{2.codigo_generado}}', CURRENT_DATE, true) ON CONFLICT (casa_id, fecha, codigo) DO UPDATE SET activo = true RETURNING *;"
+      },
+      "metadata": {
+        "designer": { "x": 460, "y": 0, "name": "Supabase: Guardar en codigos_diarios" }
+      }
+    },
+    {
+      "id": 4,
+      "module": "gmail:sendEmail",
+      "version": 1,
+      "parameters": {
+        "to": [ "{{1.email_tabernero}}" ],
+        "subject": "🔏 Código de Sello Real para hoy: {{2.codigo_generado}}",
+        "content": "Salud tabernero.<br><br>El código oficial de la jornada para tu Casa Feudal es: <h2>{{2.codigo_generado}}</h2><br>Compártelo con los Maestres que consuman tu Santo Pintxo o úsalo en el generador de QR del Escribano."
+      },
+      "metadata": {
+        "designer": { "x": 700, "y": 0, "name": "Enviar Sello al Tabernero" }
+      }
+    }
+  ]
+}

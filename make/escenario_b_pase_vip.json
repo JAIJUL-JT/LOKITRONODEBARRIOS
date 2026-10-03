@@ -1,0 +1,89 @@
+{
+  "name": "Trono del Pintxo - Escenario B: Generar Pase VIP Dorado",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 0, "y": 0, "name": "Disparador de Juicio" }
+      }
+    },
+    {
+      "id": 2,
+      "module": "supabase:ExecuteSql",
+      "version": 1,
+      "parameters": {
+        "sql": "SELECT sellos_por_maestre('{{1.maestre_id}}'::uuid) AS total_sellos, m.alias, m.email FROM maestres m WHERE m.id = '{{1.maestre_id}}'::uuid;"
+      },
+      "metadata": {
+        "designer": { "x": 220, "y": 0, "name": "Supabase: Contar Sellos y Maestre" }
+      }
+    },
+    {
+      "id": 3,
+      "module": "util:Filter",
+      "version": 1,
+      "filter": {
+        "name": "Sellos Feudales >= 5",
+        "conditions": [
+          [
+            {
+              "a": "{{2.total_sellos}}",
+              "o": "number:gte",
+              "b": 5
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "module": "googleDocs:createDocumentFromTemplate",
+      "version": 1,
+      "parameters": {
+        "title": "Pase Dorado Imperial - {{2.alias}}",
+        "templateId": "PLANTILLA_PASE_DORADO_DOC_ID",
+        "values": {
+          "{{MAESTRE_ALIAS}}": "{{2.alias}}",
+          "{{FECHA}}": "{{formatDate(now; \"DD/MM/YYYY\")}}",
+          "{{TOTAL_SELLOS}}": "{{2.total_sellos}}"
+        }
+      },
+      "metadata": {
+        "designer": { "x": 450, "y": 0, "name": "Google Docs: Crear Pase VIP" }
+      }
+    },
+    {
+      "id": 5,
+      "module": "googleDrive:downloadFile",
+      "version": 1,
+      "parameters": {
+        "fileId": "{{4.documentId}}",
+        "mimeType": "application/pdf"
+      },
+      "metadata": {
+        "designer": { "x": 680, "y": 0, "name": "Google Drive: Exportar a PDF" }
+      }
+    },
+    {
+      "id": 6,
+      "module": "gmail:sendEmail",
+      "version": 1,
+      "parameters": {
+        "to": [ "{{2.email}}" ],
+        "subject": "👑 ¡Vuestro Pase Dorado a la Gran Gala de Bilbao!",
+        "content": "Salud, noble Maestre {{2.alias}}.<br><br>Habéis sellado vuestro pasaporte en {{2.total_sellos}} Casas de Bilbao, conquistando la dignidad suficiente para sentaros entre los señores de la Gran Gala.<br><br>Adjunto hallaréis vuestro Pase Dorado Oficial.<br><br><i>El Consejo Imperial de El Trono del Pintxo</i>",
+        "attachments": [
+          {
+            "fileName": "Pase_Dorado_{{2.alias}}.pdf",
+            "data": "{{5.data}}"
+          }
+        ]
+      },
+      "metadata": {
+        "designer": { "x": 920, "y": 0, "name": "Gmail: Enviar Invitación Oficial" }
+      }
+    }
+  ]
+}

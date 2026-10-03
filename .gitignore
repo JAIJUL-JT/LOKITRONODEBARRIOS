@@ -1,0 +1,14 @@
+# Dependencias y entornos
+node_modules/
+.env.local
+.env.*.local
+
+# Builds
+dist/
+build/
+.vercel/
+
+# Logs y SO
+*.log
+.DS_Store
+Thumbs.db

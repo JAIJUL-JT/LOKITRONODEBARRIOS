@@ -1,0 +1,61 @@
+{
+  "name": "Trono del Pintxo - Escenario C: Ranking Semanal y Publicación",
+  "flow": [
+    {
+      "id": 1,
+      "module": "builtin:Schedule",
+      "version": 1,
+      "parameters": {
+        "schedule": "0 23 * * 0"
+      },
+      "metadata": {
+        "designer": { "x": 0, "y": 0, "name": "Programador (Domingos 23:59)" }
+      }
+    },
+    {
+      "id": 2,
+      "module": "supabase:ExecuteSql",
+      "version": 1,
+      "parameters": {
+        "sql": "SELECT * FROM calcular_ranking();"
+      },
+      "metadata": {
+        "designer": { "x": 240, "y": 0, "name": "Supabase: Ley II calcular_ranking()" }
+      }
+    },
+    {
+      "id": 3,
+      "module": "googleSheets:addRow",
+      "version": 1,
+      "parameters": {
+        "spreadsheetId": "HOJA_CALCULO_RANKING_ID",
+        "sheetName": "Historial_Semanas",
+        "values": [
+          "{{formatDate(now; \"YYYY-MM-DD\")}}",
+          "{{2.posicion}}",
+          "{{2.nombre}}",
+          "{{2.puntuacion_final}}",
+          "{{2.total_juicios}}",
+          "{{2.media_festin}}",
+          "{{2.media_caminos}}",
+          "{{2.media_espiritu}}"
+        ]
+      },
+      "metadata": {
+        "designer": { "x": 480, "y": 0, "name": "Google Sheets: Actualizar Historial" }
+      }
+    },
+    {
+      "id": 4,
+      "module": "slack:createMessage",
+      "version": 1,
+      "parameters": {
+        "channel": "#trono-del-pintxo-bando",
+        "text": "👑 *BANDO IMPERIAL — CIERRE DE JORNADA SEMANAL*\n\nTras el escrutinio de la Ley II de Bilbao, así queda el podio feudal:\n\n🥇 *1º Puesto:* Casa {{2[1].nombre}} ({{2[1].puntuacion_final}} pts)\n🥈 *2º Puesto:* Casa {{2[2].nombre}} ({{2[2].puntuacion_final}} pts)\n🥉 *3º Puesto:* Casa {{2[3].nombre}} ({{2[3].puntuacion_final}} pts)\n\n¡Gloria a los taberneros vencedores de esta jornada!"
+      },
+      "metadata": {
+        "designer": { "x": 720, "y": 0, "name": "Slack/Discord: Publicar Top 3" }
+      }
+    }
+  ]
+}

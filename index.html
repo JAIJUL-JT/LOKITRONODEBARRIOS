@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego del Lokitrono de Barrios de Bilbao</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Carga del SDK oficial de Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <header class="hero">
+        <h1>⚔️ JUEGO DEL LOKITRONO DE BILBAO ⚔️</h1>
+        <p>«En la justa por el Honor, o se conquista el Reino... o se vuelve con la garganta seca»</p>
+        
+        <!-- PANTALLA INICIAL DE ACCESO / LOGIN (Teléfono + PIN de 4 dígitos) -->
+        <div id="pantalla-login-inicio" style="margin: 20px auto; max-width: 380px; background: rgba(10, 10, 10, 0.95); border: var(--borde-oro-brillante); padding: 25px; border-radius: 12px; box-shadow: var(--sombra-oro);">
+            <h3 style="color: var(--oro-real); font-family: 'Cinzel', serif; margin-top: 0; font-size: 1.4rem; text-align: center;">📜 Acceso a la Corte</h3>
+            <div id="login-step-phone">
+                <input type="tel" id="input-phone-inicio" placeholder="Teléfono (ej: 123456789)" class="input-medieval" style="text-align: center; margin-bottom: 12px;">
+                <input type="text" id="input-pin-inicio" placeholder="PIN de 4 dígitos" class="input-medieval" maxlength="4" style="text-align: center; margin-bottom: 18px;">
+                <button class="btn-cuervo" style="width: 100%;" onclick="iniciarSesionDirecta()">👑 Entrar al Reino</button>
+            </div>
+            <p id="login-inicio-message" style="margin-top: 10px; font-size: 0.85rem; color: #f87171; min-height: 20px;"></p>
+        </div>
+
+        <!-- ESTADO DE SESIÓN CUANDO EL USUARIO ESTÁ DENTRO -->
+        <div id="auth-status" style="display: none; margin-top: 20px;">
+            <!-- Carga dinámica -->
+        </div>
+    </header>
+
+    <!-- Menú Desplegable de Secciones (Visible sólo tras iniciar sesión) -->
+    <nav id="nav-secciones-corte" class="nav-dropdown-container" style="display: none; background: rgba(5, 5, 5, 0.98); border-bottom: 2px solid var(--oro-real); padding: 14px; text-align: center;">
+        <div style="max-width: 600px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 12px;">
+            <label for="select-seccion-corte" style="font-family: 'Cinzel', serif; color: var(--oro-real); font-weight: bold; white-space: nowrap; font-size: 1rem;">📜 Menú de la Corte:</label>
+            <select id="select-seccion-corte" class="input-medieval" onchange="cambiarPestana(this.value)" style="margin: 0; padding: 10px; font-weight: bold; font-family: 'Cinzel', serif; background: #0a0a0a;">
+                <option value="pestana-clasificacion">🏆 Clasificación Real</option>
+                <option value="pestana-tronistas">👑 Tronistas de Barrios</option>
+                <option value="pestana-calendario">📅 Calendario Eventos</option>
+                <option value="pestana-usuarios" id="option-menu-usuarios" style="display: none;">👥 Control de Usuarios (Superadmin)</option>
+                <option value="pestana-barrios">🏰 Barrios y Poblaciones</option>
+                <option value="pestana-evento-final">🎉 Evento Final</option>
+            </select>
+        </div>
+    </nav>
+
+
+
+    <div id="contenido-reino-protegido" style="display: none;">
+        <main class="container">
+            <!-- PESTAÑA 0: Clasificación de Reinos -->
+        <section id="pestana-clasificacion" class="tab-content active">
+
+            <div class="leaderboard-container">
+                <div class="leaderboard-header">
+                    <h2>🏆 TABLA DEL REY — LOKIBARRIO TXAPELDUN 🏆</h2>
+                    <p>Estatus ponderado de las Tierras y Reinos disputados</p>
+                    <div id="superadmin-simulacion-actions" style="display: none; margin-top: 15px; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="generarEjemploCompeticionSimulada()" class="btn-cuervo" style="background: #1e3a8a;">🎲 Generar Partida Ejemplo (Simulada)</button>
+                        <button onclick="restaurarCompeticionCero()" class="btn-cuervo" style="background: #7f1d1d;">🔄 Restaurar Competición a 0</button>
+                        <button onclick="togglePanelPonderacionSuperadmin()" class="btn-cuervo" style="background: #9333ea;">⚙️ Configurar Criterios & Ponderación (%)</button>
+                    </div>
+                </div>
+
+                <!-- PANEL EXCLUSIVO SUPERADMIN: CONFIGURACIÓN DE CRITERIOS Y PONDERACIONES DE VALORACIÓN -->
+                <div id="panel-superadmin-ponderaciones" style="display: none; background: rgba(15, 23, 42, 0.95); border: 2px solid #a855f7; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                    <h3 style="color: #c084fc; margin-top: 0; font-family: 'Cinzel', serif;">⚙️ Configuración de Grupos y Criterios de Valoración (Solo Superadmin)</h3>
+                    <p style="font-size: 0.85rem; color: #e9d5ff;">Crea, edita, agrupa o desagrupa los aspectos a valorar. La suma total de los pesos debe ser **exactamente 100%**.</p>
+
+                    <!-- Indicador visual del 100% -->
+                    <div style="margin-bottom: 15px; background: rgba(30, 41, 59, 0.8); padding: 10px 15px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-weight: bold; color: #f8fafc;">Suma Ponderada Actual: <span id="suma-ponderacion-badge" style="font-size: 1.1rem; padding: 2px 8px; border-radius: 4px; background: #22c55e; color: #fff;">100%</span></span>
+                        <span id="avisador-ponderacion-status" style="font-size: 0.85rem; color: #4ade80;">✅ El reparto de ponderaciones es válido (100%).</span>
+                    </div>
+
+                    <!-- Formulario para añadir nuevo grupo/criterio -->
+                    <div style="background: rgba(30, 41, 59, 0.6); padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                        <h4 style="color: #e9d5ff; margin-top: 0; font-size: 0.95rem;">➕ Añadir o Agrupar Nuevo Criterio de Valoración</h4>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="text" id="nuevo-criterio-nombre" class="input-medieval" placeholder="Nombre (ej: Festines / Sabor Pintxo)" style="flex: 2; min-width: 180px;">
+                            <input type="number" id="nuevo-criterio-peso" class="input-medieval" placeholder="Peso % (ej: 50)" min="1" max="100" style="flex: 1; min-width: 100px;">
+                            <button onclick="agregarNuevoCriterioPonderacion()" class="btn-cuervo" style="background: #a855f7;">➕ Añadir Criterio</button>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de criterios actuales -->
+                    <div class="table-responsive">
+                        <table class="leaderboard-table" style="font-size: 0.9rem;">
+                            <thead>
+                                <tr>
+                                    <th>Criterio / Aspecto a Valorar</th>
+                                    <th>Peso Ponderado (%)</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-criterios-ponderacion-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="leaderboard-table">
+                        <thead id="clasificacion-header-dinamico">
+                            <tr>
+                                <th>Estatus</th>
+                                <th>Reino / Feudo</th>
+                                <th>Festines (50%)</th>
+                                <th>Rutas (20%)</th>
+                                <th>Jolgorio (30%)</th>
+                                <th>Nota Final</th>
+                                <th>Votos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clasificacion-body">
+                            <!-- Carga dinámica -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- SECCIÓN PERSONALIZADA: VOTOS ASIGNADOS POR EL USUARIO EN SESIÓN & EMISIÓN DE VOTO -->
+                <div id="seccion-mis-votos-personales" style="margin-top: 30px; background: rgba(28, 25, 23, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="color: var(--oro-brillante); margin: 0; font-family: 'Cinzel', serif;">📜 Emitir / Mis Votos Emitidos en el Reino</h3>
+                        <button onclick="toggleFormularioEmitirVoto()" class="btn-cuervo" style="padding: 6px 12px; font-size: 0.85rem; background: #2563eb;">🗳️ Emitir Nuevo Voto en Barrio</button>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #d6d3d1; margin-top: 8px;">Calificaciones individuales otorgadas por ti a los feudos en los que has participado (los superadministradores también pueden ejercitar su voto libremente):</p>
+                    
+                    <!-- Formulario desplegable para emitir voto -->
+                    <div id="formulario-emitir-voto-div" style="display: none; background: rgba(41, 37, 36, 0.85); border: 1px solid var(--oro-real); padding: 15px; border-radius: 6px; margin-top: 15px; margin-bottom: 20px;">
+                        <h4 style="color: var(--oro-brillante); margin-top: 0;">🗳️ Formulario de Calificación Barrial</h4>
+                        <form id="form-votar-barrio" onsubmit="guardarVotoBarrioUsuario(event)">
+                            <div class="form-group">
+                                <label>Selecciona el Barrio A Evaluar:</label>
+                                <select id="voto-select-barrio" class="input-medieval" required></select>
+                            </div>
+                            <div id="contenedor-inputs-criterios-voto"></div>
+                            <button type="submit" class="btn-cuervo" style="margin-top: 10px; width: 100%;">⚔️ Enviar Calificación al Reino</button>
+                        </form>
+                    </div>
+
+                    <div id="contenedor-mis-votos-body"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 1: Tronistas de Barrios (Solo lectura general, lista de Tronistas Barriales y asignación) -->
+        <section id="pestana-tronistas" class="tab-content" style="display: none;">
+            <div class="panel-card">
+                <h2>👑 Tronistas de Barrios y Feudos</h2>
+                <p>Representantes oficiales del Lokitrono por cada reino barrial (Máximo 2 Tronistas por barrio).</p>
+                
+                <div id="panel-superadmin-tronistas" style="display: none; background: rgba(41, 37, 36, 0.8); border: 1px solid var(--oro-real); padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                    <h3 style="color: var(--oro-brillante); margin-top: 0;">⚔️ Sustitución y Asignación de Tronistas (Superadmin)</h3>
+                    <p style="font-size: 0.9rem; color: #d6d3d1;">En caso de vacante o sustitución, los Superadministradores pueden ejercer de tronistas o asignar Maestres al reino desprotegido.</p>
+                    <form id="form-tronista-admin" onsubmit="asignarTronistaAdmin(event)">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="font-size: 0.85rem;">Maestre / Tronista:</label>
+                                <select id="select-usuario-tronista" class="input-medieval" required></select>
+                            </div>
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="font-size: 0.85rem;">Barrio / Reino A Representar:</label>
+                                <select id="select-barrio-tronista" class="input-medieval" required></select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-cuervo" style="margin-top: 10px;">👑 Asignar / Ejercer Tronista</button>
+                    </form>
+                </div>
+
+                <h3 style="color: var(--oro-brillante);">Representación Oficial de los Barrios</h3>
+                <div id="lista-tronistas" class="grid-cards"></div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 2: Indicar Fecha en el Calendario para Evento por Barrio -->
+        <section id="pestana-calendario" class="tab-content" style="display: none;">
+            <div class="panel-card">
+                <h2>📅 Calendario de Justas y Eventos Barriales</h2>
+                <p>Programa los días festivos de ruta en cada feudo. (Visible para todos los Maestres)</p>
+                <form id="form-evento" onsubmit="guardarEventoBarrio(event)">
+                    <input type="hidden" id="evento-id-edit">
+                    <div class="form-group">
+                        <label>Barrio / Reino:</label>
+                        <select id="evento-barrio" class="input-medieval" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre del Evento:</label>
+                        <input type="text" id="evento-nombre" class="input-medieval" placeholder="Ej: Gran Ruta del Pintxo de Deusto" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha del Evento:</label>
+                        <input type="date" id="evento-fecha" class="input-medieval" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Detalles / Descripción:</label>
+                        <textarea id="evento-desc" class="input-medieval" placeholder="Escribe los detalles de la justa..." rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn-cuervo" id="btn-guardar-evento">📅 Programar / Editar Evento</button>
+                    <button type="button" class="btn-cuervo" id="btn-cancelar-evento" style="display: none; background: #44403c;" onclick="resetFormEvento()">Cancelar Edición</button>
+                </form>
+
+                <h3 style="margin-top: 30px; color: var(--oro-brillante);">Eventos Programados</h3>
+                <div id="lista-eventos" class="grid-cards"></div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 3: Control de Usuarios (Añadir, Editar, Borrar, Recuperar Contraseña, Asignar Barrio) -->
+        <section id="pestana-usuarios" class="tab-content" style="display: none;">
+            <div class="panel-card">
+                <h2>👥 Panel de Control de Usuarios Autorizados</h2>
+                <p>Administra accesos, roles (máximo 2 Tronistas por barrio), asignación de reinos y credenciales.</p>
+                
+                <form id="form-usuario" onsubmit="guardarUsuario(event)">
+                    <input type="hidden" id="usuario-id-edit">
+                    <div class="form-group">
+                        <label>Teléfono de WhatsApp (ej. 123456789 o +34123456789):</label>
+                        <input type="tel" id="usuario-phone" class="input-medieval" placeholder="123456789" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre de Maestre / Usuario (Opcional):</label>
+                        <input type="text" id="usuario-nombre" class="input-medieval" placeholder="Ej: Maestre Bilbao (opcional)">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Rol de Acceso:</label>
+                        <select id="usuario-role" class="input-medieval" onchange="toggleBarrioAsignadoUsuario(this.value)">
+                            <option value="jugador">Jugador / Maestre</option>
+                            <option value="tronista">Tronista Barrial (Máx 2 por barrio)</option>
+                            <option value="organizador">Organizador Real</option>
+                            <option value="superadmin">Superadmin (Puede ejercitar como Tronista)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="group-barrio-asignado" style="display: none;">
+                        <label>Barrio Asignado como Tronista:</label>
+                        <select id="usuario-barrio-asignado" class="input-medieval"></select>
+                    </div>
+
+                    <button type="submit" class="btn-cuervo" id="btn-guardar-user">➕ Añadir Usuario Autorizado</button>
+                    <button type="button" class="btn-cuervo" id="btn-cancelar-user" style="display: none; background: #44403c;" onclick="resetFormUsuario()">Cancelar Edición</button>
+                </form>
+
+                <h3 style="margin-top: 30px; color: var(--oro-brillante);">Usuarios Autorizados Registrados</h3>
+                <div class="table-responsive">
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Teléfono</th>
+                                <th>Rol</th>
+                                <th>Barrio Asignado</th>
+                                <th>Código PIN (4 dígitos)</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-usuarios-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- VISTA EXCLUSIVA SUPERADMIN: LISTADO GENERAL DE 135 PARTICIPANTES Y AUDITORÍA DE VOTOS -->
+                <div id="seccion-superadmin-participantes" style="margin-top: 40px; background: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; padding: 20px; border-radius: 8px;">
+                    <h3 style="color: #60a5fa; margin-top: 0; font-family: 'Cinzel', serif;">📊 Listado General de Participantes (135 Maestres) y Auditoría de Votos</h3>
+                    <p style="font-size: 0.85rem; color: #93c5fd;">Acceso exclusivo para Superadministradores: Consulta el listado general de los 135 participantes de la competición, la asistencia separada por evento (media de 14 a 63) y los votos detallados emitidos por cada participante.</p>
+                    
+                    <div id="contenedor-participantes-eventos-body"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 4: Añadir, Editar y Borrar Barrios / Poblaciones -->
+        <section id="pestana-barrios" class="tab-content" style="display: none;">
+            <div class="panel-card">
+                <h2>🏰 Gestión de Barrios y Poblaciones</h2>
+                <p>Incorpora, edita o elimina feudos y reinos de la competición feudal de Bilbao.</p>
+                
+                <form id="form-barrio" onsubmit="guardarBarrio(event)">
+                    <input type="hidden" id="barrio-id-edit">
+                    <div class="form-group">
+                        <label>Nombre del Barrio / Población:</label>
+                        <input type="text" id="barrio-nombre" class="input-medieval" placeholder="Ej: Rekalde" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Lema / Frase del Reino:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="barrio-lema" class="input-medieval" placeholder="Ej: Tierra de Fuerza y Gastronomía" style="flex: 1;">
+                            <button type="button" class="btn-cuervo" style="padding: 6px 12px; font-size: 0.85rem;" onclick="generarLemaAleatorio()">🎲 Generar Lema</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Emblema del Reino (Seleccionar de la lista de 10 Emblemas Reales):</label>
+                        <select id="barrio-emblema" class="input-medieval">
+                            <option value="🏰">🏰 1. Bastión / Castillo Feudal</option>
+                            <option value="⚔️">⚔️ 2. Espadas Cruzadas</option>
+                            <option value="👑">👑 3. Corona Imperial</option>
+                            <option value="🛡️">🛡️ 4. Escudo Heráldico</option>
+                            <option value="🍷">🍷 5. Copa de Vino & Pintxo</option>
+                            <option value="🐉">🐉 6. Dragón del Reino</option>
+                            <option value="🦁">🦁 7. León Rampante</option>
+                            <option value="🐺">🐺 8. Lobo Guerrero</option>
+                            <option value="🦅">🦅 9. Águila Real</option>
+                            <option value="⚓">⚓ 10. Ancla del Ría de Bilbao</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-cuervo" id="btn-guardar-barrio">➕ Añadir Nuevo Barrio</button>
+                    <button type="button" class="btn-cuervo" id="btn-cancelar-barrio" style="display: none; background: #44403c;" onclick="resetFormBarrio()">Cancelar Edición</button>
+                </form>
+
+                <h3 style="margin-top: 30px; color: var(--oro-brillante);">Reinos Actuales</h3>
+                <div id="lista-barrios-grid" class="grid-cards"></div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 5: Configurar Evento Final (Editar y Borrar) -->
+        <section id="pestana-evento-final" class="tab-content" style="display: none;">
+            <div class="panel-card">
+                <h2>🎉 Configuración de la Gran Gala Final del Lokitrono</h2>
+                <p>Establece, edita o reinicia los parámetros de la ceremonia de coronación y premio final.</p>
+
+                <form id="form-evento-final" onsubmit="guardarEventoFinal(event)">
+                    <div class="form-group">
+                        <label>Título de la Gala Final:</label>
+                        <input type="text" id="final-titulo" class="input-medieval" value="Gran Coronación del Lokibarrio Txapeldun" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Lugar / Bastión de la Celebración:</label>
+                        <input type="text" id="final-lugar" class="input-medieval" value="Teatro Arriaga / Plaza Nueva" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha y Hora de la Gala:</label>
+                        <input type="datetime-local" id="final-fecha" class="input-medieval" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Premio / Recompensa para el Reino Ganador:</label>
+                        <textarea id="final-premio" class="input-medieval" rows="3" placeholder="Ej: El Barril de Oro Imperial y Pase Dorado para todos sus Maestres..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="submit" class="btn-cuervo" id="btn-guardar-gala" style="flex: 1;">👑 Guardar / Editar Gala Final</button>
+                        <button type="button" class="btn-cuervo" id="btn-borrar-gala" style="background: #7f1d1d; display: none;" onclick="borrarConfiguracionGalaFinal()">🗑️ Borrar Configuración</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+    </div> <!-- /contenido-reino-protegido -->
+
+
+    <!-- Modal de Autenticación por WhatsApp -->
+    <div id="modal-auth" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="cerrarModalAuth()">&times;</span>
+            <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">📜 Identificación en la Corte</h3>
+            <p id="auth-step-desc" style="font-size: 0.95rem; color: #d6d3d1;">Introduce tu número de teléfono de WhatsApp (ej. 123456789):</p>
+            
+            <div id="step-phone">
+                <input type="tel" id="input-phone" placeholder="123456789" class="input-medieval" value="">
+                <button class="btn-cuervo" style="width: 100%; margin-top: 15px;" onclick="enviarCuervoOTP()">✉️ Solicitar Código por WhatsApp</button>
+            </div>
+
+            <div id="step-otp" style="display: none; margin-top: 15px;">
+                <input type="text" id="input-otp" placeholder="Código de 4 dígitos" class="input-medieval" maxlength="4">
+                <button class="btn-cuervo" style="width: 100%; margin-top: 15px;" onclick="validarCodigoOTP()">👑 Acceder al Reino</button>
+            </div>
+            
+            <p id="auth-message" style="margin-top: 15px; font-size: 0.9rem; color: #f87171;"></p>
+        </div>
+    </div>
+
+
+    <!-- Código JS principal -->
+    <script src="js/app.js"></script>
+</body>
+</html>

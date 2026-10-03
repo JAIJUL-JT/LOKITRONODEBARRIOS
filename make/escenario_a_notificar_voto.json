@@ -1,0 +1,93 @@
+{
+  "name": "Trono del Pintxo - Escenario A: Notificar Juicio Sobresaliente",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "hook": "TRONO_WEBHOOK_RECEIVER"
+      },
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0,
+          "name": "Webhook Supabase (Nuevo Juicio)"
+        },
+        "restore": {},
+        "expect": [
+          {
+            "name": "evento",
+            "type": "text",
+            "label": "Evento"
+          },
+          {
+            "name": "maestre_alias",
+            "type": "text",
+            "label": "Alias Maestre"
+          },
+          {
+            "name": "casa_nombre",
+            "type": "text",
+            "label": "Casa Nombre"
+          },
+          {
+            "name": "festin",
+            "type": "number",
+            "label": "Festín"
+          },
+          {
+            "name": "caminos",
+            "type": "number",
+            "label": "Caminos"
+          },
+          {
+            "name": "espiritu",
+            "type": "number",
+            "label": "Espíritu"
+          },
+          {
+            "name": "comentario",
+            "type": "text",
+            "label": "Comentario"
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "util:Filter",
+      "version": 1,
+      "filter": {
+        "name": "Espíritu Feudal >= 9",
+        "conditions": [
+          [
+            {
+              "a": "{{1.espiritu}}",
+              "o": "number:gte",
+              "b": 9
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "module": "telegram:sendMessage",
+      "version": 1,
+      "parameters": {
+        "chatId": "@TronoPintxoOrganizadores",
+        "text": "🏰 *¡ESPÍRITU EXCEPCIONAL EN EL REINO!*\n\nEl Maestre *{{1.maestre_alias}}* ha juzgado la Casa *{{1.casa_nombre}}*:\n🍗 *Festín:* {{1.festin}}/10\n🗺️ *Caminos:* {{1.caminos}}/10\n🛡️ *Espíritu:* {{1.espiritu}}/10\n\n💬 _\"{{1.comentario}}\"_ \n\n📍 _Notificado por el Mayordomo de Make_",
+        "parse_mode": "Markdown"
+      },
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0,
+          "name": "Telegram a Organizadores"
+        }
+      }
+    }
+  ]
+}

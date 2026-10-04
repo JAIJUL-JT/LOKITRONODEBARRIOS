@@ -22,11 +22,11 @@ Este proyecto implementa la arquitectura feudal integral para conectar **GitHub 
 └─────────────┘              └─────────────┘
 ```
 
-| Herramienta | Rol Feudal en el Juego | Descripción Técnica |
-| :--- | :--- | :--- |
-| **GitHub** | **El Archivo del Reino** | Repositorio versionado del código (`main` y `dev`). |
-| **Supabase** | **El Trono de Datos** | Base de datos PostgreSQL con RLS, tablas de Casas, Maestres, Juicios, Ley II y triggers. |
-| **Vercel** | **La Taberna Imperial** | Despliegue estático de alta velocidad con CI/CD automático. |
+| Herramienta     | Rol Feudal en el Juego     | Descripción Técnica                                                                                                  |
+| :-------------- | :------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| **GitHub**      | **El Archivo del Reino**   | Repositorio versionado del código (`main` y `dev`).                                                                  |
+| **Supabase**    | **El Trono de Datos**      | Base de datos PostgreSQL con RLS, tablas de Casas, Maestres, Juicios, Ley II y triggers.                             |
+| **Vercel**      | **La Taberna Imperial**    | Despliegue estático de alta velocidad con CI/CD automático.                                                          |
 | **Make (.com)** | **El Mayordomo del Reino** | Orquestación de notificaciones (Telegram), Pases VIP (Google Docs/PDF + Gmail), rankings semanales y sellos diarios. |
 
 ---
@@ -90,7 +90,9 @@ juego-de-barrios-bilbao/
 4. En **Environment Variables**, añade:
    - `VITE_SUPABASE_URL` = `https://tu-proyecto.supabase.co`
    - `VITE_SUPABASE_ANON_KEY` = `tu-anon-key`
+   - `MAKE_WEBHOOK_URL` = `https://hook.eu1.make.com/tu-webhook-id`
 5. Haz clic en **Deploy**. ¡Cada `push` a la rama `main` se desplegará automáticamente!
+6. Si quieres despliegues automáticos desde GitHub, crea los secretos `VERCEL_TOKEN`, `VERCEL_ORG_ID` y `VERCEL_PROJECT_ID` en el repositorio. El workflow de ejemplo está en [`.github/workflows/vercel-deploy.yml`](.github/workflows/vercel-deploy.yml).
 
 ### 🤖 Paso 4 — Make (El Mayordomo Automático)
 1. Entra en [make.com](https://make.com) y crea un nuevo escenario.
@@ -99,7 +101,14 @@ juego-de-barrios-bilbao/
    - [`make/escenario_b_pase_vip.json`](file:///root/antigravity-termux/antigravity-termux/juego-de-barrios-bilbao/make/escenario_b_pase_vip.json): Pase Dorado VIP para Maestres con 5 o más sellos.
    - [`make/escenario_c_ranking_semanal.json`](file:///root/antigravity-termux/antigravity-termux/juego-de-barrios-bilbao/make/escenario_c_ranking_semanal.json): Bando semanal con podio dominical.
    - [`make/escenario_d_codigo_sello.json`](file:///root/antigravity-termux/antigravity-termux/juego-de-barrios-bilbao/make/escenario_d_codigo_sello.json): Distribución diaria de sellos a tabernas.
-3. Copia la URL del Webhook generado en el Escenario A y colócala en `sql/schema.sql` en la función `notificar_make()`, o guárdala directamente desde la pestaña **🔏 Cámara del Escribano** en la aplicación web.
+3. Copia la URL del Webhook generado en el Escenario A y guárdala en `MAKE_WEBHOOK_URL` o en la función `notificar_make()` del SQL.
+4. En Make, configura los módulos compatibles con Supabase, Google Docs/Drive y Gmail, y prueba el escenario A con un nuevo juicio con `espiritu >= 9` para comprobar que la notificación llega.
+
+### 👤 Acceso de GitHub para `afjbilbao@gmail.com`
+1. Crea o accede a la cuenta de GitHub que use el correo `afjbilbao@gmail.com`.
+2. Entra en el repositorio, ve a **Settings → Collaborators and teams** y añade ese usuario como colaborador o miembro con permisos de escritura.
+3. Si quieres que el despliegue en Vercel esté vinculado a esa cuenta, inicia sesión en Vercel con esa misma cuenta y añade el repositorio desde el panel de proyectos.
+4. En Supabase, añade la misma cuenta como propietario o administrador del proyecto si quieres gestionar el proyecto desde esa identidad.
 
 ---
 

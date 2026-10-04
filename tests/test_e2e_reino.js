@@ -255,8 +255,20 @@ const supabaseJsContent = fs.readFileSync(path.join(ROOT_DIR, 'js/supabase.js'),
 
 assert(indexHtmlContent.includes('data-tab="tab-calendario"'), 'Pestaña Calendario Feudal presente en la barra de navegación');
 assert(indexHtmlContent.includes('id="tab-calendario"'), 'Sección tab-calendario presente en el DOM');
+assert(indexHtmlContent.includes('id="evento-lugar"') && indexHtmlContent.includes('id="evento-hora"'), 'Formulario de eventos permite indicar lugar y hora');
+assert(!indexHtmlContent.includes('value="organizador"'), 'El rol organizador ya no se ofrece en la gestión de usuarios');
+assert(indexHtmlContent.includes('value="pestana-votacion-barrio"'), 'La pestaña de votación de barrio está disponible para todos los usuarios');
 assert(appJsContent.includes('EVENTOS_FEUDALES'), 'Crónica de EVENTOS_FEUDALES definida con fechas y Casas');
 assert(appJsContent.includes('descargarICSEvento'), 'Función para sincronizar citas con Google Calendar (.ics) implementada');
+assert(appJsContent.includes("function puedeGestionarUsuarios(role) {\n    return role === 'superadmin';"), 'Solo Superadmin puede gestionar usuarios y sus roles');
+assert(appJsContent.includes("return ['superadmin', 'tronista'].includes(role);"), 'Solo Superadmin y Tronista pueden gestionar eventos de barrio');
+assert(appJsContent.includes(".select('id, phone, name, role, pin_code, barrio_asignado')"), 'La sesión de tronista conserva el barrio asignado para aplicar el alcance de eventos');
+assert(appJsContent.includes('function puedeEditarEventoTronista'), 'Tronista tiene una regla específica de edición de eventos');
+assert(appJsContent.includes("if (role !== 'tronista') return false;"), 'La edición de eventos por barrio se reserva al tronista asignado');
+assert(appJsContent.includes('eventoActual.nombre !== nombre || eventoActual.fecha !== fecha'), 'Tronista no puede editar nombre ni fecha del evento');
+assert(sqlContent.includes("CHECK (role IN ('jugador', 'tronista', 'superadmin'))"), 'El esquema limita los roles a jugador, tronista y superadmin');
+const roleMigrationContent = fs.readFileSync(path.join(ROOT_DIR, 'sql/migrations/202610030002_replace_organizador_with_tronista.sql'), 'utf-8');
+assert(roleMigrationContent.includes("SET role = 'tronista'\nWHERE role = 'organizador'"), 'La migración convierte las cuentas organizador existentes a tronista');
 
 // -----------------------------------------------------------------------------
 // PASO 11: VERIFICACIÓN DE SÚPER ADMINISTRADOR & LEY DE VOTO ÚNICO

@@ -1,7 +1,7 @@
 // ==========================================
 // CONFIGURACIÓN DE SUPABASE
 // ==========================================
-const SUPABASE_URL = 'https://uswikdckptzivsurzrlc.supabase.co'; 
+const SUPABASE_URL = 'https://uswikdckptzivsurzrlc.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzd2lrZGNrcHR6aXZzdXJ6cmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODAwNTEsImV4cCI6MjEwNjU1NjA1MX0.3kovmMBfC_JCGKyJ_1s5iyxtkKyqVMIt77CfHnytLzI';
 
 // Inicialización segura del cliente
@@ -16,6 +16,13 @@ if (typeof supabase !== 'undefined' && SUPABASE_URL && !SUPABASE_URL.includes('t
 
 // Variable global para mantener el teléfono durante el proceso de OTP
 let ultimoTelefonoFormateado = '';
+
+const EVENTOS_FEUDALES = [
+    { barrio: 'Casco Viejo', nombre: 'Ruta del Pintxo Medieval', fecha: '2026-11-03', descripcion: 'Noche de calle con degustación y música en vivo.' },
+    { barrio: 'Indautxu', nombre: 'Velada del Vino y la Tradición', fecha: '2026-11-05', descripcion: 'Bodega abierta para armonizar sabor y arte.' },
+    { barrio: 'Deusto', nombre: 'Jornada de los Maestres del Ría', fecha: '2026-11-08', descripcion: 'Catas y rutas junto al río.' },
+    { barrio: 'San Mamés', nombre: 'Feria del León y la Gastronomía', fecha: '2026-11-12', descripcion: 'Gran vuelta por tabernas del barrio.' }
+];
 
 function abrirModalAuth() {
     const modal = document.getElementById('modal-auth');
@@ -100,23 +107,81 @@ function obtenerMakeWebhookUrl() {
     return localStorage.getItem('make_webhook_url') || window.MAKE_WEBHOOK_URL || '';
 }
 
+function exportarRepositorioCSV() {
+    const votos = getRepositorioVotos ? getRepositorioVotos() : JSON.parse(localStorage.getItem('repositorio_votos') || '[]');
+    if (!votos.length) {
+        alert('⚠️ El repositorio central del reino aún no tiene votos para exportar.');
+        return;
+    }
+
+    const cabecera = ['maestre_id', 'casa_visitada', 'barrio', 'nota_festin', 'nota_caminos', 'nota_espiritu', 'fecha_juicio'];
+    const filas = votos.map(v => [
+        v.maestre_id || '',
+        v.casa_visitada || '',
+        v.barrio || '',
+        v.nota_festin || 0,
+        v.nota_caminos || 0,
+        v.nota_espiritu || 0,
+        v.fecha_juicio || ''
+    ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(','));
+    const csv = [cabecera.join(','), ...filas].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'repositorio-votos-bilbao.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    alert('📤 Repositorio exportado en formato CSV.');
+}
+
+function descargarICSEvento(evento) {
+    const fecha = (evento && evento.fecha) ? new Date(evento.fecha + 'T12:00:00') : new Date();
+    const start = fecha.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const summary = encodeURIComponent((evento && evento.nombre) ? evento.nombre : 'Evento Feudal');
+    const description = encodeURIComponent((evento && evento.descripcion) ? evento.descripcion : 'Evento programado por la Corte');
+    const location = encodeURIComponent((evento && evento.barrio) ? evento.barrio : 'Bilbao');
+    const ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'BEGIN:VEVENT',
+        `UID:${Date.now()}@lokitrono`,
+        `DTSTAMP:${start}`,
+        `DTSTART:${start}`,
+        `DTEND:${start}`,
+        `SUMMARY:${summary}`,
+        `DESCRIPTION:${description}`,
+        `LOCATION:${location}`,
+        'END:VEVENT',
+        'END:VCALENDAR'
+    ].join('\n');
+
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'evento-feudal.ics';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
 // Función para enviar el mensaje de Bienvenida por WhatsApp con PIN e instrucciones vía Make.com
 async function enviarMensajeBienvenidaWhatsApp(phone, name, pinCode) {
     const nombreMostrar = name || 'Noble Caminante';
     const mensajeText = `¡Hola ${nombreMostrar}! Te damos la bienvenida a la Corte del Lokitrono de Bilbao ⚔️👑\n\n` +
-                        `Se ha activado tu acceso autorizado.\n` +
-                        `🔑 Tu PIN de acceso de 4 dígitos es: *${pinCode}*\n\n` +
-                        `📜 Instrucciones para acceder a la web:\n` +
-                        `1. Entra en la web de la Corte.\n` +
-                        `2. Pulsa en "📜 Identificarse por WhatsApp".\n` +
-                        `3. Introduce tu número de teléfono (${phone}).\n` +
-                        `4. Escribe tu PIN de 4 dígitos (${pinCode}) para entrar.`;
+        `Se ha activado tu acceso autorizado.\n` +
+        `🔑 Tu PIN de acceso de 4 dígitos es: *${pinCode}*\n\n` +
+        `📜 Instrucciones para acceder a la web:\n` +
+        `1. Entra en la web de la Corte.\n` +
+        `2. Pulsa en "📜 Identificarse por WhatsApp".\n` +
+        `3. Introduce tu número de teléfono (${phone}).\n` +
+        `4. Escribe tu PIN de 4 dígitos (${pinCode}) para entrar.`;
 
     const mensajeLog = `💬 [WHATSAPP BIENVENIDA A ${phone}]\n` +
-                       `--------------------------------------------------\n` +
-                       mensajeText + `\n` +
-                       `--------------------------------------------------`;
-    
+        `--------------------------------------------------\n` +
+        mensajeText + `\n` +
+        `--------------------------------------------------`;
+
     console.log(mensajeLog);
 
     const webhookUrl = obtenerMakeWebhookUrl();
@@ -146,7 +211,7 @@ async function enviarMensajeBienvenidaWhatsApp(phone, name, pinCode) {
 async function notificarSuperAdminsWhatsApp(accion, usuarioData) {
     const nombreMostrar = usuarioData.name || 'Sin nombre (Solo teléfono)';
     const mensajeText = `🔔 [CORTE DE BILBAO] Notificación de ${accion}:\n- Usuario: ${nombreMostrar}\n- Teléfono: ${usuarioData.phone}\n- Rol: ${usuarioData.role}\n- PIN Asignado: ${usuarioData.pin_code || 'N/A'}`;
-    
+
     console.log("📲 ENVIANDO NOTIFICACIÓN A SUPERADMINISTRADORES:\n" + mensajeText);
 
     const webhookUrl = obtenerMakeWebhookUrl();
@@ -313,7 +378,7 @@ async function enviarCuervoOTP() {
 
         if (stepPhone) stepPhone.style.display = 'none';
         if (stepOtp) stepOtp.style.display = 'block';
-        
+
         const etiquetaNombre = user.name ? `¡Hola ${user.name}!` : `¡Hola Maestre (${digitsOnly})!`;
         if (desc) desc.innerText = `📲 ${etiquetaNombre} Introduce tu PIN de 4 dígitos recibido en WhatsApp (Tu PIN: ${pinCode}):`;
 
@@ -369,7 +434,7 @@ async function iniciarSesionDirecta() {
     try {
         const { data: user, error } = await supabaseClient
             .from('authorized_users')
-            .select('id, phone, name, role, pin_code')
+            .select('id, phone, name, role, pin_code, barrio_asignado')
             .eq('phone', telefonoFormateado)
             .maybeSingle();
 
@@ -392,13 +457,91 @@ async function iniciarSesionDirecta() {
 }
 
 
+function obtenerSesionActual() {
+    const sesion = localStorage.getItem('maestre_sesion');
+    if (!sesion) return null;
+    try {
+        return JSON.parse(sesion);
+    } catch (e) {
+        console.error('Error leyendo la sesión actual:', e);
+        return null;
+    }
+}
+
+function puedeVerMenu(role, opcion) {
+    const permisos = {
+        'clasificacion': ['jugador', 'tronista', 'superadmin'],
+        'votacion-barrio': ['jugador', 'tronista', 'superadmin'],
+        'calendario': ['jugador', 'tronista', 'superadmin'],
+        'tronistas': ['tronista', 'superadmin'],
+        'admin': ['superadmin'],
+        'usuarios': ['superadmin'],
+        'barrios': ['superadmin'],
+        'roles': ['superadmin'],
+        'ponderacion': ['superadmin'],
+        'evento-final': ['superadmin']
+    };
+    return (permisos[opcion] || []).includes(role);
+}
+
+function puedeAbrirPestana(role, pestana) {
+    const permisos = {
+        'pestana-clasificacion': ['jugador', 'tronista', 'superadmin'],
+        'pestana-votacion-barrio': ['jugador', 'tronista', 'superadmin'],
+        'tab-calendario': ['jugador', 'tronista', 'superadmin'],
+        'pestana-tronistas': ['tronista', 'superadmin'],
+        'tab-superadmin': ['superadmin'],
+        'pestana-usuarios': ['superadmin'],
+        'pestana-barrios': ['superadmin'],
+        'pestana-evento-final': ['superadmin']
+    };
+    return (permisos[pestana] || []).includes(role);
+}
+
+function puedeGestionarUsuarios(role) {
+    return role === 'superadmin';
+}
+
+function puedeGestionarEventos(role) {
+    return ['superadmin', 'tronista'].includes(role);
+}
+
+function esRolBasico(role) {
+    return ['jugador', 'tronista'].includes(role);
+}
+
+function barrioAsignadoUsuarioActual() {
+    const user = obtenerSesionActual();
+    return user && user.barrio_asignado ? user.barrio_asignado : null;
+}
+
+function puedeEditarEventoTronista(role, barrioEvento, fechaEvento, horaEvento) {
+    if (role === 'superadmin') return true;
+    if (role !== 'tronista') return false;
+
+    const barrioTronista = barrioAsignadoUsuarioActual();
+    if (!barrioTronista || barrioTronista !== barrioEvento) return false;
+
+    if (!fechaEvento) return false;
+
+    const fechaLimite = new Date(`${fechaEvento}T${horaEvento || '00:00'}`);
+    const ahora = new Date();
+
+    return !Number.isNaN(fechaLimite.getTime()) && fechaLimite.getTime() > ahora.getTime();
+}
+
 function actualizarEstadoUI() {
     const sesion = localStorage.getItem('maestre_sesion');
     const authStatusDiv = document.getElementById('auth-status');
     const pantallaLogin = document.getElementById('pantalla-login-inicio');
     const navSecciones = document.getElementById('nav-secciones-corte');
     const contenidoProtegido = document.getElementById('contenido-reino-protegido');
+    const optionVotacionBarrio = document.querySelector('#select-seccion-corte option[value="pestana-votacion-barrio"]');
     const optionUsuarios = document.getElementById('option-menu-usuarios');
+    const optionTronistas = document.querySelector('#select-seccion-corte option[value="pestana-tronistas"]');
+    const optionConsejoReal = document.querySelector('#select-seccion-corte option[value="tab-superadmin"]');
+    const optionEventoFinal = document.querySelector('#select-seccion-corte option[value="pestana-evento-final"]');
+    const selectSeccionCorte = document.getElementById('select-seccion-corte');
 
     if (!sesion) {
         // Modo NO Autenticado: Mostrar pantalla de login inicial, ocultar contenido y menú
@@ -412,6 +555,9 @@ function actualizarEstadoUI() {
     try {
         const user = JSON.parse(sesion);
         const nombreMostrar = user.name ? user.name : user.phone;
+        const esSuperAdmin = (user.role === 'superadmin');
+        const esRolBase = esRolBasico(user.role);
+        const puedeUsuarios = puedeGestionarUsuarios(user.role);
 
         // Ocultar login, mostrar estado de sesión, menú y contenido protegido
         if (pantallaLogin) pantallaLogin.style.display = 'none';
@@ -430,9 +576,42 @@ function actualizarEstadoUI() {
         }
 
         // Control de Visibilidad del Menú y Acciones Superadmin
-        const esSuperAdmin = (user.role === 'superadmin');
+        if (optionVotacionBarrio) {
+            optionVotacionBarrio.style.display = '';
+        }
         if (optionUsuarios) {
-            optionUsuarios.removeAttribute('style');
+            optionUsuarios.style.display = puedeUsuarios ? '' : 'none';
+        }
+        if (optionTronistas) {
+            optionTronistas.style.display = esSuperAdmin || user.role === 'tronista' ? '' : 'none';
+        }
+        if (optionConsejoReal) {
+            optionConsejoReal.style.display = esSuperAdmin ? '' : 'none';
+        }
+        if (optionEventoFinal) {
+            optionEventoFinal.style.display = esSuperAdmin ? '' : 'none';
+        }
+        if (selectSeccionCorte) {
+            const optionVotacionMenu = selectSeccionCorte.querySelector('option[value="pestana-votacion-barrio"]');
+            if (optionVotacionMenu) {
+                optionVotacionMenu.style.display = '';
+            }
+            const optionSuperAdmin = selectSeccionCorte.querySelector('option[value="tab-superadmin"]');
+            if (optionSuperAdmin) {
+                optionSuperAdmin.style.display = esSuperAdmin ? '' : 'none';
+            }
+            const optionUsuariosMenu = selectSeccionCorte.querySelector('option[value="pestana-usuarios"]');
+            if (optionUsuariosMenu) {
+                optionUsuariosMenu.style.display = puedeUsuarios ? '' : 'none';
+            }
+            const optionTronistasMenu = selectSeccionCorte.querySelector('option[value="pestana-tronistas"]');
+            if (optionTronistasMenu) {
+                optionTronistasMenu.style.display = esSuperAdmin || user.role === 'tronista' ? '' : 'none';
+            }
+            const optionEventoFinalMenu = selectSeccionCorte.querySelector('option[value="pestana-evento-final"]');
+            if (optionEventoFinalMenu) {
+                optionEventoFinalMenu.style.display = esSuperAdmin ? '' : 'none';
+            }
         }
 
         const accionesSimulacionDiv = document.getElementById('superadmin-simulacion-actions');
@@ -445,8 +624,8 @@ function actualizarEstadoUI() {
             panelAdminTronistas.style.display = esSuperAdmin ? 'block' : 'none';
         }
 
-        // Aplicar restricciones de edición para usuarios que NO son superadmin ni organizador
-        aplicarRestriccionesLectura(!esSuperAdmin && user.role !== 'organizador');
+        // Tronistas mantienen permisos básicos salvo la gestión acotada de eventos de su barrio.
+        aplicarRestriccionesLectura(!esSuperAdmin && !esRolBase && user.role !== 'tronista');
 
         // Seleccionar pestaña por defecto
         cambiarPestana('pestana-clasificacion');
@@ -485,7 +664,7 @@ const CRITERIOS_DEFECTO = [
 function obtenerCriteriosActuales() {
     const guardados = localStorage.getItem('criterios_ponderacion');
     if (guardados) {
-        try { return JSON.parse(guardados); } catch (e) {}
+        try { return JSON.parse(guardados); } catch (e) { }
     }
     return CRITERIOS_DEFECTO;
 }
@@ -657,7 +836,7 @@ function generarEjemploCompeticionSimulada() {
 
     usuariosSimulados.forEach(user => {
         votosPorUsuario[user.phone] = [];
-        
+
         const numBarriosVotados = Math.floor(Math.random() * 5) + 2;
         const barriosMezclados = [...barrios].sort(() => 0.5 - Math.random());
         const barriosElegidos = barriosMezclados.slice(0, numBarriosVotados);
@@ -802,7 +981,7 @@ function guardarVotoBarrioUsuario(e) {
     const sesion = localStorage.getItem('maestre_sesion');
     let phoneUsuario = '+34605676002';
     if (sesion) {
-        try { phoneUsuario = JSON.parse(sesion).phone; } catch (e) {}
+        try { phoneUsuario = JSON.parse(sesion).phone; } catch (e) { }
     }
 
     let notaFinal = 0;
@@ -833,7 +1012,7 @@ function guardarVotoBarrioUsuario(e) {
     localStorage.setItem('simulacion_votos_usuarios', JSON.stringify(votosPorUsuario));
 
     alert(`🗳️ ¡Tu voto para el reino de ${barrio} ha sido registrado con éxito! (Nota Ponderada: ${detallesVoto.notaFinal})`);
-    
+
     document.getElementById('formulario-emitir-voto-div').style.display = 'none';
     cargarMisVotosPersonales();
 }
@@ -845,7 +1024,7 @@ function cargarMisVotosPersonales() {
     const sesion = localStorage.getItem('maestre_sesion');
     let phoneUsuario = '+34605676002';
     if (sesion) {
-        try { phoneUsuario = JSON.parse(sesion).phone; } catch (e) {}
+        try { phoneUsuario = JSON.parse(sesion).phone; } catch (e) { }
     }
 
     const votosPorUsuario = JSON.parse(localStorage.getItem('simulacion_votos_usuarios') || '{}');
@@ -885,7 +1064,7 @@ function cargarSeccionSuperAdminParticipantes() {
     const sesion = localStorage.getItem('maestre_sesion');
     let userRole = '';
     if (sesion) {
-        try { userRole = JSON.parse(sesion).role; } catch (e) {}
+        try { userRole = JSON.parse(sesion).role; } catch (e) { }
     }
 
     if (userRole !== 'superadmin') {
@@ -909,8 +1088,8 @@ function cargarSeccionSuperAdminParticipantes() {
                 
                 <div style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
                     ${usuariosSimulados.map(u => {
-                        const votosEmitidos = votosPorUsuario[u.phone] || [];
-                        return `
+            const votosEmitidos = votosPorUsuario[u.phone] || [];
+            return `
                             <details style="margin-bottom: 8px; background: rgba(15, 23, 42, 0.7); padding: 8px; border-radius: 4px; border: 1px solid #1e40af;">
                                 <summary style="cursor: pointer; color: #fef08a; font-weight: bold; font-size: 0.9rem;">
                                     ${u.name} (${u.phone}) - <span style="color:#a7f3d0;">Rol: ${u.role}</span> | Votos Emitidos: ${votosEmitidos.length} barrios
@@ -937,7 +1116,7 @@ function cargarSeccionSuperAdminParticipantes() {
                                 </div>
                             </details>
                         `;
-                    }).join('')}
+        }).join('')}
                 </div>
             </div>
 
@@ -969,34 +1148,91 @@ function cambiarPestana(idPestana) {
     const sesion = localStorage.getItem('maestre_sesion');
     let userRole = '';
     if (sesion) {
-        try { userRole = JSON.parse(sesion).role; } catch (e){}
+        try { userRole = JSON.parse(sesion).role; } catch (e) { }
     }
 
-    // Pestaña de usuarios accesible en el menú de la corte
+    const aliasTabs = {
+        'pestana-clasificacion': 'pestana-clasificacion',
+        'tab-clasificacion': 'pestana-clasificacion',
+        'pestana-votacion-barrio': 'pestana-votacion-barrio',
+        'tab-votacion-barrio': 'pestana-votacion-barrio',
+        'pestana-tronistas': 'pestana-tronistas',
+        'tab-tronistas': 'pestana-tronistas',
+        'pestana-calendario': 'tab-calendario',
+        'tab-calendario': 'tab-calendario',
+        'pestana-usuarios': 'pestana-usuarios',
+        'tab-usuarios': 'pestana-usuarios',
+        'tab-superadmin': 'tab-superadmin',
+        'pestana-barrios': 'pestana-barrios',
+        'tab-barrios': 'pestana-barrios',
+        'pestana-evento-final': 'pestana-evento-final',
+        'tab-evento-final': 'pestana-evento-final'
+    };
+
+    const targetId = aliasTabs[idPestana] || idPestana;
+    const esSuperAdmin = userRole === 'superadmin';
+
+    if (targetId && !puedeAbrirPestana(userRole, targetId)) {
+        const fallback = document.getElementById('pestana-clasificacion');
+        if (fallback) fallback.style.display = 'block';
+        const select = document.getElementById('select-seccion-corte');
+        if (select) select.value = 'pestana-clasificacion';
+        return;
+    }
+
     const contents = document.querySelectorAll('.tab-content');
     contents.forEach(c => c.style.display = 'none');
 
-    const target = document.getElementById(idPestana);
+    const target = document.getElementById(targetId);
     if (target) target.style.display = 'block';
 
     const select = document.getElementById('select-seccion-corte');
     if (select && select.value !== idPestana) {
-        select.value = idPestana;
+        const mappedValue = Object.keys(aliasTabs).find(key => aliasTabs[key] === targetId) || idPestana;
+        select.value = mappedValue;
     }
 
-    if (idPestana === 'pestana-clasificacion') {
+    if (targetId === 'pestana-clasificacion') {
         cargarClasificacion();
         cargarMisVotosPersonales();
     }
-    if (idPestana === 'pestana-tronistas') cargarTronistas();
-    if (idPestana === 'pestana-calendario') cargarEventos();
-    if (idPestana === 'pestana-usuarios') {
+    if (targetId === 'pestana-tronistas') cargarTronistas();
+    if (targetId === 'tab-calendario') cargarEventos();
+    if (targetId === 'pestana-usuarios') {
+        if (!puedeGestionarUsuarios(userRole)) {
+            const fallback = document.getElementById('pestana-clasificacion');
+            if (fallback) fallback.style.display = 'block';
+            return;
+        }
         cargarUsuariosTabla();
         cargarSeccionSuperAdminParticipantes();
         actualizarEstadoWebhookUI();
     }
-    if (idPestana === 'pestana-barrios') cargarBarriosGrid();
-    if (idPestana === 'pestana-evento-final') cargarEventoFinalForm();
+    if (targetId === 'tab-superadmin') {
+        if (userRole !== 'superadmin') {
+            const fallback = document.getElementById('pestana-clasificacion');
+            if (fallback) fallback.style.display = 'block';
+            return;
+        }
+        cargarSeccionSuperAdminParticipantes();
+        const tbody = document.getElementById('repositorio-votos-body');
+        if (tbody) {
+            const votos = getRepositorioVotos ? getRepositorioVotos() : [];
+            tbody.innerHTML = votos.length === 0
+                ? '<tr><td colspan="5" style="text-align: center; color: #d6d3d1;">Sin votos registrados en el repositorio central.</td></tr>'
+                : votos.map(v => `
+                    <tr>
+                        <td>${v.maestre_id || 'Sin maestre'}</td>
+                        <td>${v.barrio || 'Sin barrio'}</td>
+                        <td>${v.casa_visitada || 'Sin casa'}</td>
+                        <td>${(v.nota_festin ?? 0)} / ${(v.nota_caminos ?? 0)} / ${(v.nota_espiritu ?? 0)}</td>
+                        <td>${v.fecha_juicio || 'Sin fecha'}</td>
+                    </tr>
+                `).join('');
+        }
+    }
+    if (targetId === 'pestana-barrios') cargarBarriosGrid();
+    if (targetId === 'pestana-evento-final') cargarEventoFinalForm();
 }
 
 
@@ -1007,6 +1243,7 @@ async function cargarTronistas() {
     const selectBarrio = document.getElementById('tronista-barrio');
     const selectEventoBarrio = document.getElementById('evento-barrio');
     const selectBarrioTronista = document.getElementById('select-barrio-tronista');
+    const selectNuevoTronistaBarrio = document.getElementById('nuevo-tronista-barrio');
     const selectUsuarioTronista = document.getElementById('select-usuario-tronista');
     const container = document.getElementById('lista-tronistas');
 
@@ -1020,11 +1257,12 @@ async function cargarTronistas() {
     if (selectBarrio) selectBarrio.innerHTML = optionsBarrios;
     if (selectEventoBarrio) selectEventoBarrio.innerHTML = optionsBarrios;
     if (selectBarrioTronista) selectBarrioTronista.innerHTML = optionsBarrios;
+    if (selectNuevoTronistaBarrio) selectNuevoTronistaBarrio.innerHTML = optionsBarrios;
 
     if (supabaseClient && selectUsuarioTronista) {
         const { data: usuarios } = await supabaseClient.from('authorized_users').select('id, name, phone, role');
         if (usuarios) {
-            selectUsuarioTronista.innerHTML = usuarios.map(u => 
+            selectUsuarioTronista.innerHTML = usuarios.map(u =>
                 `<option value="${u.id}">${u.name || u.phone} (${u.role})</option>`
             ).join('');
         }
@@ -1033,7 +1271,7 @@ async function cargarTronistas() {
     const sesion = localStorage.getItem('maestre_sesion');
     let esSuperAdmin = false;
     if (sesion) {
-        try { esSuperAdmin = JSON.parse(sesion).role === 'superadmin'; } catch (e) {}
+        try { esSuperAdmin = JSON.parse(sesion).role === 'superadmin'; } catch (e) { }
     }
 
     if (supabaseClient && container) {
@@ -1065,6 +1303,10 @@ async function cargarTronistas() {
 }
 
 async function desasignarTronista(userId) {
+    if (!puedeGestionarUsuarios((obtenerSesionActual() || {}).role)) {
+        alert('Solo Superadmin puede retirar roles de tronista.');
+        return;
+    }
     if (confirm("¿Estás seguro de quitar a este Maestre del puesto de Tronista de Barrio?")) {
         const { error } = await supabaseClient
             .from('authorized_users')
@@ -1079,15 +1321,83 @@ async function desasignarTronista(userId) {
     }
 }
 
+async function crearTronistaAdmin(e) {
+    e.preventDefault();
+    const sesion = JSON.parse(localStorage.getItem('maestre_sesion') || 'null');
+    if (!sesion || sesion.role !== 'superadmin') {
+        alert('Solo un superadministrador puede añadir tronistas.');
+        return;
+    }
+
+    const name = document.getElementById('nuevo-tronista-nombre').value.trim();
+    const rawPhone = document.getElementById('nuevo-tronista-phone').value.trim();
+    const barrio_asignado = document.getElementById('nuevo-tronista-barrio').value;
+    const digitsOnly = rawPhone.replace(/\D/g, '');
+    let phone = rawPhone;
+    if (digitsOnly.length === 9) phone = '+34' + digitsOnly;
+    else if (digitsOnly.length === 11 && digitsOnly.startsWith('34')) phone = '+' + digitsOnly;
+
+    const { data: tronistasBarrio, error: consultaError } = await supabaseClient
+        .from('authorized_users')
+        .select('id')
+        .eq('barrio_asignado', barrio_asignado);
+
+    if (consultaError) {
+        alert('Error comprobando el aforo de tronistas: ' + consultaError.message);
+        return;
+    }
+    if (tronistasBarrio && tronistasBarrio.length >= 2) {
+        alert(`⚠️ El barrio ${barrio_asignado} ya cuenta con el máximo permitido de 2 Tronistas.`);
+        return;
+    }
+
+    const pin_code = generarPin4Digitos();
+    const { error } = await supabaseClient
+        .from('authorized_users')
+        .insert([{ name, phone, role: 'tronista', barrio_asignado, pin_code }]);
+
+    if (error) {
+        alert('Error al crear el tronista: ' + error.message);
+        return;
+    }
+
+    enviarMensajeBienvenidaWhatsApp(phone, name, pin_code);
+    notificarSuperAdminsWhatsApp('ALTA_TRONISTA', { phone, name, role: 'tronista', barrio_asignado, pin_code });
+    alert(`👑 Tronista creado y asignado a ${barrio_asignado}. PIN generado: ${pin_code}.`);
+    document.getElementById('form-crear-tronista').reset();
+    cargarTronistas();
+}
+
 async function asignarTronistaAdmin(e) {
     e.preventDefault();
+    if (!puedeGestionarUsuarios((obtenerSesionActual() || {}).role)) {
+        alert('Solo Superadmin puede asignar roles de tronista.');
+        return;
+    }
     const userId = document.getElementById('select-usuario-tronista').value;
     const barrio = document.getElementById('select-barrio-tronista').value;
 
-    const { data: existentes } = await supabaseClient
+    const { data: usuarioSeleccionado, error: usuarioError } = await supabaseClient
+        .from('authorized_users')
+        .select('id, role')
+        .eq('id', userId)
+        .single();
+
+    if (usuarioError || !usuarioSeleccionado) {
+        alert('No se pudo verificar el Maestre seleccionado.');
+        return;
+    }
+
+    const { data: existentes, error: consultaError } = await supabaseClient
         .from('authorized_users')
         .select('id')
-        .eq('barrio_asignado', barrio);
+        .eq('barrio_asignado', barrio)
+        .neq('id', userId);
+
+    if (consultaError) {
+        alert('Error comprobando el aforo de tronistas: ' + consultaError.message);
+        return;
+    }
 
     if (existentes && existentes.length >= 2) {
         alert(`⚠️ El barrio ${barrio} ya cuenta con el máximo permitido de 2 Tronistas de barrio.`);
@@ -1096,7 +1406,7 @@ async function asignarTronistaAdmin(e) {
 
     const { error } = await supabaseClient
         .from('authorized_users')
-        .update({ barrio_asignado: barrio, role: 'tronista' })
+        .update({ barrio_asignado: barrio, role: usuarioSeleccionado.role === 'superadmin' ? 'superadmin' : 'tronista' })
         .eq('id', userId);
 
     if (error) {
@@ -1113,6 +1423,9 @@ async function asignarTronistaAdmin(e) {
 async function cargarEventos() {
     const selectEventoBarrio = document.getElementById('evento-barrio');
     const container = document.getElementById('lista-eventos');
+    const user = obtenerSesionActual();
+    const esTronista = user && user.role === 'tronista';
+    const barrioTronista = barrioAsignadoUsuarioActual();
 
     if (supabaseClient && selectEventoBarrio) {
         const { data: casas } = await supabaseClient.from('casas').select('nombre');
@@ -1121,29 +1434,38 @@ async function cargarEventos() {
         }
     }
 
-    const sesion = localStorage.getItem('maestre_sesion');
-    let esSuperAdmin = false;
-    if (sesion) {
-        try { esSuperAdmin = JSON.parse(sesion).role === 'superadmin'; } catch (e) {}
+    if (esTronista && selectEventoBarrio) {
+        selectEventoBarrio.value = barrioTronista || '';
+        selectEventoBarrio.disabled = true;
     }
 
     const eventos = JSON.parse(localStorage.getItem('eventos_list') || '[]');
+    const eventosVisibles = esTronista
+        ? (barrioTronista ? eventos.filter(ev => ev.barrio === barrioTronista) : [])
+        : eventos;
+
     if (container) {
-        if (eventos.length === 0) {
+        if (eventosVisibles.length === 0) {
             container.innerHTML = `<p style="color:#d6d3d1;">No hay eventos programados en el calendario.</p>`;
         } else {
-            container.innerHTML = eventos.map((ev, index) => `
+            container.innerHTML = eventosVisibles.map((ev, index) => {
+                const indiceReal = eventos.indexOf(ev);
+                const puedeEditar = user && (user.role === 'superadmin' || puedeEditarEventoTronista(user.role, ev.barrio, ev.fecha, ev.hora));
+
+                return `
                 <div class="card-item">
                     <h3 style="color:var(--oro-brillante); margin-top:0;">📅 ${ev.nombre}</h3>
                     <p><strong>Barrio:</strong> ${ev.barrio}</p>
                     <p><strong>Fecha:</strong> ${ev.fecha}</p>
+                    <p><strong>Lugar:</strong> ${ev.lugar || 'Pendiente'} | <strong>Hora:</strong> ${ev.hora || 'Pendiente'}</p>
                     <p style="color:#a8a29e;">${ev.desc || ''}</p>
                     <div style="margin-top: 10px;">
-                        <button onclick="editarEvento(${index})" class="btn-cuervo btn-accion-sm">✏️ Editar Evento</button>
-                        <button onclick="borrarEvento(${index})" class="btn-cuervo btn-accion-sm" style="background:#7f1d1d;">🗑️ Eliminar Evento</button>
+                        ${puedeEditar ? `<button onclick="editarEvento(${indiceReal})" class="btn-cuervo btn-accion-sm">✏️ Editar Evento</button>` : ''}
+                        ${user && user.role === 'superadmin' ? `<button onclick="borrarEvento(${indiceReal})" class="btn-cuervo btn-accion-sm" style="background:#7f1d1d;">🗑️ Eliminar Evento</button>` : ''}
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
     }
 }
@@ -1153,11 +1475,32 @@ function editarEvento(index) {
     const ev = eventos[index];
     if (!ev) return;
 
+    const user = obtenerSesionActual();
+    if (!user || !puedeEditarEventoTronista(user.role, ev.barrio, ev.fecha, ev.hora)) {
+        if (!user || user.role !== 'superadmin') {
+            alert('Solo puedes editar eventos de tu barrio antes de su hora de inicio.');
+            return;
+        }
+    }
+
     document.getElementById('evento-id-edit').value = index;
     document.getElementById('evento-barrio').value = ev.barrio;
     document.getElementById('evento-nombre').value = ev.nombre;
     document.getElementById('evento-fecha').value = ev.fecha;
     document.getElementById('evento-desc').value = ev.desc || '';
+    document.getElementById('evento-lugar').value = ev.lugar || '';
+    document.getElementById('evento-hora').value = ev.hora || '';
+
+    if (user && user.role === 'tronista') {
+        const eventoBarrio = document.getElementById('evento-barrio');
+        const eventoNombre = document.getElementById('evento-nombre');
+        const eventoFecha = document.getElementById('evento-fecha');
+        const eventoDesc = document.getElementById('evento-desc');
+        if (eventoBarrio) eventoBarrio.disabled = true;
+        if (eventoNombre) eventoNombre.readOnly = true;
+        if (eventoFecha) eventoFecha.readOnly = true;
+        if (eventoDesc) eventoDesc.readOnly = true;
+    }
 
     document.getElementById('btn-guardar-evento').innerText = "💾 Guardar Cambios de Evento";
     document.getElementById('btn-cancelar-evento').style.display = "inline-block";
@@ -1166,11 +1509,29 @@ function editarEvento(index) {
 function resetFormEvento() {
     document.getElementById('form-evento').reset();
     document.getElementById('evento-id-edit').value = "";
+    const eventoNombre = document.getElementById('evento-nombre');
+    const eventoBarrio = document.getElementById('evento-barrio');
+    const eventoFecha = document.getElementById('evento-fecha');
+    const eventoDesc = document.getElementById('evento-desc');
+    const user = obtenerSesionActual();
+    if (eventoBarrio) {
+        eventoBarrio.disabled = Boolean(user && user.role === 'tronista');
+        if (user && user.role === 'tronista') eventoBarrio.value = user.barrio_asignado || '';
+    }
+    if (eventoNombre) eventoNombre.readOnly = false;
+    if (eventoFecha) eventoFecha.readOnly = false;
+    if (eventoDesc) eventoDesc.readOnly = false;
     document.getElementById('btn-guardar-evento').innerText = "📅 Programar / Editar Evento";
     document.getElementById('btn-cancelar-evento').style.display = "none";
 }
 
 function borrarEvento(index) {
+    const user = obtenerSesionActual();
+    if (!user || user.role !== 'superadmin') {
+        alert('Solo Superadmin puede borrar eventos.');
+        return;
+    }
+
     if (confirm("¿Deseas eliminar este evento del calendario?")) {
         const eventos = JSON.parse(localStorage.getItem('eventos_list') || '[]');
         eventos.splice(index, 1);
@@ -1181,19 +1542,61 @@ function borrarEvento(index) {
 
 function guardarEventoBarrio(e) {
     e.preventDefault();
+    const user = obtenerSesionActual();
     const idEdit = document.getElementById('evento-id-edit').value;
     const barrio = document.getElementById('evento-barrio').value;
     const nombre = document.getElementById('evento-nombre').value.trim();
     const fecha = document.getElementById('evento-fecha').value;
     const desc = document.getElementById('evento-desc').value.trim();
+    const lugar = document.getElementById('evento-lugar').value.trim();
+    const hora = document.getElementById('evento-hora').value;
 
     const eventos = JSON.parse(localStorage.getItem('eventos_list') || '[]');
 
+    if (!user || !puedeGestionarEventos(user.role)) {
+        alert('No tienes permisos para gestionar eventos del calendario.');
+        return;
+    }
+
+    if (user.role === 'tronista') {
+        if (!user.barrio_asignado || barrio !== user.barrio_asignado) {
+            alert('Los tronistas solo pueden publicar eventos de su barrio asignado.');
+            return;
+        }
+
+        if (!fecha || new Date(`${fecha}T${hora || '00:00'}`).getTime() <= Date.now()) {
+            alert('El tronista solo puede publicar eventos futuros.');
+            return;
+        }
+
+        if (idEdit !== '') {
+            const eventoActual = eventos[parseInt(idEdit, 10)];
+            if (!eventoActual || eventoActual.barrio !== user.barrio_asignado || !puedeEditarEventoTronista(user.role, eventoActual.barrio, eventoActual.fecha, eventoActual.hora)) {
+                alert('Solo puedes actualizar lugar y hora de eventos de tu barrio antes de su inicio.');
+                return;
+            }
+
+            if (eventoActual.nombre !== nombre || eventoActual.fecha !== fecha || (eventoActual.desc || '') !== desc || eventoActual.barrio !== barrio) {
+                alert('Como tronista solo puedes editar el lugar y la hora del evento.');
+                return;
+            }
+        }
+    }
+
     if (idEdit !== "") {
-        eventos[parseInt(idEdit)] = { barrio, nombre, fecha, desc };
+        const eventoActual = eventos[parseInt(idEdit, 10)] || {};
+        eventos[parseInt(idEdit, 10)] = {
+            ...eventoActual,
+            barrio,
+            nombre,
+            fecha,
+            desc,
+            lugar,
+            hora
+        };
         alert(`📅 Evento '${nombre}' actualizado correctamente.`);
     } else {
-        eventos.push({ barrio, nombre, fecha, desc });
+        eventos.push({ barrio, nombre, fecha, desc, lugar, hora });
         alert(`📅 Evento '${nombre}' programado para el barrio ${barrio}.`);
     }
 
@@ -1213,6 +1616,7 @@ function toggleBarrioAsignadoUsuario(role) {
 }
 
 async function cargarUsuariosTabla() {
+    if (!puedeGestionarUsuarios((obtenerSesionActual() || {}).role)) return;
     const tbody = document.getElementById('tabla-usuarios-body');
     const selectBarrioUser = document.getElementById('usuario-barrio-asignado');
     if (!tbody || !supabaseClient) return;
@@ -1254,10 +1658,21 @@ async function cargarUsuariosTabla() {
 
 async function guardarUsuario(e) {
     e.preventDefault();
+    const sesion = JSON.parse(localStorage.getItem('maestre_sesion') || 'null');
+    const esPermitido = sesion && puedeGestionarUsuarios(sesion.role);
+    if (!esPermitido) {
+        alert('❌ No tienes permisos para dar de alta o gestionar usuarios.');
+        return;
+    }
+
     const idEdit = document.getElementById('usuario-id-edit').value;
     const rawPhone = document.getElementById('usuario-phone').value.trim();
     const name = document.getElementById('usuario-nombre').value.trim();
     const role = document.getElementById('usuario-role').value;
+    if (!['jugador', 'tronista', 'superadmin'].includes(role)) {
+        alert('El rol seleccionado no es válido.');
+        return;
+    }
     const barrio_asignado = (role === 'tronista' || role === 'superadmin') ? document.getElementById('usuario-barrio-asignado').value : null;
 
     const digitsOnly = rawPhone.replace(/\D/g, '');
@@ -1315,11 +1730,15 @@ async function guardarUsuario(e) {
 }
 
 function editarUsuario(id, phone, name, role, barrio) {
+    if (!puedeGestionarUsuarios((obtenerSesionActual() || {}).role)) {
+        alert('Solo Superadmin puede editar usuarios y sus roles.');
+        return;
+    }
     document.getElementById('usuario-id-edit').value = id;
     document.getElementById('usuario-phone').value = phone;
     document.getElementById('usuario-nombre').value = name;
     document.getElementById('usuario-role').value = role;
-    
+
     toggleBarrioAsignadoUsuario(role);
     if (barrio && document.getElementById('usuario-barrio-asignado')) {
         document.getElementById('usuario-barrio-asignado').value = barrio;
@@ -1338,6 +1757,10 @@ function resetFormUsuario() {
 }
 
 async function borrarUsuario(id, phone, name) {
+    if (!puedeGestionarUsuarios((obtenerSesionActual() || {}).role)) {
+        alert('Solo Superadmin puede borrar usuarios y sus roles.');
+        return;
+    }
     if (confirm(`¿Estás seguro de revocar el acceso a ${name} (${phone})?`)) {
         const { error } = await supabaseClient
             .from('authorized_users')
@@ -1358,12 +1781,12 @@ function abrirWhatsAppDirecto(phone, name, pin) {
     const cleanPhone = phone.replace(/\D/g, '');
     const nombreMostrar = name || 'Noble Caminante';
     const texto = `¡Hola ${nombreMostrar}! Te damos la bienvenida al LokiTrono de Barrios ⚔️👑\n\n` +
-                  `🔑 Tu PIN de acceso de 4 dígitos es: *${pin}*\n\n` +
-                  `📜 Pasos para entrar a la web:\n` +
-                  `1. Entra a la web del LokiTrono.\n` +
-                  `2. Introduce tu número de teléfono (${phone}).\n` +
-                  `3. Escribe tu PIN (${pin}) y pulsa Entrar.`;
-    
+        `🔑 Tu PIN de acceso de 4 dígitos es: *${pin}*\n\n` +
+        `📜 Pasos para entrar a la web:\n` +
+        `1. Entra a la web del LokiTrono.\n` +
+        `2. Introduce tu número de teléfono (${phone}).\n` +
+        `3. Escribe tu PIN (${pin}) y pulsa Entrar.`;
+
     const urlWa = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(texto)}`;
     window.open(urlWa, '_blank');
 }

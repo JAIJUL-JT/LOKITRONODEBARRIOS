@@ -28,6 +28,7 @@ CREATE TABLE casas (
     emblema TEXT, -- Icono o emoji representativo
     color_heraldo TEXT DEFAULT '#d4af37', -- Color heráldico
     imagen_url TEXT,
+    participa BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -72,15 +73,17 @@ CREATE TABLE authorized_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     phone TEXT NOT NULL UNIQUE,
     name TEXT,
-    role TEXT DEFAULT 'jugador',
+    email TEXT UNIQUE,
+    role TEXT DEFAULT 'jugador' CHECK (role IN ('jugador', 'tronista', 'superadmin')),
     pin_code VARCHAR(4),
     barrio_asignado TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+
 -- ==============================================================================
 -- 4. POLÍTICAS RLS (Seguridad Feudal)
--- ==============================================================================
+-- ============================================================================
 
 ALTER TABLE casas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE maestres ENABLE ROW LEVEL SECURITY;
@@ -88,42 +91,60 @@ ALTER TABLE juicios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE codigos_diarios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE authorized_users ENABLE ROW LEVEL SECURITY;
 
--- Política para 'authorized_users'
-CREATE POLICY "Lectura pública de usuarios autorizados" 
-    ON authorized_users FOR SELECT USING (true);
+-- Función helper para comprobar si el usuario actual es superadministrador
+CREATE OR REPLACE FUNCTION is_superadmin()
+RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
+    SELECT EXISTS (
+        SELECT 1 FROM authorized_users au
+        WHERE au.role = 'superadmin' AND (
+            (au.email IS NOT NULL AND au.email = current_setting('jwt.claims.email', true))
+            OR
+            (au.phone IS NOT NULL AND au.phone = current_setting('jwt.claims.phone', true))
+        )
+    );
+$$;
 
-CREATE POLICY "Gestión completa de usuarios autorizados" 
-    ON authorized_users FOR ALL USING (true) WITH CHECK (true);
+-- Policies for authorized_users: only superadmins can read/manage
+CREATE POLICY "authorized_users_superadmin_select"
+    ON authorized_users FOR SELECT USING (is_superadmin());
 
+CREATE POLICY "authorized_users_superadmin_manage"
+    ON authorized_users FOR ALL USING (is_superadmin()) WITH CHECK (is_superadmin());
 
-
--- Políticas para 'casas'
-CREATE POLICY "Lectura pública de casas" 
+-- Políticas para 'casas': lectura pública, gestión solo por superadmins
+CREATE POLICY "casas_public_select" 
     ON casas FOR SELECT USING (true);
 
--- Políticas para 'maestres'
-CREATE POLICY "Lectura pública de maestres" 
+CREATE POLICY "casas_superadmin_manage"
+    ON casas FOR ALL USING (is_superadmin()) WITH CHECK (is_superadmin());
+
+-- Políticas para 'maestres': lectura pública, gestión solo por superadmins
+CREATE POLICY "maestres_public_select" 
     ON maestres FOR SELECT USING (true);
 
-CREATE POLICY "Registro o creación de maestre" 
-    ON maestres FOR INSERT WITH CHECK (true);
+CREATE POLICY "maestres_superadmin_manage"
+    ON maestres FOR ALL USING (is_superadmin()) WITH CHECK (is_superadmin());
 
-CREATE POLICY "Actualización del propio maestre" 
-    ON maestres FOR UPDATE USING (true);
-
--- Políticas para 'juicios'
-CREATE POLICY "Lectura pública de juicios" 
+-- Políticas para 'juicios': lectura pública, inserción por usuarios autenticados,
+-- modificaciones (UPDATE/DELETE) solo por superadmins
+CREATE POLICY "juicios_public_select" 
     ON juicios FOR SELECT USING (true);
 
-CREATE POLICY "Inserción de juicio" 
-    ON juicios FOR INSERT WITH CHECK (true);
+CREATE POLICY "juicios_insert_authenticated"
+    ON juicios FOR INSERT WITH CHECK (current_setting('jwt.claims.sub', true) IS NOT NULL);
 
--- Políticas para 'codigos_diarios'
-CREATE POLICY "Lectura de códigos activos" 
+CREATE POLICY "juicios_admin_modify"
+    ON juicios FOR UPDATE USING (is_superadmin()) WITH CHECK (is_superadmin());
+
+CREATE POLICY "juicios_admin_delete"
+    ON juicios FOR DELETE USING (is_superadmin());
+
+-- Políticas para 'codigos_diarios': lectura pública de activos, gestión por superadmins
+CREATE POLICY "codigos_public_select_active" 
     ON codigos_diarios FOR SELECT USING (activo = true);
 
-CREATE POLICY "Inserción de códigos por organizador" 
-    ON codigos_diarios FOR INSERT WITH CHECK (true);
+CREATE POLICY "codigos_superadmin_manage"
+    ON codigos_diarios FOR ALL USING (is_superadmin()) WITH CHECK (is_superadmin());
 
 -- ==============================================================================
 -- 5. LEY II DE BILBAO: FUNCIÓN calcular_ranking() (Media Ponderada y Relativa)
@@ -153,7 +174,9 @@ BEGIN
     -- Media global de todos los juicios emitidos en el reino
     SELECT COALESCE(ROUND(AVG(0.50 * j.festin + 0.25 * j.caminos + 0.25 * j.espiritu), 2), 7.00)
     INTO v_media_global
-    FROM juicios j;
+    FROM juicios j
+    JOIN casas c ON c.id = j.casa_visitada
+    WHERE c.participa;
 
     RETURN QUERY
     WITH metricas_casa AS (
@@ -170,6 +193,7 @@ BEGIN
             ROUND(AVG(0.50 * j.festin + 0.25 * j.caminos + 0.25 * j.espiritu), 2) AS prom_crudo
         FROM casas c
         LEFT JOIN juicios j ON c.id = j.casa_visitada
+        WHERE c.participa
         GROUP BY c.id, c.nombre, c.lema, c.emblema, c.color_heraldo
     ),
     ranking_calculado AS (
@@ -210,6 +234,26 @@ BEGIN
     FROM ranking_calculado;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION validar_casa_participante()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM casas
+        WHERE id = NEW.casa_visitada
+          AND participa
+    ) THEN
+        RAISE EXCEPTION 'Solo se puede votar a barrios participantes.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER juicios_solo_casas_participantes
+    BEFORE INSERT OR UPDATE OF casa_visitada ON juicios
+    FOR EACH ROW EXECUTE FUNCTION validar_casa_participante();
 
 -- ==============================================================================
 -- 6. DISPARADOR MAKE: notificar_make() (El Mayordomo del Reino)
@@ -298,6 +342,10 @@ SET lema = EXCLUDED.lema,
     emblema = EXCLUDED.emblema, 
     color_heraldo = EXCLUDED.color_heraldo;
 
+INSERT INTO casas (nombre, lema, emblema, color_heraldo, participa) VALUES
+('Forastero/a', 'Casa de origen para quienes vienen de fuera de los barrios participantes', '🌍', '#64748b', false)
+ON CONFLICT (nombre) DO UPDATE SET participa = false;
+
 -- Códigos de demostración para el día actual
 INSERT INTO codigos_diarios (casa_id, codigo, fecha, activo)
 SELECT id, 'PIN-' || UPPER(SUBSTRING(MD5(nombre || CURRENT_DATE::text) FROM 1 FOR 4)), CURRENT_DATE, true
@@ -305,7 +353,12 @@ FROM casas
 ON CONFLICT (casa_id, fecha, codigo) DO NOTHING;
 
 -- Usuarios Autorizados Iniciales (Ejemplo de inicio)
-INSERT INTO authorized_users (phone, name, role) VALUES
-('+34605676002', 'Maestre Julio', 'organizador')
+INSERT INTO authorized_users (phone, name, email, role) VALUES
+('+34605676002', 'Maestre Julio', NULL, 'tronista')
 ON CONFLICT (phone) DO NOTHING;
+
+-- Superadministrador inicial (para administración del sistema)
+INSERT INTO authorized_users (phone, name, email, role) VALUES
+(NULL, 'AFJ Bilbao', 'afjbilbao@gmail.com', 'superadmin')
+ON CONFLICT (email) DO NOTHING;
 

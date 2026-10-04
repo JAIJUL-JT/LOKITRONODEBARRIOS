@@ -49,3 +49,46 @@ function guardarEnRespaldo(voto) {
     historico.push(voto);
     localStorage.setItem('repositorio_votos', JSON.stringify(historico));
 }
+
+function verificarClaveSuperAdmin(clave) {
+    return typeof clave === 'string' && clave.trim() === SUPER_ADMIN_KEY;
+}
+
+function getRepositorioVotos() {
+    try {
+        const votos = JSON.parse(localStorage.getItem('repositorio_votos') || '[]');
+        return Array.isArray(votos) ? votos : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function getEstadisticasAdmin() {
+    const votos = getRepositorioVotos();
+    const total = votos.length;
+    const media = total === 0 ? 0 : votos.reduce((sum, voto) => {
+        const nota = [voto.nota_festin, voto.nota_caminos, voto.nota_espiritu]
+            .map(Number)
+            .reduce((acc, value) => acc + (Number.isFinite(value) ? value : 0), 0);
+        return sum + nota / 3;
+    }, 0) / total;
+
+    return {
+        total,
+        media,
+        votos:
+            votos.map(voto => ({
+                maestre_id: voto.maestre_id || 'anon',
+                casa_visitada: voto.casa_visitada || 'sin-casa',
+                barrio: voto.barrio || 'sin-barrio',
+                nota_festin: Number(voto.nota_festin) || 0,
+                nota_caminos: Number(voto.nota_caminos) || 0,
+                nota_espiritu: Number(voto.nota_espiritu) || 0,
+                fecha_juicio: voto.fecha_juicio || new Date().toISOString()
+            }))
+    };
+}
+
+function haVotadoCasa(maestreId, casaId) {
+    return getRepositorioVotos().some(v => v.maestre_id === maestreId && v.casa_visitada === casaId);
+}

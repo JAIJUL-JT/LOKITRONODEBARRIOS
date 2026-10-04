@@ -1,0 +1,28 @@
+{
+  "name": "juego-de-barrios-bilbao",
+  "version": "1.0.0",
+  "description": "> *La contienda gastronómica feudal entre las ocho grandes Casas de Bilbao.*",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "python3 -m http.server 3000",
+    "preview": "npx vercel",
+    "deploy": "npx vercel --prod"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JAIJUL-JT/LOKITRONODEBARRIOS.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/JAIJUL-JT/LOKITRONODEBARRIOS/issues"
+  },
+  "homepage": "https://github.com/JAIJUL-JT/LOKITRONODEBARRIOS#readme",
+  "devDependencies": {
+    "vercel": "^62.2.0"
+  }
+}

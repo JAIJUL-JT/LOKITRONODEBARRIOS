@@ -1,8 +1,14 @@
 // ==========================================
-// CONFIGURACIÓN DE SUPABASE
+// CONFIGURACIÓN DE SUPABASE / PRODUCCIÓN
 // ==========================================
-const SUPABASE_URL = 'https://uswikdckptzivsurzrlc.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzd2lrZGNrcHR6aXZzdXJ6cmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODAwNTEsImV4cCI6MjEwNjU1NjA1MX0.3kovmMBfC_JCGKyJ_1s5iyxtkKyqVMIt77CfHnytLzI';
+const APP_CONFIG = Object.assign({
+    SUPABASE_URL: 'https://tu-proyecto.supabase.co',
+    SUPABASE_ANON_KEY: 'TU_SUPABASE_ANON_KEY',
+    MAKE_WEBHOOK_URL: ''
+}, window.__APP_CONFIG__ || {});
+
+const SUPABASE_URL = APP_CONFIG.SUPABASE_URL;
+const SUPABASE_ANON_KEY = APP_CONFIG.SUPABASE_ANON_KEY;
 
 // Inicialización segura del cliente
 let supabaseClient = null;
@@ -104,7 +110,7 @@ function generarPin4Digitos() {
 }
 
 function obtenerMakeWebhookUrl() {
-    return localStorage.getItem('make_webhook_url') || window.MAKE_WEBHOOK_URL || '';
+    return localStorage.getItem('make_webhook_url') || window.MAKE_WEBHOOK_URL || APP_CONFIG.MAKE_WEBHOOK_URL || '';
 }
 
 function exportarRepositorioCSV() {
@@ -343,7 +349,7 @@ async function enviarCuervoOTP() {
         // 1. Consultar si el número está en la tabla de autorizados
         let { data: user, error: checkError } = await supabaseClient
             .from('authorized_users')
-            .select('id, phone, name, role, pin_code')
+            .select('id, phone, name, role, pin_code, barrio_asignado, barrio_representado')
             .eq('phone', telefonoFormateado)
             .maybeSingle();
 
@@ -434,7 +440,7 @@ async function iniciarSesionDirecta() {
     try {
         const { data: user, error } = await supabaseClient
             .from('authorized_users')
-            .select('id, phone, name, role, pin_code, barrio_asignado')
+            .select('id, phone, name, role, pin_code, barrio_asignado, barrio_representado')
             .eq('phone', telefonoFormateado)
             .maybeSingle();
 
@@ -445,7 +451,11 @@ async function iniciarSesionDirecta() {
 
         // Validar PIN (Acepta el PIN guardado en DB, o PINs asignados 3007 / 1234)
         if (user.pin_code === pinCode || pinCode === "3007" || pinCode === "1234") {
-            localStorage.setItem('maestre_sesion', JSON.stringify(user));
+            const userSession = {
+                ...user,
+                barrio_representado: user.barrio_representado || user.barrio_asignado || 'Forastero'
+            };
+            localStorage.setItem('maestre_sesion', JSON.stringify(userSession));
             actualizarEstadoUI();
         } else {
             if (msg) msg.innerText = "⚠️ Código PIN incorrecto.";
@@ -511,8 +521,10 @@ function esRolBasico(role) {
 }
 
 function barrioAsignadoUsuarioActual() {
+    // Compatibilidad con la sesión del tronista: .select('id, phone, name, role, pin_code, barrio_asignado')
     const user = obtenerSesionActual();
-    return user && user.barrio_asignado ? user.barrio_asignado : null;
+    const barrioRepresentado = user && (user.barrio_representado || user.barrio_asignado);
+    return barrioRepresentado || null;
 }
 
 function puedeEditarEventoTronista(role, barrioEvento, fechaEvento, horaEvento) {
@@ -1615,15 +1627,49 @@ function toggleBarrioAsignadoUsuario(role) {
     }
 }
 
+function poblarOpcionesBarrioRepresentado() {
+    const selectRepresentado = document.getElementById('usuario-barrio-representado');
+    const selectBarrioUser = document.getElementById('usuario-barrio-asignado');
+    if (!selectRepresentado && !selectBarrioUser) return;
+
+    const opcionesBase = [
+        { nombre: 'Forastero', detalle: 'Sin barrio representado (fuera de competición)' },
+        { nombre: 'Casco Viejo', detalle: 'Casco Viejo' },
+        { nombre: 'Indautxu', detalle: 'Indautxu' },
+        { nombre: 'Deusto', detalle: 'Deusto' },
+        { nombre: 'Santutxu', detalle: 'Santutxu' },
+        { nombre: 'Abando', detalle: 'Abando' },
+        { nombre: 'San Mamés - Basurto', detalle: 'San Mamés - Basurto' },
+        { nombre: 'Bilbao La Vieja', detalle: 'Bilbao La Vieja' },
+        { nombre: 'Uribarri', detalle: 'Uribarri' },
+        { nombre: 'Zorroza', detalle: 'Zorroza' }
+    ];
+
+    const opciones = opcionesBase
+        .map(c => `<option value="${c.nombre}">${c.detalle}</option>`)
+        .join('');
+
+    if (selectRepresentado) selectRepresentado.innerHTML = opciones;
+    if (selectBarrioUser) selectBarrioUser.innerHTML = opciones;
+}
+
 async function cargarUsuariosTabla() {
     if (!puedeGestionarUsuarios((obtenerSesionActual() || {}).role)) return;
     const tbody = document.getElementById('tabla-usuarios-body');
     const selectBarrioUser = document.getElementById('usuario-barrio-asignado');
+    const selectRepresentado = document.getElementById('usuario-barrio-representado');
     if (!tbody || !supabaseClient) return;
 
+    poblarOpcionesBarrioRepresentado();
     const { data: casas } = await supabaseClient.from('casas').select('nombre');
-    if (casas && selectBarrioUser) {
-        selectBarrioUser.innerHTML = casas.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
+    const opcionesCasas = (casas || []).map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
+
+    if (selectBarrioUser) {
+        selectBarrioUser.innerHTML = `${opcionesCasas || ''}`;
+    }
+    if (selectRepresentado) {
+        selectRepresentado.innerHTML = `${opcionesCasas ? '<option value="Forastero">Forastero (sin barrio representado)</option>' + opcionesCasas : '<option value="Forastero">Forastero (sin barrio representado)</option>'}`;
+        if (!selectRepresentado.value) selectRepresentado.value = 'Forastero';
     }
 
     try {
@@ -1637,20 +1683,24 @@ async function cargarUsuariosTabla() {
             return;
         }
 
-        tbody.innerHTML = usuarios.map(u => `
+        tbody.innerHTML = usuarios.map(u => {
+            const barrioRepresentado = u.barrio_representado || u.barrio_asignado || 'Forastero';
+            return `
             <tr>
                 <td><strong>${u.name || '(Sin nombre)'}</strong></td>
                 <td>${u.phone}</td>
                 <td><span class="score-badge">${u.role}</span></td>
+                <td>${barrioRepresentado}</td>
                 <td>${u.barrio_asignado || '-'}</td>
                 <td style="color:var(--oro-brillante); font-weight:bold;">${u.pin_code || 'Generando...'}</td>
                 <td>
-                    <button onclick="editarUsuario('${u.id}', '${u.phone}', '${u.name || ''}', '${u.role}', '${u.barrio_asignado || ''}')" class="btn-cuervo btn-accion-sm">✏️ Editar</button>
+                    <button onclick="editarUsuario('${u.id}', '${u.phone}', '${u.name || ''}', '${u.role}', '${u.barrio_asignado || ''}', '${barrioRepresentado}')" class="btn-cuervo btn-accion-sm">✏️ Editar</button>
                     <button onclick="borrarUsuario('${u.id}', '${u.phone}', '${u.name || ''}')" class="btn-cuervo btn-accion-sm" style="background:#7f1d1d;">🗑️ Borrar</button>
                     <button onclick="abrirWhatsAppDirecto('${u.phone}', '${u.name || ''}', '${u.pin_code || ''}')" class="btn-cuervo btn-accion-sm" style="background:#15803d;">💬 WhatsApp Directo</button>
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
     } catch (err) {
         console.error("Error cargando usuarios:", err);
     }
@@ -1673,6 +1723,9 @@ async function guardarUsuario(e) {
         alert('El rol seleccionado no es válido.');
         return;
     }
+    const barrio_representado = document.getElementById('usuario-barrio-representado')
+        ? document.getElementById('usuario-barrio-representado').value || 'Forastero'
+        : 'Forastero';
     const barrio_asignado = (role === 'tronista' || role === 'superadmin') ? document.getElementById('usuario-barrio-asignado').value : null;
 
     const digitsOnly = rawPhone.replace(/\D/g, '');
@@ -1699,17 +1752,17 @@ async function guardarUsuario(e) {
     if (idEdit) {
         const { error } = await supabaseClient
             .from('authorized_users')
-            .update({ phone, name, role, barrio_asignado })
+            .update({ phone, name, role, barrio_asignado, barrio_representado })
             .eq('id', idEdit);
 
         if (error) {
             alert("Error actualizando usuario: " + error.message);
         } else {
             alert("✅ Usuario actualizado correctamente.");
-            notificarSuperAdminsWhatsApp("EDICIÓN_USUARIO", { phone, name, role, barrio_asignado });
+            notificarSuperAdminsWhatsApp("EDICIÓN_USUARIO", { phone, name, role, barrio_asignado, barrio_representado });
         }
     } else {
-        const payload = { phone, role, pin_code, barrio_asignado };
+        const payload = { phone, role, pin_code, barrio_asignado, barrio_representado };
         if (name) payload.name = name;
 
         const { error } = await supabaseClient
@@ -1721,7 +1774,7 @@ async function guardarUsuario(e) {
         } else {
             enviarMensajeBienvenidaWhatsApp(phone, name, pin_code);
             alert(`🎉 ¡Alta completada para ${phone}!\n\nPIN generado: ${pin_code}.\nSe ha enviado por WhatsApp el mensaje con instrucciones.`);
-            notificarSuperAdminsWhatsApp("ALTA_USUARIO", { phone, name, role, pin_code, barrio_asignado });
+            notificarSuperAdminsWhatsApp("ALTA_USUARIO", { phone, name, role, pin_code, barrio_asignado, barrio_representado });
         }
     }
 
@@ -1729,7 +1782,7 @@ async function guardarUsuario(e) {
     cargarUsuariosTabla();
 }
 
-function editarUsuario(id, phone, name, role, barrio) {
+function editarUsuario(id, phone, name, role, barrio, barrioRepresentado) {
     if (!puedeGestionarUsuarios((obtenerSesionActual() || {}).role)) {
         alert('Solo Superadmin puede editar usuarios y sus roles.');
         return;
@@ -1740,6 +1793,10 @@ function editarUsuario(id, phone, name, role, barrio) {
     document.getElementById('usuario-role').value = role;
 
     toggleBarrioAsignadoUsuario(role);
+    const barrioRepresentadoSeleccionado = barrioRepresentado || barrio || 'Forastero';
+    if (document.getElementById('usuario-barrio-representado')) {
+        document.getElementById('usuario-barrio-representado').value = barrioRepresentadoSeleccionado;
+    }
     if (barrio && document.getElementById('usuario-barrio-asignado')) {
         document.getElementById('usuario-barrio-asignado').value = barrio;
     }
@@ -1751,6 +1808,8 @@ function editarUsuario(id, phone, name, role, barrio) {
 function resetFormUsuario() {
     document.getElementById('form-usuario').reset();
     document.getElementById('usuario-id-edit').value = "";
+    const selectRepresentado = document.getElementById('usuario-barrio-representado');
+    if (selectRepresentado) selectRepresentado.value = 'Forastero';
     document.getElementById('btn-guardar-user').innerText = "➕ Añadir Usuario Autorizado";
     document.getElementById('btn-cancelar-user').style.display = "none";
     toggleBarrioAsignadoUsuario('jugador');

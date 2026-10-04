@@ -68,8 +68,8 @@ const sqlContent = fs.readFileSync(path.join(ROOT_DIR, 'sql/schema.sql'), 'utf-8
 assert(sqlContent.includes('CREATE TABLE casas'), 'Tabla casas definida en SQL');
 assert(sqlContent.includes('CREATE TABLE maestres'), 'Tabla maestres definida en SQL');
 assert(sqlContent.includes('CREATE TABLE juicios'), 'Tabla juicios definida en SQL');
-assert(sqlContent.includes('CREATE TABLE codigos_diarios'), 'Tabla codigos_diarios definida en SQL');
-assert(sqlContent.includes('ENABLE ROW LEVEL SECURITY'), 'Políticas RLS configuradas');
+assert(sqlContent.includes('CREATE TABLE codigos_diarios'), 'Tabla codigos_diarios definida en SQL'); assert(sqlContent.includes('barrio_representado TEXT'), 'Campo barrio_representado incluido en la tabla authorized_users');
+assert(sqlContent.includes("('Forastero'"), 'Barrio Forastero incluido como caso especial no competitivo'); assert(sqlContent.includes('ENABLE ROW LEVEL SECURITY'), 'Políticas RLS configuradas');
 assert(sqlContent.includes('CREATE OR REPLACE FUNCTION calcular_ranking()'), 'Función calcular_ranking() con Ley II implementada');
 assert(sqlContent.includes('CREATE OR REPLACE FUNCTION notificar_make()'), 'Trigger notificar_make() implementado');
 assert(sqlContent.includes('net.http_post'), 'Integración pg_net configurada para webhooks Make');
@@ -276,9 +276,12 @@ assert(roleMigrationContent.includes("SET role = 'tronista'\nWHERE role = 'organ
 console.log('\n👑 PASO 11: Verificación de Súper Administrador y Ley de Voto Único...');
 assert(indexHtmlContent.includes('data-tab="tab-superadmin"'), 'Pestaña Consejo Real (Admin) presente en la navegación');
 assert(indexHtmlContent.includes('id="tab-superadmin"'), 'Sección tab-superadmin presente en el DOM');
+assert(indexHtmlContent.includes('Barrio representado'), 'Campo Barrio representado visible en el panel de usuarios autorizados');
+assert(indexHtmlContent.includes('Forastero'), 'Barrio Forastero disponible como opción especial en la gestión de usuarios');
 assert(indexHtmlContent.includes('repositorio-table'), 'Tabla del repositorio central de votos presente en el HTML');
 assert(indexHtmlContent.includes('alerta-voto-repetido'), 'Aviso de voto duplicado presente en formulario de Juicio');
 assert(sqlContent.includes('UNIQUE(maestre_id, casa_visitada)'), 'Restricción UNIQUE(maestre_id, casa_visitada) en base de datos');
+assert(appJsContent.includes('barrio_representado'), 'La lógica de la app conserva el barrio representado del usuario');
 assert(supabaseJsContent.includes('verificarClaveSuperAdmin'), 'Función de autenticación verificarClaveSuperAdmin implementada');
 assert(supabaseJsContent.includes('getRepositorioVotos'), 'Función getRepositorioVotos() para auditoría implementada');
 assert(supabaseJsContent.includes('getEstadisticasAdmin'), 'Función getEstadisticasAdmin() para cálculo de medias implementada');

@@ -77,6 +77,7 @@ CREATE TABLE authorized_users (
     role TEXT DEFAULT 'jugador' CHECK (role IN ('jugador', 'tronista', 'superadmin')),
     pin_code VARCHAR(4),
     barrio_asignado TEXT,
+    barrio_representado TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -242,9 +243,9 @@ BEGIN
         SELECT 1
         FROM casas
         WHERE id = NEW.casa_visitada
-          AND participa
+          AND (participa OR nombre = 'Forastero')
     ) THEN
-        RAISE EXCEPTION 'Solo se puede votar a barrios participantes.';
+        RAISE EXCEPTION 'Solo se puede votar a barrios participantes o al barrio Forastero.';
     END IF;
 
     RETURN NEW;
@@ -343,7 +344,7 @@ SET lema = EXCLUDED.lema,
     color_heraldo = EXCLUDED.color_heraldo;
 
 INSERT INTO casas (nombre, lema, emblema, color_heraldo, participa) VALUES
-('Forastero/a', 'Casa de origen para quienes vienen de fuera de los barrios participantes', '🌍', '#64748b', false)
+('Forastero', 'Casa de origen para quienes vienen de fuera de los barrios participantes', '🌍', '#64748b', false)
 ON CONFLICT (nombre) DO UPDATE SET participa = false;
 
 -- Códigos de demostración para el día actual

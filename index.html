@@ -9,6 +9,13 @@
     <link rel="stylesheet" href="css/style.css">
     <!-- Carga del SDK oficial de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
+        window.__APP_CONFIG__.SUPABASE_URL = window.__APP_CONFIG__.SUPABASE_URL || 'https://tu-proyecto.supabase.co';
+        window.__APP_CONFIG__.SUPABASE_ANON_KEY = window.__APP_CONFIG__.SUPABASE_ANON_KEY || 'TU_SUPABASE_ANON_KEY';
+        window.__APP_CONFIG__.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL || '';
+        window.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL;
+    </script>
 </head>
 
 <body>
@@ -394,6 +401,13 @@
                             </select>
                         </div>
 
+                        <div class="form-group">
+                            <label>Barrio representado:</label>
+                            <select id="usuario-barrio-representado" class="input-medieval">
+                                <option value="Forastero">Forastero (sin barrio representado)</option>
+                            </select>
+                        </div>
+
                         <div class="form-group" id="group-barrio-asignado" style="display: none;">
                             <label>Barrio Asignado como Tronista:</label>
                             <select id="usuario-barrio-asignado" class="input-medieval"></select>
@@ -414,6 +428,7 @@
                                     <th>Nombre</th>
                                     <th>Teléfono</th>
                                     <th>Rol</th>
+                                    <th>Barrio representado</th>
                                     <th>Barrio Asignado</th>
                                     <th>Código PIN (4 dígitos)</th>
                                     <th>Acciones</th>

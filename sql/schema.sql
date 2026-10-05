@@ -8,13 +8,23 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "pg_net";
 
 -- 2. Limpieza de tablas previas (opcional si se recrea)
-DROP TRIGGER IF EXISTS juicio_insertado ON juicios;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'juicios'
+    ) THEN
+        DROP TRIGGER IF EXISTS juicio_insertado ON juicios;
+    END IF;
+END $$;
 DROP FUNCTION IF EXISTS notificar_make();
 DROP FUNCTION IF EXISTS calcular_ranking();
 DROP TABLE IF EXISTS juicios CASCADE;
 DROP TABLE IF EXISTS codigos_diarios CASCADE;
 DROP TABLE IF EXISTS maestres CASCADE;
 DROP TABLE IF EXISTS casas CASCADE;
+DROP TABLE IF EXISTS authorized_users CASCADE;
 
 -- ==============================================================================
 -- 3. TABLAS FEUDALES
@@ -71,7 +81,7 @@ CREATE TABLE codigos_diarios (
 -- Usuarios Autorizados para la Autenticación por Teléfono / WhatsApp
 CREATE TABLE authorized_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    phone TEXT NOT NULL UNIQUE,
+    phone TEXT UNIQUE,
     name TEXT,
     email TEXT UNIQUE,
     role TEXT DEFAULT 'jugador' CHECK (role IN ('jugador', 'tronista', 'superadmin')),

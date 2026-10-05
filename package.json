@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node tests/test_e2e_reino.js",
     "dev": "python3 -m http.server 3000",
     "preview": "npx vercel",
     "build": "echo \"No build step defined\"",
@@ -18,7 +18,7 @@
     "url": "git+https://github.com/JAIJUL-JT/LOKITRONODEBARRIOS.git"
   },
   "keywords": [],
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/JAIJUL-JT/LOKITRONODEBARRIOS/issues"
   },

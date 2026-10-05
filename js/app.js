@@ -2,8 +2,8 @@
 // CONFIGURACIÓN DE SUPABASE / PRODUCCIÓN
 // ==========================================
 const APP_CONFIG = Object.assign({
-    SUPABASE_URL: 'https://tu-proyecto.supabase.co',
-    SUPABASE_ANON_KEY: 'TU_SUPABASE_ANON_KEY',
+    SUPABASE_URL: 'https://uswikdckptzivsurzrlc.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzd2lrZGNrcHR6aXZzdXJ6cmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODAwNTEsImV4cCI6MjEwNjU1NjA1MX0.3kovmMBfC_JCGKyJ_1s5iyxtkKyqVMIt77CfHnytLzI',
     MAKE_WEBHOOK_URL: ''
 }, window.__APP_CONFIG__ || {});
 

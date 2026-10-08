@@ -69,6 +69,7 @@
                     <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
                 </optgroup>
                 <optgroup label="👑 Administración Superadmin" id="optgroup-admin-menu">
+                    <option value="pestana-generar-evento" data-tab="tab-generar-evento">📅 Generar y Gestionar Eventos</option>
                     <option value="tab-superadmin" data-tab="tab-superadmin">📊 Auditoría de Votos (Admin)</option>
                     <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Alta y Control de Usuarios</option>
                     <option value="pestana-barrios" data-tab="tab-barrios">🏰 Gestión de Barrios y Reinos</option>
@@ -358,6 +359,81 @@
                         </form>
                     </div>
 
+                </div>
+            </section>
+
+            <!-- PESTAÑA SUPERADMIN: Generar y Gestionar Eventos -->
+            <section id="pestana-generar-evento" class="tab-content" data-tab="tab-generar-evento" style="display: none;">
+                <div class="panel-card">
+                    <h2 style="font-family: 'Cinzel', serif; color: var(--oro-real);">📅 Generar y Programar Eventos con Votación</h2>
+                    <p style="color: #d6d3d1;">Crea y administra eventos oficiales o de prueba para los distintos barrios del reino, configurando la fecha, el lugar, la descripción y las horas independientes de inicio y cierre de votación.</p>
+
+                    <div style="background: rgba(30, 24, 16, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0;">⚙️ Formulario de Generación de Eventos</h3>
+                        <form id="form-evento-admin-dedicated" onsubmit="guardarEventoBarrioDesdePestana(event)">
+                            <input type="hidden" id="evento-dedicated-id-edit">
+                            
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 220px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Barrio / Reino Host:</label>
+                                    <select id="evento-dedicated-barrio" class="input-medieval" required></select>
+                                </div>
+                                <div class="form-group" style="flex: 2; min-width: 280px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Nombre del Evento:</label>
+                                    <input type="text" id="evento-dedicated-nombre" class="input-medieval" placeholder="Ej: Ruta Gastronómica de Deusto" required>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Fecha del Evento:</label>
+                                    <input type="date" id="evento-dedicated-fecha" class="input-medieval" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Lugar / Ubicación:</label>
+                                    <input type="text" id="evento-dedicated-lugar" class="input-medieval" placeholder="Ej: Plaza Nueva / Tabernas del Casco" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 150px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Hora de Inicio Evento:</label>
+                                    <input type="time" id="evento-dedicated-hora" class="input-medieval" value="20:00" required>
+                                </div>
+                            </div>
+
+                            <!-- FRANJA HORARIA INDEPENDIENTE DE VOTACIÓN -->
+                            <div style="background: rgba(45, 35, 20, 0.85); padding: 15px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.4); margin: 15px 0;">
+                                <h4 style="color: var(--oro-brillante); margin: 0 0 10px; font-family: 'Cinzel', serif;">🗳️ Configuración del Periodo de Votaciones</h4>
+                                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                        <label style="color: #4ade80; font-weight: bold;">🟢 Hora Inicio Votación:</label>
+                                        <input type="time" id="evento-dedicated-votacion-inicio" class="input-medieval" value="20:30" required>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                        <label style="color: #f87171; font-weight: bold;">🔴 Hora Cierre Votación:</label>
+                                        <input type="time" id="evento-dedicated-votacion-fin" class="input-medieval" value="23:30" required>
+                                    </div>
+                                </div>
+                                <p style="font-size: 0.78rem; color: #a1a1aa; margin: 8px 0 0;">
+                                    ℹ️ Al expirar el tiempo de cierre o alcanzarse el último minuto (<=60s), se mostrará automáticamente el reloj de cuenta atrás con la alerta de último minuto a los usuarios.
+                                </p>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="font-weight: bold; color: var(--oro-real);">Detalles / Descripción del Evento:</label>
+                                <textarea id="evento-dedicated-desc" class="input-medieval" rows="3" placeholder="Información sobre los festines, tabernas participantes o normas del evento..."></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button type="submit" id="btn-guardar-evento-dedicated" class="btn-cuervo" style="flex: 2; background: #15803d;">✨ Generar / Guardar Evento</button>
+                                <button type="button" id="btn-cancelar-evento-dedicated" class="btn-cuervo" style="display: none; flex: 1; background: #44403c;" onclick="resetFormEventoDedicated()">Cancelar Edición</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- LISTADO DE EVENTOS EXISTENTES CON ACCIONES SUPERADMIN -->
+                    <div>
+                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">📜 Listado de Eventos Generados en el Reino</h3>
+                        <div id="lista-eventos-generados-admin" class="grid-cards"></div>
+                    </div>
                 </div>
             </section>
 

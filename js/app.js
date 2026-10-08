@@ -1270,10 +1270,166 @@ function guardarEventoBarrio(event) {
 
 function poblarSelectBarriosEvento() {
     const select = document.getElementById('evento-barrio');
-    if (select) {
-        const barrios = ['Casco Viejo', 'Indautxu', 'Deusto', 'Santutxu', 'Abando', 'San Mamés - Basurto'];
-        select.innerHTML = barrios.map(b => `<option value="${b}">${b}</option>`).join('');
+    const selectDedicated = document.getElementById('evento-dedicated-barrio');
+    const barrios = getBarriosRegistrados();
+    const optionsHTML = barrios.map(b => `<option value="${b}">${b}</option>`).join('');
+
+    if (select) select.innerHTML = optionsHTML;
+    if (selectDedicated) selectDedicated.innerHTML = optionsHTML;
+}
+
+function guardarEventoBarrioDesdePestana(event) {
+    if (event) event.preventDefault();
+
+    const user = getCurrentUser();
+    if (!user || user.role !== 'superadmin') {
+        alert('Solo el Superadministrador puede gestionar eventos.');
+        return;
     }
+
+    const editId = document.getElementById('evento-dedicated-id-edit')?.value;
+    const barrio = document.getElementById('evento-dedicated-barrio')?.value;
+    const nombre = document.getElementById('evento-dedicated-nombre')?.value;
+    const fecha = document.getElementById('evento-dedicated-fecha')?.value;
+    const lugar = document.getElementById('evento-dedicated-lugar')?.value;
+    const hora = document.getElementById('evento-dedicated-hora')?.value || '20:00';
+    const horaInicioVotacion = document.getElementById('evento-dedicated-votacion-inicio')?.value || '20:30';
+    const horaFinVotacion = document.getElementById('evento-dedicated-votacion-fin')?.value || '23:30';
+    const desc = document.getElementById('evento-dedicated-desc')?.value || '';
+
+    if (!nombre || !fecha || !lugar) {
+        alert('Por favor, completa los campos requeridos del evento.');
+        return;
+    }
+
+    let customEvents = [];
+    try {
+        const raw = localStorage.getItem('eventos_feudales_custom');
+        if (raw) customEvents = JSON.parse(raw);
+    } catch (e) {
+        customEvents = [];
+    }
+
+    if (editId) {
+        const idx = customEvents.findIndex(e => e.id === editId);
+        if (idx !== -1) {
+            customEvents[idx] = {
+                ...customEvents[idx],
+                nombre,
+                barrio,
+                fecha,
+                lugar,
+                hora,
+                hora_inicio_votacion: horaInicioVotacion,
+                hora_fin_votacion: horaFinVotacion,
+                desc
+            };
+        } else {
+            customEvents.push({
+                id: editId,
+                nombre,
+                barrio,
+                fecha,
+                lugar,
+                hora,
+                hora_inicio_votacion: horaInicioVotacion,
+                hora_fin_votacion: horaFinVotacion,
+                desc
+            };
+        }
+        alert(`✅ Evento "${nombre}" actualizado con éxito.`);
+    } else {
+        const nuevoEvento = {
+            id: `evt-custom-${Date.now()}`,
+            nombre,
+            barrio,
+            fecha,
+            lugar,
+            hora,
+            hora_inicio_votacion: horaInicioVotacion,
+            hora_fin_votacion: horaFinVotacion,
+            desc
+        };
+        customEvents.push(nuevoEvento);
+        alert(`✅ Evento "${nombre}" generado y publicado en el Reino.`);
+    }
+
+    localStorage.setItem('eventos_feudales_custom', JSON.stringify(customEvents));
+    resetFormEventoDedicated();
+    actualizarCalendarioMedieval();
+    renderEventosGeneradosPestanaAdmin();
+}
+
+function resetFormEventoDedicated() {
+    const form = document.getElementById('form-evento-admin-dedicated');
+    if (form) form.reset();
+    const editId = document.getElementById('evento-dedicated-id-edit');
+    if (editId) editId.value = '';
+    const btnGuardar = document.getElementById('btn-guardar-evento-dedicated');
+    const btnCancelar = document.getElementById('btn-cancelar-evento-dedicated');
+    if (btnGuardar) btnGuardar.textContent = '✨ Generar / Guardar Evento';
+    if (btnCancelar) btnCancelar.style.display = 'none';
+}
+
+function editarEventoBarrioDesdePestana(eventoId) {
+    const todos = getTodosLosEventos();
+    const evt = todos.find(e => e.id === eventoId);
+    if (!evt) return;
+
+    document.getElementById('evento-dedicated-id-edit').value = evt.id;
+    document.getElementById('evento-dedicated-barrio').value = evt.barrio || 'Casco Viejo';
+    document.getElementById('evento-dedicated-nombre').value = evt.nombre || '';
+    document.getElementById('evento-dedicated-fecha').value = evt.fecha || '';
+    document.getElementById('evento-dedicated-lugar').value = evt.lugar || '';
+    document.getElementById('evento-dedicated-hora').value = evt.hora || '20:00';
+    document.getElementById('evento-dedicated-votacion-inicio').value = evt.hora_inicio_votacion || '20:30';
+    document.getElementById('evento-dedicated-votacion-fin').value = evt.hora_fin_votacion || '23:30';
+    document.getElementById('evento-dedicated-desc').value = evt.desc || '';
+
+    const btnGuardar = document.getElementById('btn-guardar-evento-dedicated');
+    const btnCancelar = document.getElementById('btn-cancelar-evento-dedicated');
+    if (btnGuardar) btnGuardar.textContent = '💾 Actualizar Evento';
+    if (btnCancelar) btnCancelar.style.display = 'inline-block';
+
+    const form = document.getElementById('form-evento-admin-dedicated');
+    if (form) form.scrollIntoView({ behavior: 'smooth' });
+}
+
+function renderEventosGeneradosPestanaAdmin() {
+    const container = document.getElementById('lista-eventos-generados-admin');
+    if (!container) return;
+
+    const eventos = getTodosLosEventos();
+    if (!eventos || eventos.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;">No hay eventos generados registrados.</div>`;
+        return;
+    }
+
+    container.innerHTML = eventos.map(evt => {
+        const estadoVot = obtenerEstadoVotacionEvento(evt);
+        return `
+            <div class="card-item" style="border: 1px solid var(--oro-real); background: rgba(20, 15, 10, 0.9);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span class="pill-user" style="background: rgba(185,28,28,0.8); color: #fff; font-weight: bold; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem;">
+                        🏰 ${evt.barrio || 'Reino'}
+                    </span>
+                    <span style="font-size: 0.82rem; color: var(--oro-brillante); font-weight: bold;">📅 ${evt.fecha} (${evt.hora || '20:00'})</span>
+                </div>
+                <h4 style="color: var(--oro-real); font-family: 'Cinzel', serif; margin: 4px 0;">${evt.nombre}</h4>
+                <p style="font-size: 0.85rem; color: #d6d3d1; margin-bottom: 4px;"><strong>📍 Lugar:</strong> ${evt.lugar || 'N/A'}</p>
+                <p style="font-size: 0.82rem; color: #a1a1aa; margin-bottom: 10px;">
+                    ⏰ <strong>Votación:</strong> ${estadoVot.horaInicio} a ${estadoVot.horaFin} hs (${estadoVot.texto})
+                </p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button onclick="editarEventoBarrioDesdePestana('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: #2563eb; flex: 1;">✏️ Editar</button>
+                    <button onclick="toggleCerrarVotacionEvento('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: ${evt.cerrado_manualmente ? '#166534' : '#d97706'}; flex: 1.2;">
+                        ${evt.cerrado_manualmente ? '🟢 Abrir' : '🔒 Cerrar'}
+                    </button>
+                    <button onclick="eliminarEventoBarrio('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: #7f1d1d; flex: 0.8;">🗑️ Eliminar</button>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 /* ==========================================
@@ -1382,6 +1538,7 @@ function initApp() {
     renderGalaFinal();
     renderRepositorioVotos();
     renderOpcionesVoto();
+    if (typeof renderEventosGeneradosPestanaAdmin === 'function') renderEventosGeneradosPestanaAdmin();
     if (typeof renderCriteriosJerarquicos === 'function') renderCriteriosJerarquicos();
     if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
     if (typeof renderDashboardSimulacionCompleto === 'function') renderDashboardSimulacionCompleto();

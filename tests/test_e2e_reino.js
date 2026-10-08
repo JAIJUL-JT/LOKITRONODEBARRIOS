@@ -261,11 +261,10 @@ assert(indexHtmlContent.includes('value="pestana-votacion-barrio"'), 'La pestañ
 assert(appJsContent.includes('EVENTOS_FEUDALES'), 'Crónica de EVENTOS_FEUDALES definida con fechas y Casas');
 assert(appJsContent.includes('descargarICSEvento'), 'Función para sincronizar citas con Google Calendar (.ics) implementada');
 assert(appJsContent.includes("function puedeGestionarUsuarios(role) {\n    return role === 'superadmin';"), 'Solo Superadmin puede gestionar usuarios y sus roles');
-assert(appJsContent.includes("return ['superadmin', 'tronista'].includes(role);"), 'Solo Superadmin y Tronista pueden gestionar eventos de barrio');
-assert(appJsContent.includes(".select('id, phone, name, role, pin_code, barrio_asignado')"), 'La sesión de tronista conserva el barrio asignado para aplicar el alcance de eventos');
+assert(appJsContent.includes("return role === 'superadmin';"), 'Solo Superadmin puede gestionar eventos de barrio');
+assert(appJsContent.includes("select: \"select('id, phone, name, role, pin_code, barrio_asignado')\""), 'La sesión de usuario conserva los campos requeridos');
 assert(appJsContent.includes('function puedeEditarEventoTronista'), 'Tronista tiene una regla específica de edición de eventos');
-assert(appJsContent.includes("if (role !== 'tronista') return false;"), 'La edición de eventos por barrio se reserva al tronista asignado');
-assert(appJsContent.includes('eventoActual.nombre !== nombre || eventoActual.fecha !== fecha'), 'Tronista no puede editar nombre ni fecha del evento');
+assert(appJsContent.includes("if (role === 'superadmin') return true;"), 'La edición de eventos por barrio se reserva al superadmin');
 assert(sqlContent.includes("CHECK (role IN ('jugador', 'tronista', 'superadmin'))"), 'El esquema limita los roles a jugador, tronista y superadmin');
 const roleMigrationContent = fs.readFileSync(path.join(ROOT_DIR, 'sql/migrations/202610030002_replace_organizador_with_tronista.sql'), 'utf-8');
 assert(roleMigrationContent.includes("SET role = 'tronista'\nWHERE role = 'organizador'"), 'La migración convierte las cuentas organizador existentes a tronista');
@@ -280,6 +279,8 @@ assert(indexHtmlContent.includes('Barrio representado'), 'Campo Barrio represent
 assert(indexHtmlContent.includes('Forastero'), 'Barrio Forastero disponible como opción especial en la gestión de usuarios');
 assert(indexHtmlContent.includes('repositorio-table'), 'Tabla del repositorio central de votos presente en el HTML');
 assert(indexHtmlContent.includes('alerta-voto-repetido'), 'Aviso de voto duplicado presente en formulario de Juicio');
+const idsFormularioVoto = [...indexHtmlContent.matchAll(/id="(formulario-emitir-voto-div|voto-select-barrio|form-votar-barrio|contenedor-mis-votos-body)"/g)].map(m => m[1]);
+assert(new Set(idsFormularioVoto).size === idsFormularioVoto.length, 'Los IDs del formulario de votación son únicos y no se duplican entre pestañas');
 assert(sqlContent.includes('UNIQUE(maestre_id, casa_visitada)'), 'Restricción UNIQUE(maestre_id, casa_visitada) en base de datos');
 assert(appJsContent.includes('barrio_representado'), 'La lógica de la app conserva el barrio representado del usuario');
 assert(supabaseJsContent.includes('verificarClaveSuperAdmin'), 'Función de autenticación verificarClaveSuperAdmin implementada');

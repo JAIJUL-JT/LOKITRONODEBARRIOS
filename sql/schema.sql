@@ -364,8 +364,14 @@ FROM casas
 ON CONFLICT (casa_id, fecha, codigo) DO NOTHING;
 
 -- Usuarios Autorizados Iniciales (Ejemplo de inicio)
-INSERT INTO authorized_users (phone, name, email, role) VALUES
-('+34605676002', 'Maestre Julio', NULL, 'tronista')
+INSERT INTO authorized_users (phone, name, email, role, pin_code, barrio_asignado) VALUES
+('+34605676002', 'Maestre Julio', NULL, 'superadmin', '1234', 'Indautxu'),
+('605676002', 'Maestre Julio', NULL, 'superadmin', '1234', 'Indautxu')
+ON CONFLICT (phone) DO UPDATE SET role = 'superadmin';
+-- Usuario SORAYA para despliegue (teléfono, barrio y PIN)
+INSERT INTO authorized_users (phone, name, email, role, pin_code, barrio_asignado) VALUES
+('456123456', 'SORAYA', NULL, 'superadmin', '1234', 'Deusto'),
+('123456789', 'Superadmin Bilbao', NULL, 'superadmin', '1234', 'Abando')
 ON CONFLICT (phone) DO NOTHING;
 
 -- Superadministrador inicial (para administración del sistema)

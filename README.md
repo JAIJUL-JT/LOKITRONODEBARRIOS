@@ -34,7 +34,7 @@ Este proyecto implementa la arquitectura feudal integral para conectar **GitHub 
 ## 📁 Estructura del Proyecto
 
 ```text
-juego-de-barrios-bilbao/
+lokitronodebarrios/
 ├── index.html                  # "La Taberna Imperial" (SPA con diseño feudal)
 ├── css/
 │   └── style.css               # Estilos medievales, paleta oro/carmesí y responsive
@@ -66,14 +66,14 @@ juego-de-barrios-bilbao/
    git commit -m "feat: Implementación completa de El Trono del Pintxo"
    git branch -M main
    git branch dev
-   git remote add origin https://github.com/TU_USUARIO/juego-de-barrios-bilbao.git
+   git remote add origin https://github.com/TU_USUARIO/lokitronodebarrios.git
    git push -u origin main
    git push -u origin dev
    ```
 
 ### 🗄️ Paso 2 — Supabase (El Trono de Datos)
 1. Entra en [supabase.com](https://supabase.com) y crea un nuevo proyecto: `trono-del-pintxo`.
-2. Ve a **SQL Editor** y ejecuta el contenido completo de [`sql/schema.sql`](file:///root/antigravity-termux/antigravity-termux/juego-de-barrios-bilbao/sql/schema.sql).
+2. Ve a **SQL Editor** y ejecuta el contenido completo de [`sql/schema.sql`](file:///root/antigravity-termux/antigravity-termux/lokitronodebarrios/sql/schema.sql).
    - Creará las tablas: `casas`, `maestres`, `juicios` y `codigos_diarios`.
    - Insertará los datos semilla de las 8 Casas de Bilbao (Casco Viejo, Indautxu, Deusto, Santutxu, Abando, San Mamés, Bilbao La Vieja, Uribarri).
    - Configurará la función de la **Ley II de Bilbao** (`calcular_ranking()`).
@@ -82,7 +82,7 @@ juego-de-barrios-bilbao/
 
 ### ⚡ Paso 3 — Vercel (La Taberna Imperial)
 1. Entra en [vercel.com](https://vercel.com) y haz clic en **Add New → Project**.
-2. Importa el repositorio `juego-de-barrios-bilbao`.
+2. Importa el repositorio `lokitronodebarrios`.
 3. Configuración del proyecto:
    - **Framework Preset:** `Other`
    - **Build Command:** *(dejar vacío)*
@@ -97,10 +97,10 @@ juego-de-barrios-bilbao/
 ### 🤖 Paso 4 — Make (El Mayordomo Automático)
 1. Entra en [make.com](https://make.com) y crea un nuevo escenario.
 2. En el menú inferior `...`, selecciona **Import Blueprint** y carga:
-   - [`make/escenario_a_notificar_voto.json`](file:///root/antigravity-termux/antigravity-termux/juego-de-barrios-bilbao/make/escenario_a_notificar_voto.json): Notificaciones instantáneas si Espíritu ≥ 9.
-   - [`make/escenario_b_pase_vip.json`](file:///root/antigravity-termux/antigravity-termux/juego-de-barrios-bilbao/make/escenario_b_pase_vip.json): Pase Dorado VIP para Maestres con 5 o más sellos.
-   - [`make/escenario_c_ranking_semanal.json`](file:///root/antigravity-termux/antigravity-termux/juego-de-barrios-bilbao/make/escenario_c_ranking_semanal.json): Bando semanal con podio dominical.
-   - [`make/escenario_d_codigo_sello.json`](file:///root/antigravity-termux/antigravity-termux/juego-de-barrios-bilbao/make/escenario_d_codigo_sello.json): Distribución diaria de sellos a tabernas.
+   - [`make/escenario_a_notificar_voto.json`](file:///root/antigravity-termux/antigravity-termux/lokitronodebarrios/make/escenario_a_notificar_voto.json): Notificaciones instantáneas si Espíritu ≥ 9.
+   - [`make/escenario_b_pase_vip.json`](file:///root/antigravity-termux/antigravity-termux/lokitronodebarrios/make/escenario_b_pase_vip.json): Pase Dorado VIP para Maestres con 5 o más sellos.
+   - [`make/escenario_c_ranking_semanal.json`](file:///root/antigravity-termux/antigravity-termux/lokitronodebarrios/make/escenario_c_ranking_semanal.json): Bando semanal con podio dominical.
+   - [`make/escenario_d_codigo_sello.json`](file:///root/antigravity-termux/antigravity-termux/lokitronodebarrios/make/escenario_d_codigo_sello.json): Distribución diaria de sellos a tabernas.
 3. Copia la URL del Webhook generado en el Escenario A y guárdala en `MAKE_WEBHOOK_URL` o en la función `notificar_make()` del SQL.
 4. En Make, configura los módulos compatibles con Supabase, Google Docs/Drive y Gmail, y prueba el escenario A con un nuevo juicio con `espiritu >= 9` para comprobar que la notificación llega.
 

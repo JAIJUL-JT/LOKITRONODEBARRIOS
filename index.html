@@ -200,6 +200,15 @@
                                     style="display: none; margin-bottom: 12px; color: #fca5a5; font-weight: bold;">⚠️ Voto duplicado
                                     detectado en la Mesa del Rey.</div>
                                 <div class="form-group">
+                                    <label>Selecciona el evento:</label>
+                                    <select id="voto-select-evento" class="input-medieval" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Barrio del evento:</label>
+                                    <input id="voto-barrio-evento" class="input-medieval" readonly>
+                                </div>
+                                <div id="estado-votacion-formulario" role="status" style="margin:10px 0;color:#fbbf24;"></div>
+                                <div class="form-group">
                                     <label>Selecciona el Barrio A Evaluar:</label>
                                     <select id="voto-select-barrio" class="input-medieval" required></select>
                                 </div>
@@ -639,6 +648,43 @@
                     <p>Administra accesos, roles (máximo 2 Tronistas por barrio), asignación de reinos y credenciales.
                     </p>
 
+                    <!-- PANEL CONFIG TÍTULOS (solo visible para superadmin) -->
+                    <div id="panel-config-titulos-usuarios" style="display:none; margin-bottom:24px; background:rgba(20,16,5,0.9); border:1px solid var(--oro-real); border-radius:8px; padding:18px;">
+                        <h3 style="color:var(--oro-brillante);margin-top:0;font-family:'Cinzel',serif;">⚙️ Configuración de Títulos del Reino</h3>
+                        <p style="font-size:0.82rem;color:#d6d3d1;">Personaliza cómo se llaman los rangos de los usuarios en la corte.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">⚔️ Jugador (masculino):</label>
+                                <input type="text" id="titulo-config-jugador_masculino" class="input-medieval" placeholder="Lord">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">⚔️ Jugador (femenino):</label>
+                                <input type="text" id="titulo-config-jugador_femenino" class="input-medieval" placeholder="Lady">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">👑 Tronista (masculino):</label>
+                                <input type="text" id="titulo-config-tronista_masculino" class="input-medieval" placeholder="Lokitronista Lord">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">👑 Tronista (femenino):</label>
+                                <input type="text" id="titulo-config-tronista_femenino" class="input-medieval" placeholder="Lokitronista Lady">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">🏰 Superadmin (masculino):</label>
+                                <input type="text" id="titulo-config-superadmin_masculino" class="input-medieval" placeholder="Gran Maestre">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">🏰 Superadmin (femenino):</label>
+                                <input type="text" id="titulo-config-superadmin_femenino" class="input-medieval" placeholder="Gran Maestra">
+                            </div>
+                        </div>
+                        <p style="font-size:0.78rem;color:#a1a1aa;margin-bottom:10px;">🔱 Consejeros especiales (605676002, 663366786) siempre tendrán título Consejero/a, independientemente de la configuración.</p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <button type="button" class="btn-cuervo" onclick="guardarTitulosConfig()">💾 Guardar Títulos</button>
+                            <button type="button" class="btn-cuervo" style="background:#44403c;" onclick="guardarTitulosConfig({});renderTablaUsuarios();renderListaTronistas();alert('✅ Títulos restablecidos a valores por defecto.');">↺ Restablecer Predeterminados</button>
+                        </div>
+                    </div>
+
                     <form id="form-usuario" onsubmit="guardarUsuario(event)">
                         <input type="hidden" id="usuario-id-edit">
                         <div class="form-group">
@@ -653,9 +699,20 @@
                         </div>
 
                         <div class="form-group">
+                            <label>Email (Opcional):</label>
+                            <input type="email" id="usuario-email" class="input-medieval" placeholder="email@ejemplo.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Título personalizado (opcional, deja vacío para usar predeterminado):</label>
+                            <input type="text" id="usuario-titulo-custom" class="input-medieval" placeholder="Ej: Consejero (deja vacío para usar el predeterminado)">
+                        </div>
+
+                        <div class="form-group">
                             <label>Rol de Acceso:</label>
                             <select id="usuario-role" class="input-medieval">
                                 <option value="jugador">Jugador / Maestre</option>
+                                <option value="tronista">👑 Tronista de Barrio</option>
                                 <option value="superadmin">Superadmin (Administrador del Sistema)</option>
                             </select>
                         </div>
@@ -684,12 +741,14 @@
                         <table class="leaderboard-table">
                             <thead>
                                 <tr>
-                                    <th>Nombre</th>
+                                    <th>Rango</th>
+                                    <th>Título + Nombre</th>
                                     <th>Teléfono</th>
                                     <th>Rol</th>
-                                    <th>Barrio representado</th>
+                                    <th>Email</th>
+                                    <th>Barrio Representado</th>
                                     <th>Barrio Asignado</th>
-                                    <th>Código PIN (4 dígitos)</th>
+                                    <th>PIN</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>

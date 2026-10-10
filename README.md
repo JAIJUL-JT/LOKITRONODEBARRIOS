@@ -132,3 +132,22 @@ Donde $N$ es el total de juicios recibidos y $K = 3.0$ es la constante de confia
 5. El voto se graba en Supabase → Supabase dispara el Webhook a Make.
 6. El ranking se actualiza en tiempo real y el Maestre acumula un nuevo sello hacia su **Pase Dorado**.
 # LOKITRONODEBARRIOS
+
+
+## Gestión de barrios desde Superadmin (tabla `casas`)
+
+La pantalla **Gestión de Barrios y Poblaciones** lee los barrios desde `public.casas`.
+Para habilitar el alta segura, aplica una sola vez esta migración en el SQL Editor de Supabase:
+
+`sql/migrations/202610090001_create_casa_superadmin.sql`
+
+La función `public.crear_casa_superadmin(...)` valida en la base de datos que el teléfono y el PIN correspondan a una fila de `authorized_users` con rol `superadmin`; después crea el barrio en `casas`. La tabla `casas` mantiene la lectura pública definida por el esquema, mientras que la operación de alta se realiza a través de esa función.
+
+Pasos de comprobación:
+1. Aplicar la migración en Supabase.
+2. Iniciar sesión con una cuenta superadmin cuyo teléfono y PIN coincidan con `authorized_users`.
+3. Abrir **Gestión de Barrios y Poblaciones**, completar nombre, lema y emblema y pulsar **Añadir Nuevo Barrio**.
+4. Confirmar que el barrio aparece en el listado y en los selectores de la aplicación.
+5. Intentar crear el mismo nombre de nuevo y confirmar que se rechaza.
+
+Nota de seguridad: el inicio de sesión existente de esta aplicación usa teléfono/PIN en el cliente. La función de base de datos vuelve a validar las credenciales para el alta, pero antes de hacer un lanzamiento público conviene migrar la autenticación a Supabase Auth y añadir limitación de intentos al PIN.

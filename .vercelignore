@@ -1,0 +1,10 @@
+node_modules/
+.git/
+*.zip
+*.pptx
+*.backup*
+*.bak
+**/parche_eventos_supabase.py
+**/parche_votacion_barrio.py
+lokitrono-barrio-management-update/
+lokitrono-login-superadmin-fix/

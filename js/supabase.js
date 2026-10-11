@@ -37,8 +37,8 @@ async function emitirJuicio(maestreId, casaId, barrio, notas) {
 }
 
 function calcularMediaPonderada(festin, caminos, espiritu) {
-    // Ley II (Bilbao): Festín 50%, Caminos 25%, Espíritu 25%
-    return (festin * 0.50) + (caminos * 0.25) + (espiritu * 0.25);
+    // Códice de la Villa: Ocio Hostelero 50%, Accesibilidad 20%, Ambiente de Barrio 30%
+    return (festin * 0.50) + (caminos * 0.20) + (espiritu * 0.30);
 }
 
 function verificarVotoExistente(maestreId, casaId) {

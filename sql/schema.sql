@@ -161,7 +161,7 @@ CREATE POLICY "codigos_superadmin_manage"
 -- 5. LEY II DE BILBAO: FUNCIÓN calcular_ranking() (Media Ponderada y Relativa)
 -- ==============================================================================
 -- Calcula la clasificación feudal de cada casa con ponderación:
---   Festín: 50%, Caminos: 25%, Espíritu: 25%
+--   Ocio Hostelero: 50%, Accesibilidad: 20%, Ambiente de Barrio: 30%
 -- Aplica media bayesiana/relativa para equilibrar casas con pocos votos frente
 -- a casas populares, evitando que una casa con un solo 10 gane injustamente.
 CREATE OR REPLACE FUNCTION calcular_ranking()
@@ -183,7 +183,7 @@ DECLARE
     v_umbral_confianza NUMERIC := 3.0; -- Cantidad mínima ponderada de votos
 BEGIN
     -- Media global de todos los juicios emitidos en el reino
-    SELECT COALESCE(ROUND(AVG(0.50 * j.festin + 0.25 * j.caminos + 0.25 * j.espiritu), 2), 7.00)
+    SELECT COALESCE(ROUND(AVG(0.50 * j.festin + 0.20 * j.caminos + 0.30 * j.espiritu), 2), 7.00)
     INTO v_media_global
     FROM juicios j
     JOIN casas c ON c.id = j.casa_visitada
@@ -201,7 +201,7 @@ BEGIN
             ROUND(AVG(j.festin), 2) AS prom_festin,
             ROUND(AVG(j.caminos), 2) AS prom_caminos,
             ROUND(AVG(j.espiritu), 2) AS prom_espiritu,
-            ROUND(AVG(0.50 * j.festin + 0.25 * j.caminos + 0.25 * j.espiritu), 2) AS prom_crudo
+            ROUND(AVG(0.50 * j.festin + 0.20 * j.caminos + 0.30 * j.espiritu), 2) AS prom_crudo
         FROM casas c
         LEFT JOIN juicios j ON c.id = j.casa_visitada
         WHERE c.participa

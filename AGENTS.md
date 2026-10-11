@@ -30,7 +30,7 @@ Reformatear esas funciones rompe los tests aunque el código siga siendo correct
 - Roles válidos: `jugador`, `tronista`, `superadmin` (CHECK en el esquema). El antiguo `organizador` se migró a `tronista`.
 - Solo `superadmin` gestiona usuarios/roles y eventos. Ver `js/app.js` (`puedeGestionarUsuarios`, `puedeEditarEventoTronista`).
 - Voto único por Maestre y Casa (`UNIQUE(maestre_id, casa_visitada)`).
-- Ranking «Ley II de Bilbao»: media ponderada `0.50 Festín + 0.25 Caminos + 0.25 Espíritu`, regularizada con `K = 3.0`. Implementada en `calcular_ranking()` (`sql/schema.sql`) y replicada en JS/tests.
+- Ranking «Códice de la Villa»: media ponderada `0.50 Ocio Hostelero + 0.20 Accesibilidad + 0.30 Ambiente`, regularizada con `K = 3.0`. Implementada en `calcular_ranking()` (`sql/schema.sql`) y replicada en JS/tests.
 - Barrio `Forastero` es un caso especial no competitivo.
 
 ## SQL y despliegue

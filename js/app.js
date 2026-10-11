@@ -80,7 +80,7 @@ function setCurrentUser(user) {
     localStorage.setItem(STORAGE_KEYS.usuarioActual, JSON.stringify(user || null));
 }
 
-const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios'];
+const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-oraculo-ia'];
 
 function cambiarPestana(valor) {
     const usuario = getCurrentUser();
@@ -199,6 +199,21 @@ function getUsuariosAutorizadosLocal() {
                     }
                 }
             });
+            const tieneMaster = usuarios.some(u =>
+                String(u.phone || '').replace(/\D/g, '').slice(-9) === '605676002'
+            );
+            if (!tieneMaster) {
+                usuarios.push({
+                    id: 'user-julio-master',
+                    phone: '605676002',
+                    name: 'Julio',
+                    role: 'master',
+                    pin_code: '123456',
+                    barrio_representado: 'Forastero',
+                    barrio_asignado: 'Zorrotza'
+                });
+                actualizado = true;
+            }
             if (actualizado) {
                 localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(usuarios));
             }
@@ -450,6 +465,8 @@ function actualizarEstadoFormularioVoto() {
                     : estadoVotacion.texto;
     }
     if (boton) boton.disabled = !puedeVotar;
+    const opcionesVoto = document.getElementById('voto-opciones-box');
+    if (opcionesVoto) opcionesVoto.style.display = puedeVotar ? 'block' : 'none';
 }
 
 function renderMisVotosPersonales() {
@@ -477,7 +494,7 @@ function renderMisVotosPersonales() {
         <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;">
                 <thead><tr>
-                    <th>Evento</th><th>Barrio</th><th>Festín</th><th>Caminos</th><th>Espíritu</th><th>Fecha del voto</th><th>Estado</th>
+                    <th>Evento</th><th>Barrio</th><th>Ocio Hostelero</th><th>Accesibilidad</th><th>Ambiente</th><th>Fecha del voto</th><th>Estado</th>
                 </tr></thead>
                 <tbody>${votos.map(v => {
                     const evt = eventos.find(e => String(e.id) === String(v.evento_id));
@@ -559,9 +576,12 @@ async function guardarVotoBarrioUsuario(event) {
         return;
     }
 
-    const notaFestin = notaCriterioODefecto('crit-festin', notas, ['crit-festin-sabor']);
-    const notaCaminos = notaCriterioODefecto('crit-caminos', notas);
-    const notaEspiritu = notaCriterioODefecto('crit-espiritu', notas);
+    // Códice de la Villa: cada disciplina se calcula como la media ponderada de
+    // sus subcategorías (Plebeyo/Real/Elitista/Poteo, Carruajes/Dragones/Establos/
+    // Caminos, Originalidad/Organización/Gozo).
+    const notaOcio = notaCriterioODefecto('crit-ocio', notas, ['crit-festin', 'crit-festin-sabor']);
+    const notaAccesibilidad = notaCriterioODefecto('crit-acceso', notas, ['crit-caminos']);
+    const notaAmbiente = notaCriterioODefecto('crit-ambiente', notas, ['crit-espiritu']);
 
     const voto = {
         maestre_id: maestreId,
@@ -569,9 +589,9 @@ async function guardarVotoBarrioUsuario(event) {
         evento_nombre: evento.nombre || '',
         casa_visitada: barrio,
         barrio,
-        nota_festin: Number(notaFestin !== null ? notaFestin : (notas['crit-festin-sabor'] || notas['crit-festin'] || 8)),
-        nota_caminos: Number(notaCaminos !== null ? notaCaminos : (notas['crit-caminos'] || 8)),
-        nota_espiritu: Number(notaEspiritu !== null ? notaEspiritu : (notas['crit-espiritu'] || 8)),
+        nota_festin: Number(notaOcio !== null ? notaOcio : (notas['crit-festin-sabor'] || notas['crit-ocio'] || 8)),
+        nota_caminos: Number(notaAccesibilidad !== null ? notaAccesibilidad : (notas['crit-caminos'] || notas['crit-acceso'] || 8)),
+        nota_espiritu: Number(notaAmbiente !== null ? notaAmbiente : (notas['crit-espiritu'] || notas['crit-ambiente'] || 8)),
         detalles_notas: notas,
         fecha_juicio: new Date().toISOString()
     };
@@ -615,25 +635,36 @@ async function guardarVotoBarrioUsuario(event) {
         : 'Voto guardado en este dispositivo. Se sincronizará con el Reino cuando la votación esté disponible en el servidor.');
 }
 
+const CRITERIOS_VERSION = 2;
 const CRITERIOS_JERARQUICOS_DEFAULT = [
-    { id: 'crit-festin', nombre: 'Festín / Pintxos', parentId: null, peso: 50, nivel: 1 },
-    { id: 'crit-festin-sabor', nombre: 'Sabor & Calidad', parentId: 'crit-festin', peso: 60, nivel: 2 },
-    { id: 'crit-festin-presentacion', nombre: 'Presentación', parentId: 'crit-festin', peso: 40, nivel: 2 },
-    { id: 'crit-caminos', nombre: 'Caminos / Rutas', parentId: null, peso: 25, nivel: 1 },
-    { id: 'crit-espiritu', nombre: 'Espíritu / Ambiente', parentId: null, peso: 25, nivel: 1 }
+    { id: 'crit-ocio', nombre: '🍽️ Ocio Hostelero', parentId: null, peso: 50, nivel: 1 },
+    { id: 'crit-ocio-plebeyo', nombre: '🍢 Pintxo de Plebeyo', parentId: 'crit-ocio', peso: 20, nivel: 2 },
+    { id: 'crit-ocio-real', nombre: '👑 Pintxo Real', parentId: 'crit-ocio', peso: 15, nivel: 2 },
+    { id: 'crit-ocio-elitista', nombre: '💎 Elixir Elitista', parentId: 'crit-ocio', peso: 10, nivel: 2 },
+    { id: 'crit-ocio-poteo', nombre: '🍺 Pócima de Poteo', parentId: 'crit-ocio', peso: 5, nivel: 2 },
+    { id: 'crit-acceso', nombre: '🚌 Accesibilidad', parentId: null, peso: 20, nivel: 1 },
+    { id: 'crit-acceso-carruajes', nombre: '🚍 Carruajes (Autobuses)', parentId: 'crit-acceso', peso: 5, nivel: 2 },
+    { id: 'crit-acceso-dragones', nombre: '🐲 Dragones Subterráneos (Metro)', parentId: 'crit-acceso', peso: 5, nivel: 2 },
+    { id: 'crit-acceso-establos', nombre: '🏇 Establos (Aparcamiento)', parentId: 'crit-acceso', peso: 5, nivel: 2 },
+    { id: 'crit-acceso-caminos', nombre: '🛤️ Solidez de Caminos', parentId: 'crit-acceso', peso: 5, nivel: 2 },
+    { id: 'crit-ambiente', nombre: '🎉 Ambiente de Barrio', parentId: null, peso: 30, nivel: 1 },
+    { id: 'crit-ambiente-originalidad', nombre: '✨ Originalidad', parentId: 'crit-ambiente', peso: 15, nivel: 2 },
+    { id: 'crit-ambiente-organizacion', nombre: '📯 Organización (Guía del Tronista)', parentId: 'crit-ambiente', peso: 10, nivel: 2 },
+    { id: 'crit-ambiente-gozo', nombre: '🎊 Gozo del Pueblo', parentId: 'crit-ambiente', peso: 5, nivel: 2 }
 ];
 
 function getCriteriosJerarquicos() {
     try {
-        const raw = localStorage.getItem('criterios_valoracion_jerarquicos');
-        return raw ? JSON.parse(raw) : CRITERIOS_JERARQUICOS_DEFAULT;
-    } catch (e) {
-        return CRITERIOS_JERARQUICOS_DEFAULT;
-    }
+        const raw = JSON.parse(localStorage.getItem('criterios_valoracion_jerarquicos') || 'null');
+        if (raw && typeof raw === 'object' && !Array.isArray(raw) && raw.v === CRITERIOS_VERSION && Array.isArray(raw.items)) {
+            return raw.items;
+        }
+    } catch (e) { /* noop */ }
+    return CRITERIOS_JERARQUICOS_DEFAULT;
 }
 
 function guardarCriteriosJerarquicos(criterios) {
-    localStorage.setItem('criterios_valoracion_jerarquicos', JSON.stringify(criterios));
+    localStorage.setItem('criterios_valoracion_jerarquicos', JSON.stringify({ v: CRITERIOS_VERSION, items: criterios }));
 }
 
 // Calcula la nota de un criterio: media ponderada de sus descendientes con nota,
@@ -789,7 +820,7 @@ function buildCriteriosVotoMarkup() {
     return hojas.map(criterio => `
         <div class="form-group">
             <label for="voto-${criterio.id}">${'— '.repeat(criterio.nivel - 1)} ${criterio.nombre} (Nivel ${criterio.nivel})</label>
-            <input id="voto-${criterio.id}" data-criterio="${criterio.id}" type="number" min="0" max="10" value="8" required>
+            <input id="voto-${criterio.id}" data-criterio="${criterio.id}" type="number" min="1" max="10" value="8" required>
         </div>
     `).join('');
 }
@@ -942,12 +973,12 @@ async function cargarVotosDesdeSupabase() {
     }
 }
 
-// Ley II de Bilbao: media ponderada 0,50 Festín + 0,25 Caminos + 0,25 Espíritu.
+// Códice de la Villa: media ponderada 0,50 Ocio Hostelero + 0,20 Accesibilidad + 0,30 Ambiente de Barrio.
 function calcularNotaLeyII(festin, caminos, espiritu) {
     if (typeof calcularMediaPonderada === 'function') {
         return calcularMediaPonderada(Number(festin) || 0, Number(caminos) || 0, Number(espiritu) || 0);
     }
-    return (Number(festin) || 0) * 0.50 + (Number(caminos) || 0) * 0.25 + (Number(espiritu) || 0) * 0.25;
+    return (Number(festin) || 0) * 0.50 + (Number(caminos) || 0) * 0.20 + (Number(espiritu) || 0) * 0.30;
 }
 
 // Regularización bayesiana de la Ley II: media global con umbral de confianza K.
@@ -1462,12 +1493,12 @@ function renderEventos() {
                         📊 RESULTADOS OFICIALES ACTUALIZADOS (${numVotos} VOTOS)
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #d6d3d1;">
-                        <span>Festín: <strong>${mediaF}</strong></span>
-                        <span>Caminos: <strong>${mediaC}</strong></span>
-                        <span>Espíritu: <strong>${mediaE}</strong></span>
+                        <span>Ocio Hostelero: <strong>${mediaF}</strong></span>
+                        <span>Accesibilidad: <strong>${mediaC}</strong></span>
+                        <span>Ambiente: <strong>${mediaE}</strong></span>
                     </div>
                     <div style="margin-top: 4px; font-size: 0.95rem; color: var(--oro-brillante); font-weight: bold; text-align: center;">
-                        🏆 Media Ley II: ${notaLey2} pts
+                        🏆 Media del Códice: ${notaLey2} pts
                     </div>
                 </div>
             `;
@@ -3823,9 +3854,9 @@ function renderGraficosSimulacion(simData) {
     createOrUpdateChart('chart-criterios-barrios', 'bar', {
         labels: statsBarrios.map(s => s.barrio),
         datasets: [
-            { label: 'Festín (50%)', data: statsBarrios.map(s => s.festin), backgroundColor: '#ef4444' },
-            { label: 'Caminos (20%)', data: statsBarrios.map(s => s.caminos), backgroundColor: '#3b82f6' },
-            { label: 'Espíritu (30%)', data: statsBarrios.map(s => s.espiritu), backgroundColor: '#10b981' }
+            { label: 'Ocio Hostelero (50%)', data: statsBarrios.map(s => s.festin), backgroundColor: '#ef4444' },
+            { label: 'Accesibilidad (20%)', data: statsBarrios.map(s => s.caminos), backgroundColor: '#3b82f6' },
+            { label: 'Ambiente (30%)', data: statsBarrios.map(s => s.espiritu), backgroundColor: '#10b981' }
         ]
     }, {
         responsive: true,
@@ -3946,10 +3977,10 @@ function renderUsuariosPorEventoSim() {
                 <tr>
                     <th>Usuario Participante</th>
                     <th>Teléfono</th>
-                    <th>Festín</th>
-                    <th>Caminos</th>
-                    <th>Espíritu</th>
-                    <th>Nota Ley II</th>
+                    <th>Ocio Hostelero</th>
+                    <th>Accesibilidad</th>
+                    <th>Ambiente</th>
+                    <th>Nota Final</th>
                 </tr>
             </thead>
             <tbody>

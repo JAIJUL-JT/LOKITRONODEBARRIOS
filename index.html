@@ -146,10 +146,10 @@
                     <option value="pestana-votacion-barrio" data-tab="tab-votacion-barrio">🗳️ Votación de Barrio</option>
                     <option value="pestana-tronistas" data-tab="tab-tronistas">👑 Tronistas de Barrios</option>
                     <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario Eventos</option>
-                    <option value="pestana-oraculo-ia" data-tab="tab-oraculo-ia">🔮 Oráculo Imperial (IA Gemini)</option>
                     <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
                 </optgroup>
-                <optgroup label="👑 Administración Superadmin" id="optgroup-admin-menu">
+                <optgroup label="👑 Administración (Superadmin / Master)" id="optgroup-admin-menu">
+                    <option value="pestana-oraculo-ia" data-tab="tab-oraculo-ia">🔮 Oráculo Imperial (IA Gemini)</option>
                     <option value="pestana-generar-evento" data-tab="tab-generar-evento">📅 Generar y Gestionar Eventos</option>
                     <option value="tab-superadmin" data-tab="tab-superadmin">📊 Auditoría de Votos (Admin)</option>
                     <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Alta y Control de Usuarios</option>
@@ -239,9 +239,9 @@
                                 <tr>
                                     <th>Estatus</th>
                                     <th>Reino / Feudo</th>
-                                    <th>Festines (50%)</th>
-                                    <th>Rutas (20%)</th>
-                                    <th>Jolgorio (30%)</th>
+                                    <th>Ocio Hostelero (50%)</th>
+                                    <th>Accesibilidad (20%)</th>
+                                    <th>Ambiente (30%)</th>
                                     <th>Nota Final</th>
                                     <th>Votos</th>
                                 </tr>
@@ -258,8 +258,36 @@
             <section id="pestana-votacion-barrio" class="tab-content tema-taberna" style="display: none;">
                 <div class="panel-card">
                     <h2>🗳️ Votación de Barrio</h2>
-                    <p>Participa en la valoración de cada barrio con tus criterios y deja constancia del voto en el
-                        reino.</p>
+
+                    <div
+                        style="background: rgba(28, 25, 23, 0.9); border-left: 4px solid var(--oro-real); border: 1px solid rgba(212, 175, 55, 0.35); padding: 16px 18px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="color: var(--oro-brillante); margin-top: 0; font-family: 'Cinzel', serif;">📜 Cómo
+                            funciona la Votación (El Códice de la Villa)</h3>
+                        <p style="margin: 6px 0 0;">Tras cada justa o festín oficial, los maestres puntúan al barrio
+                            anfitrión en <strong>10 subcategorías</strong> agrupadas en tres disciplinas del Códice con
+                            esta ponderación: <strong>🍽️ Ocio Hostelero (50%)</strong>, <strong>🚌 Accesibilidad
+                                (20%)</strong> y <strong>🎉 Ambiente de Barrio (30%)</strong>. La <strong>Nota Final</strong>
+                            es <em>Ocio×0,50 + Accesibilidad×0,20 + Ambiente×0,30</em>, y se regulariza para evitar
+                            rankings irreales en barrios con pocos votos.</p>
+                        <ul style="margin: 8px 0 0; padding-left: 18px; color: #d6d3d1;">
+                            <li><strong>🍽️ Ocio Hostelero (50%):</strong> 🍢 Pintxo de Plebeyo (20%) · 👑 Pintxo Real
+                                (15%) · 💎 Elixir Elitista (10%) · 🍺 Pócima de Poteo (5%).</li>
+                            <li><strong>🚌 Accesibilidad (20%):</strong> 🚍 Carruajes (5%) · 🐲 Dragones Subterráneos
+                                (5%) · 🏇 Establos (5%) · 🛤️ Solidez de Caminos (5%).</li>
+                            <li><strong>🎉 Ambiente de Barrio (30%):</strong> ✨ Originalidad (15%) · 📯 Organización
+                                (10%) · 🎊 Gozo del Pueblo (5%).</li>
+                            <li><strong>🎯 Puntúa cada subcategoría del 1 al 10</strong>, de forma individual, secreta y
+                                honesta. El peso de cada disciplina es la media ponderada de sus subcategorías.</li>
+                            <li><strong>⏰ Ventana de votación:</strong> solo puedes votar mientras la votación del
+                                evento esté <em>activada</em> (dentro de su hora de inicio y fin). Antes o después
+                                quedará cerrada.</li>
+                            <li><strong>🗳️ Voto único:</strong> un solo voto por maestre y por barrio/evento. No se
+                                puede repetir.</li>
+                            <li><strong>⚖️ Neutralidad:</strong> un Tronista no puede puntuar el evento celebrado en su
+                                propio barrio.</li>
+                            <li><strong>🌫️ Forastero:</strong> es un caso especial no competitivo.</li>
+                        </ul>
+                    </div>
 
                     <div id="seccion-mis-votos-personales"
                         style="margin-top: 20px; background: rgba(28, 25, 23, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px;">
@@ -289,13 +317,15 @@
                                     <input id="voto-barrio-evento" class="input-medieval" readonly>
                                 </div>
                                 <div id="estado-votacion-formulario" role="status" style="margin:10px 0;color:#fbbf24;"></div>
-                                <div class="form-group">
-                                    <label>Selecciona el Barrio A Evaluar:</label>
-                                    <select id="voto-select-barrio" class="input-medieval" required></select>
+                                <div id="voto-opciones-box">
+                                    <div class="form-group">
+                                        <label>Selecciona el Barrio A Evaluar:</label>
+                                        <select id="voto-select-barrio" class="input-medieval" required></select>
+                                    </div>
+                                    <div id="contenedor-inputs-criterios-voto"></div>
+                                    <button type="submit" class="btn-cuervo" style="margin-top: 10px; width: 100%;">⚔️
+                                        Enviar Calificación al Reino</button>
                                 </div>
-                                <div id="contenedor-inputs-criterios-voto"></div>
-                                <button type="submit" class="btn-cuervo" style="margin-top: 10px; width: 100%;">⚔️
-                                    Enviar Calificación al Reino</button>
                             </form>
                         </div>
 
@@ -591,7 +621,7 @@
                                 </div>
 
                                 <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 8px; padding: 15px;">
-                                    <h5 style="color: #60a5fa; margin: 0 0 10px; font-size: 0.9rem; text-align: center;">⚖️ Desglose Criterios (Festín / Caminos / Espíritu)</h5>
+                                    <h5 style="color: #60a5fa; margin: 0 0 10px; font-size: 0.9rem; text-align: center;">⚖️ Desglose Criterios (Ocio Hostelero / Accesibilidad / Ambiente)</h5>
                                     <div style="position: relative; height: 220px;">
                                         <canvas id="chart-criterios-barrios"></canvas>
                                     </div>

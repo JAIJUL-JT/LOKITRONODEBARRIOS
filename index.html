@@ -23,7 +23,7 @@
     <header class="hero" style="text-align: center;">
         <div class="hero-brand">
             <a href="index.html" aria-label="Ir a la página de inicio" class="hero-brand-logo">
-                <img src="logo.jpg?v=2" alt="LokiTrono de Barrios, inicio">
+                <img src="logo-lokitrono.png?v=3" alt="LokiTrono de Barrios, inicio">
             </a>
             <h1>LokiTrono de Barrios</h1>
         </div>
@@ -32,7 +32,7 @@
         <!-- PANTALLA INICIAL DE ACCESO / LOGIN (Teléfono + PIN de 4 dígitos) -->
         <div id="pantalla-login-inicio"
             style="margin: 20px auto; max-width: 380px; background: rgba(10, 10, 10, 0.95); border: var(--borde-oro-brillante); padding: 25px; border-radius: 12px; box-shadow: var(--sombra-oro); text-align: center;">
-            <img src="logo.jpg?v=2" alt="Logo Acceso" class="login-logo">
+            <img src="logo-lokitrono.png?v=3" alt="Logo Acceso" class="login-logo">
             <h3 class="login-title">Acceder</h3>
             <div id="login-step-phone">
                 <input type="tel" id="input-phone-inicio" placeholder="Teléfono (ej: 123456789)" class="input-medieval"
@@ -66,6 +66,7 @@
                     <option value="pestana-votacion-barrio" data-tab="tab-votacion-barrio">🗳️ Votación de Barrio</option>
                     <option value="pestana-tronistas" data-tab="tab-tronistas">👑 Tronistas de Barrios</option>
                     <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario Eventos</option>
+                    <option value="pestana-oraculo-ia" data-tab="tab-oraculo-ia">🔮 Oráculo Imperial (IA Gemini)</option>
                     <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
                 </optgroup>
                 <optgroup label="👑 Administración Superadmin" id="optgroup-admin-menu">
@@ -647,16 +648,6 @@
                     <h2>👥 Panel de Control de Usuarios Autorizados</h2>
                     <p>Administra accesos, roles (máximo 2 Tronistas por barrio), asignación de reinos y credenciales.
                     </p>
-
-                    <!-- PANEL CONFIG TÍTULOS (solo visible para superadmin) -->
-                    <div id="panel-config-titulos-usuarios" style="display:none; margin-bottom:24px; background:rgba(20,16,5,0.9); border:1px solid var(--oro-real); border-radius:8px; padding:18px;">
-                        <h3 style="color:var(--oro-brillante);margin-top:0;font-family:'Cinzel',serif;">⚙️ Configuración de Títulos del Reino</h3>
-                        <p style="font-size:0.82rem;color:#d6d3d1;">Personaliza cómo se llaman los rangos de los usuarios en la corte.</p>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">⚔️ Jugador (masculino):</label>
-                                <input type="text" id="titulo-config-jugador_masculino" class="input-medieval" placeholder="Lord">
-                            </div>
                             <div class="form-group">
                                 <label style="font-size:0.82rem;">⚔️ Jugador (femenino):</label>
                                 <input type="text" id="titulo-config-jugador_femenino" class="input-medieval" placeholder="Lady">
@@ -709,6 +700,14 @@
                         </div>
 
                         <div class="form-group">
+                            <label>Tratamiento Predeterminado (M/F):</label>
+                            <select id="usuario-gender" class="input-medieval">
+                                <option value="M">Masculino (Ej: Lord, Gran Maestre)</option>
+                                <option value="F">Femenino (Ej: Lady, Gran Maestra)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
                             <label>Rol de Acceso:</label>
                             <select id="usuario-role" class="input-medieval">
                                 <option value="jugador">Jugador / Maestre</option>
@@ -742,11 +741,11 @@
                             <thead>
                                 <tr>
                                     <th>Rango</th>
-                                    <th>Título + Nombre</th>
-                                    <th>Teléfono</th>
-                                    <th>Rol</th>
+                                    <th style="cursor: pointer;" onclick="cambiarOrdenUsuarios('name')">Título + Nombre ↕️</th>
+                                    <th style="cursor: pointer;" onclick="cambiarOrdenUsuarios('phone')">Teléfono ↕️</th>
+                                    <th style="cursor: pointer;" onclick="cambiarOrdenUsuarios('role')">Rol ↕️</th>
                                     <th>Email</th>
-                                    <th>Barrio Representado</th>
+                                    <th style="cursor: pointer;" onclick="cambiarOrdenUsuarios('barrio_representado')">Barrio Representado ↕️</th>
                                     <th>Barrio Asignado</th>
                                     <th>PIN</th>
                                     <th>Acciones</th>
@@ -755,6 +754,17 @@
                             <tbody id="tabla-usuarios-body"></tbody>
                         </table>
                     </div>
+
+                    <!-- PANEL CONFIG TÍTULOS (solo visible para superadmin) -->
+                    <div id="panel-config-titulos-usuarios" style="display:none; margin-bottom:24px; background:rgba(20,16,5,0.9); border:1px solid var(--oro-real); border-radius:8px; padding:18px;">
+                        <h3 style="color:var(--oro-brillante);margin-top:0;font-family:'Cinzel',serif;">⚙️ Configuración de Títulos del Reino</h3>
+                        <p style="font-size:0.82rem;color:#d6d3d1;">Personaliza cómo se llaman los rangos de los usuarios en la corte.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">⚔️ Jugador (masculino):</label>
+                                <input type="text" id="titulo-config-jugador_masculino" class="input-medieval" placeholder="Lord">
+                            </div>
+
 
                     <!-- VISTA EXCLUSIVA SUPERADMIN: LISTADO GENERAL DE 135 PARTICIPANTES Y AUDITORÍA DE VOTOS -->
                     <div id="seccion-superadmin-participantes"
@@ -771,6 +781,7 @@
                 </div>
             </section>
 
+            <!-- LOKITRONO_EMBLEMAS_MEDIEVALES_V1 -->
             <!-- PESTAÑA 4: Añadir, Editar y Borrar Barrios / Poblaciones -->
             <section id="pestana-barrios" class="tab-content" style="display: none;">
                 <div class="panel-card">
@@ -794,25 +805,72 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Emblema del Reino (Seleccionar de la lista de 10 Emblemas Reales):</label>
+                             <label>Emblema del Reino (30 emblemas medievales):</label>
                             <select id="barrio-emblema" class="input-medieval">
-                                <option value="🏰">🏰 1. Bastión / Castillo Feudal</option>
-                                <option value="⚔️">⚔️ 2. Espadas Cruzadas</option>
-                                <option value="👑">👑 3. Corona Imperial</option>
-                                <option value="🛡️">🛡️ 4. Escudo Heráldico</option>
-                                <option value="🍷">🍷 5. Copa de Vino & Pintxo</option>
-                                <option value="🐉">🐉 6. Dragón del Reino</option>
-                                <option value="🦁">🦁 7. León Rampante</option>
-                                <option value="🐺">🐺 8. Lobo Guerrero</option>
-                                <option value="🦅">🦅 9. Águila Real</option>
-                                <option value="⚓">⚓ 10. Ancla del Ría de Bilbao</option>
-                            </select>
+    <option value="🏰">🏰 1. Castillo feudal</option>
+    <option value="⚔️">⚔️ 2. Espadas cruzadas</option>
+    <option value="👑">👑 3. Corona imperial</option>
+    <option value="🛡️">🛡️ 4. Escudo heráldico</option>
+    <option value="🍷">🍷 5. Copa de la corte</option>
+    <option value="🐉">🐉 6. Dragón del reino</option>
+    <option value="🦁">🦁 7. León rampante</option>
+    <option value="🐺">🐺 8. Lobo guerrero</option>
+    <option value="🦅">🦅 9. Águila real</option>
+    <option value="⚓">⚓ 10. Ancla de la ría</option>
+    <option value="🏹">🏹 11. Arco del guardián</option>
+    <option value="🗡️">🗡️ 12. Daga de la guardia</option>
+    <option value="🐎">🐎 13. Corcel de batalla</option>
+    <option value="🐻">🐻 14. Oso protector</option>
+    <option value="🦌">🦌 15. Ciervo noble</option>
+    <option value="🦉">🦉 16. Búho sabio</option>
+    <option value="🐦‍⬛">🐦‍⬛ 17. Cuervo mensajero</option>
+    <option value="🌙">🌙 18. Luna del reino</option>
+    <option value="☀️">☀️ 19. Sol de la victoria</option>
+    <option value="🔥">🔥 20. Llama eterna</option>
+    <option value="🌳">🌳 21. Árbol ancestral</option>
+    <option value="🌹">🌹 22. Rosa de la nobleza</option>
+    <option value="⚜️">⚜️ 23. Flor de lis</option>
+    <option value="🔱">🔱 24. Tridente soberano</option>
+    <option value="🏹">🏹 25. Arqueros del feudo</option>
+    <option value="🪶">🪶 26. Pluma del cronista</option>
+    <option value="🗝️">🗝️ 27. Llave de la fortaleza</option>
+    <option value="🏆">🏆 28. Trofeo de los campeones</option>
+    <option value="💎">💎 29. Gema de la corona</option>
+    <option value="🌊">🌊 30. Olas de la ría</option>
+</select>
                         </div>
                         <button type="submit" class="btn-cuervo" id="btn-guardar-barrio">➕ Añadir Nuevo Barrio</button>
                         <button type="button" class="btn-cuervo" id="btn-cancelar-barrio"
                             style="display: none; background: #44403c;" onclick="resetFormBarrio()">Cancelar
                             Edición</button>
                     </form>
+
+                    <!-- LOKITRONO: ORDEN DE SORTEO DE BARRIOS -->
+                    <section id="panel-sorteo-barrios" class="panel-card" style="margin-top:30px;">
+                        <h3 style="color:var(--oro-brillante);">🎲 Sorteo y orden de los barrios</h3>
+                        <p style="color:#d6d3d1;">
+                            Genera un orden aleatorio entre los barrios participantes o modifica
+                            manualmente el orden. El resultado se guarda en Supabase y no crea eventos
+                            ni modifica los votos.
+                        </p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin:15px 0;">
+                            <button type="button" class="btn-cuervo" id="btn-generar-sorteo-barrios"
+                                onclick="generarSorteoBarrios()">🎲 Generar sorteo</button>
+                            <button type="button" class="btn-cuervo" id="btn-guardar-orden-sorteo"
+                                onclick="guardarOrdenSorteoBarrios()" style="background:#166534;">💾 Guardar orden manual</button>
+                            <button type="button" class="btn-cuervo" id="btn-recargar-orden-sorteo"
+                                onclick="cargarOrdenSorteoBarrios()">🔄 Recargar orden</button>
+                        </div>
+                        <p id="estado-sorteo-barrios" role="status" aria-live="polite"
+                            style="color:#d6d3d1;"></p>
+                        <ol id="lista-orden-sorteo-barrios"
+                            aria-label="Orden de los barrios participantes"
+                            style="padding-left:28px;"></ol>
+                        <p style="font-size:.85rem;color:#a1a1aa;">
+                            Usa las flechas para cambiar posiciones. Los cambios manuales solo se
+                            aplican en Supabase al pulsar «Guardar orden manual».
+                        </p>
+                    </section>
 
                     <h3 style="margin-top: 30px; color: var(--oro-brillante);">Reinos Actuales</h3>
                     <div id="lista-barrios-grid" class="grid-cards"></div>
@@ -894,6 +952,95 @@
                                     style="background: #7f1d1d;" onclick="borrarConfiguracionGalaFinal()">🗑️ Borrar / Reiniciar Configuración</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PESTAÑA: Oráculo Imperial e Integración de Modelos Gemini IA -->
+            <section id="pestana-oraculo-ia" class="tab-content" data-tab="tab-oraculo-ia" style="display: none;">
+                <div class="leaderboard-container" style="background: rgba(10, 10, 15, 0.95); border: 2px solid var(--oro-real); padding: 25px; border-radius: 12px;">
+                    <div class="leaderboard-header" style="text-align: center; margin-bottom: 25px;">
+                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🔮 ORÁCULO IMPERIAL & MODELOS DE IA (GEMINI) 🔮</h2>
+                        <p style="color: #d6d3d1;">Inteligencia Feudal para la Generación de Crónicas, Bandos de Guerra y Recomendaciones de Pintxos</p>
+                    </div>
+
+                    <!-- SELECCIÓN DE MODELO GEMINI & CONFIGURACIÓN DE API KEY -->
+                    <div style="background: rgba(20, 20, 30, 0.8); border: 1px solid var(--oro-real); padding: 18px; border-radius: 8px; margin-bottom: 25px;">
+                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0;">⚙️ Selección de Modelo Gemini & Ajustes</h3>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                            <div style="flex: 1; min-width: 220px;">
+                                <label style="display: block; font-size: 0.9rem; color: #d6d3d1; margin-bottom: 5px;">Modelo IA Gemini Seleccionado:</label>
+                                <select id="select-modelo-gemini" class="input-medieval" style="width: 100%; margin: 0; background: #000;">
+                                    <option value="gemini-2.5-flash" selected>⚡ Gemini 2.5 Flash (Velocidad & Eficiencia Imperial)</option>
+                                    <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (Razonamiento & Crónicas Poéticas)</option>
+                                    <option value="gemini-1.5-flash">🕊️ Gemini 1.5 Flash (Edición Ligera)</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1; min-width: 260px;">
+                                <label style="display: block; font-size: 0.9rem; color: #d6d3d1; margin-bottom: 5px;">Gemini API Key (Opcional - usa clave por defecto/simulación):</label>
+                                <input type="password" id="input-gemini-api-key" placeholder="AIzaSy..." class="input-medieval" style="width: 100%; margin: 0;">
+                            </div>
+                            <div>
+                                <button class="btn-cuervo" onclick="guardarAjustesGemini()" style="height: 42px;">💾 Guardar Ajustes</button>
+                            </div>
+                        </div>
+                        <p id="gemini-config-status" style="font-size: 0.85rem; color: #4ade80; margin-top: 10px; margin-bottom: 0; display: none;"></p>
+                    </div>
+
+                    <!-- MÓDULO 1: GENERADOR DE CRÓNICAS FEUDALES -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid #3b82f6; padding: 20px; border-radius: 8px;">
+                            <h3 style="color: #60a5fa; font-family: 'Cinzel', serif; margin-top: 0;">📜 Generador de Crónicas del Reino</h3>
+                            <p style="font-size: 0.88rem; color: #94a3b8;">El Oráculo analiza la tabla de clasificación actual y los juicios emitidos para redactar una crónica medieval única con el modelo Gemini activo.</p>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 5px;">Tono de la Crónica:</label>
+                                <select id="select-tono-cronica" class="input-medieval" style="width: 100%; background: #0f172a;">
+                                    <option value="epico">⚔️ Épico Feudal (Poema de Mío Cid)</option>
+                                    <option value="satirico">🎭 Satírico & Tabernero (Coplas de Ciegos)</option>
+                                    <option value="solemne">👑 Bando Real Imperial (Solemne & Oficial)</option>
+                                </select>
+                            </div>
+
+                            <button class="btn-cuervo" onclick="generarCronicaGemini()" id="btn-generar-cronica" style="width: 100%; background: #2563eb;">✨ Invocación del Oráculo (Generar Crónica)</button>
+                        </div>
+
+                        <!-- MÓDULO 2: RECOMENDADOR IMPERIAL DE PINTXOS -->
+                        <div style="background: rgba(24, 16, 30, 0.8); border: 1px solid #a855f7; padding: 20px; border-radius: 8px;">
+                            <h3 style="color: #c084fc; font-family: 'Cinzel', serif; margin-top: 0;">🍷 Recomendador Imperial de Pintxos</h3>
+                            <p style="font-size: 0.88rem; color: #e9d5ff;">Consulta a Gemini para obtener una recomendación personalizada según tus gustos, el barrio objetivo y tu espíritu tabernero.</p>
+                            
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; font-size: 0.85rem; color: #e2e8f0; margin-bottom: 5px;">Barrio o Casa a Visitar:</label>
+                                <select id="select-barrio-recomendacion" class="input-medieval" style="width: 100%; background: #1e1b4b;">
+                                    <option value="Casco Viejo">🏰 Casco Viejo (Siete Calles)</option>
+                                    <option value="Indautxu">🍷 Indautxu</option>
+                                    <option value="Deusto">⚓ Deusto</option>
+                                    <option value="Santutxu">🛡️ Santutxu</option>
+                                    <option value="Abando">👑 Abando</option>
+                                    <option value="San Mamés - Basurto">🦁 San Mamés - Basurto</option>
+                                    <option value="Bilbao La Vieja">🌉 Bilbao La Vieja</option>
+                                    <option value="Uribarri">🦅 Uribarri</option>
+                                </select>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-size: 0.85rem; color: #e2e8f0; margin-bottom: 5px;">Preferencia o Antojo Feudal:</label>
+                                <input type="text" id="input-antojo-gemini" placeholder="Ej: Tortilla jugosa, gilda picante o maridaje con txakoli..." class="input-medieval" style="width: 100%;">
+                            </div>
+
+                            <button class="btn-cuervo" onclick="generarRecomendacionGemini()" id="btn-generar-recomendacion" style="width: 100%; background: #7e22ce;">🍷 Solicitar Recomendación Imperial</button>
+                        </div>
+                    </div>
+
+                    <!-- ÁREA DE RESULTADO DE LA IA GEMINI -->
+                    <div id="contenedor-resultado-gemini" style="display: none; margin-top: 25px; background: rgba(5, 5, 10, 0.95); border: 2px solid var(--oro-real); border-radius: 8px; padding: 20px;">
+                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
+                            <span>📜 Dictamen del Oráculo Imperial</span>
+                            <span id="badge-modelo-usado" style="font-size: 0.75rem; background: var(--oro-real); color: #000; padding: 3px 8px; border-radius: 12px; font-weight: bold;">Gemini 2.5 Flash</span>
+                        </h3>
+                        <div id="salida-oraculo-gemini" style="color: #f1f5f9; font-size: 0.98rem; line-height: 1.6; white-space: pre-wrap; font-family: Georgia, serif; background: rgba(15,23,42,0.5); padding: 15px; border-radius: 6px; border-left: 4px solid var(--oro-real);">
+                        </div>
                     </div>
                 </div>
             </section>

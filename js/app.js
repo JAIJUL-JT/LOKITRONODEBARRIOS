@@ -70,7 +70,13 @@ function actualizarInterfazSesion(usuario) {
         if (panelTronistasAdmin) panelTronistasAdmin.style.display = esSuperadmin ? 'block' : 'none';
         const panelConfigTitulos = document.getElementById('panel-config-titulos-usuarios');
         if (panelConfigTitulos) panelConfigTitulos.style.display = esSuperadmin ? 'block' : 'none';
+
+        const panelSorteo = document.getElementById('panel-sorteo-barrios');
+        if (panelSorteo) panelSorteo.style.display = esSuperadmin ? 'block' : 'none';
     } else {
+        const panelSorteo = document.getElementById('panel-sorteo-barrios');
+        if (panelSorteo) panelSorteo.style.display = 'none';
+
         if (loginBox) loginBox.style.display = 'block';
         if (authStatus) {
             authStatus.style.display = 'none';
@@ -200,12 +206,13 @@ function getTituloCompleto(usuario) {
     }
 
     let titulo = '';
+    const gender = usuario.gender || 'M';
     if (rol === 'superadmin') {
-        titulo = config.superadmin_masculino;
+        titulo = gender === 'F' ? config.superadmin_femenino : config.superadmin_masculino;
     } else if (rol === 'tronista') {
-        titulo = config.tronista_masculino;
+        titulo = gender === 'F' ? config.tronista_femenino : config.tronista_masculino;
     } else {
-        titulo = config.jugador_masculino;
+        titulo = gender === 'F' ? config.jugador_femenino : config.jugador_masculino;
     }
 
     return `${icon} ${titulo} ${nombre}`;
@@ -1905,13 +1912,36 @@ function descargarICSGalaFinal() {
    GESTIÓN DE USUARIOS AUTORIZADOS
    ========================================== */
 
+let ordenUsuariosCol = null;
+let ordenUsuariosAsc = true;
+
+window.cambiarOrdenUsuarios = function(col) {
+    if (ordenUsuariosCol === col) {
+        ordenUsuariosAsc = !ordenUsuariosAsc;
+    } else {
+        ordenUsuariosCol = col;
+        ordenUsuariosAsc = true;
+    }
+    renderTablaUsuarios();
+};
+
 function renderTablaUsuarios() {
     const tbody = document.getElementById('tabla-usuarios-body');
     if (!tbody) return;
 
     const currentUser = getCurrentUser();
     const esSuperadmin = currentUser && currentUser.role === 'superadmin';
-    const usuarios = getUsuariosAutorizadosLocal();
+    let usuarios = getUsuariosAutorizadosLocal();
+
+    if (usuarios && usuarios.length > 0 && ordenUsuariosCol) {
+        usuarios.sort((a, b) => {
+            let valA = (a[ordenUsuariosCol] || '').toString().toLowerCase();
+            let valB = (b[ordenUsuariosCol] || '').toString().toLowerCase();
+            if (valA < valB) return ordenUsuariosAsc ? -1 : 1;
+            if (valA > valB) return ordenUsuariosAsc ? 1 : -1;
+            return 0;
+        });
+    }
 
     if (!usuarios || usuarios.length === 0) {
         tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:20px;">No hay usuarios registrados.</td></tr>`;
@@ -1981,6 +2011,7 @@ function guardarUsuario(event) {
     const barrioAsig = document.getElementById('usuario-barrio-asignado')?.value || '';
     const email = document.getElementById('usuario-email')?.value?.trim() || '';
     const tituloCustom = document.getElementById('usuario-titulo-custom')?.value?.trim() || '';
+    const gender = document.getElementById('usuario-gender')?.value || 'M';
 
     if (!phone) {
         alert('El teléfono es obligatorio.');
@@ -2000,7 +2031,8 @@ function guardarUsuario(event) {
                 barrio_representado: barrioRep,
                 barrio_asignado: barrioAsig,
                 email,
-                titulo_custom: tituloCustom
+                titulo_custom: tituloCustom,
+                gender
             };
         }
     } else {
@@ -2015,7 +2047,8 @@ function guardarUsuario(event) {
             barrio_representado: barrioRep,
             barrio_asignado: barrioAsig,
             email,
-            titulo_custom: tituloCustom
+            titulo_custom: tituloCustom,
+            gender
         });
     }
 
@@ -2038,6 +2071,7 @@ function editarUsuario(userId) {
     const barrioRepEl = document.getElementById('usuario-barrio-representado');
     const emailEl = document.getElementById('usuario-email');
     const tituloEl = document.getElementById('usuario-titulo-custom');
+    const genderEl = document.getElementById('usuario-gender');
     const btnGuardar = document.getElementById('btn-guardar-user');
     const btnCancelar = document.getElementById('btn-cancelar-user');
 
@@ -2048,6 +2082,7 @@ function editarUsuario(userId) {
     if (barrioRepEl) barrioRepEl.value = user.barrio_representado || 'Forastero';
     if (emailEl) emailEl.value = user.email || '';
     if (tituloEl) tituloEl.value = user.titulo_custom || '';
+    if (genderEl) genderEl.value = user.gender || 'M';
     if (btnGuardar) btnGuardar.textContent = '💾 Actualizar Usuario';
     if (btnCancelar) btnCancelar.style.display = 'inline-block';
 
@@ -2283,55 +2318,309 @@ function actualizarSelectoresBarriosDinamicos() {
     });
 }
 
+
+// LOKITRONO_GESTION_BARRIOS_V1
+
 function renderListaBarrios() {
     const contenedor = document.getElementById('lista-barrios-grid');
     if (!contenedor) return;
+
     if (!casasCache.length) {
-        contenedor.innerHTML = '<p style="color:#d6d3d1;">No hay barrios cargados desde la tabla <code>casas</code>.</p>';
+        contenedor.innerHTML =
+            '<p style="color:#d6d3d1;">No hay barrios cargados desde la tabla <code>casas</code>.</p>';
         return;
     }
-    contenedor.innerHTML = casasCache.map(casa => `
-        <article class="panel-card" style="min-width:220px;padding:16px;">
-            <div style="font-size:2rem;text-align:center;">${escaparHTML(casa.emblema || '🏰')}</div>
-            <h4 style="text-align:center;color:var(--oro-brillante);margin:8px 0;">${escaparHTML(casa.nombre)}</h4>
-            <p style="text-align:center;color:#d6d3d1;font-size:.9rem;">${escaparHTML(casa.lema || 'Sin lema asignado')}</p>
-            <p style="text-align:center;font-size:.8rem;color:#a1a1aa;">${casa.participa ? 'Participa en la competición' : 'No participa actualmente'}</p>
-        </article>
-    `).join('');
+
+    const usuarios = typeof getUsuariosAutorizadosLocal === 'function' ? getUsuariosAutorizadosLocal() : [];
+
+    contenedor.innerHTML = casasCache.map(casa => {
+        const id = escaparHTML(String(casa.id || ''));
+        const nombre = escaparHTML(casa.nombre || '');
+        const lema = escaparHTML(casa.lema || 'Sin lema asignado');
+        const emblema = escaparHTML(casa.emblema || '🏰');
+        const estado = casa.participa
+            ? 'Participa en la competición'
+            : 'No participa actualmente';
+
+        const integrantes = usuarios.filter(u => u.barrio_representado === casa.nombre || u.barrio_asignado === casa.nombre);
+        
+        let integrantesHTML = '<div style="margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">';
+        integrantesHTML += `<h5 style="color: #93c5fd; margin: 0 0 10px; font-size: 0.85rem; text-align: center;">👥 Integrantes (${integrantes.length})</h5>`;
+        
+        if (integrantes.length === 0) {
+            integrantesHTML += '<p style="font-size: 0.75rem; text-align: center; color: #a1a1aa; margin: 0;">Sin integrantes</p>';
+        } else {
+            integrantesHTML += '<ul style="list-style: none; padding: 0; margin: 0; font-size: 0.8rem; color: #e2e8f0;">';
+            integrantes.forEach(u => {
+                integrantesHTML += `<li style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;" title="${escaparHTML(u.name || u.phone)}">👤 ${escaparHTML(u.name || u.phone)}</span>
+                    <button type="button" class="btn-cuervo" style="padding: 3px 8px; font-size: 0.7rem; background: #7f1d1d;" data-accion-barrio="quitar-usuario" data-user-phone="${escaparHTML(u.phone)}">Quitar</button>
+                </li>`;
+            });
+            integrantesHTML += '</ul>';
+        }
+        integrantesHTML += '</div>';
+
+        return `
+            <article class="panel-card" style="min-width:240px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                    <div style="font-size:2rem;text-align:center;">${emblema}</div>
+                    <h4 style="text-align:center;color:var(--oro-brillante);margin:8px 0;">${nombre}</h4>
+                    <p style="text-align:center;color:#d6d3d1;font-size:.9rem;">${lema}</p>
+                    <p style="text-align:center;font-size:.8rem;color:#a1a1aa;">${estado}</p>
+                    ${integrantesHTML}
+                </div>
+                <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px;">
+                    <button type="button" class="btn-cuervo"
+                        data-accion-barrio="editar" data-barrio-id="${id}"
+                        style="padding:8px 12px;flex:1;">✏️ Editar</button>
+                    <button type="button" class="btn-cuervo"
+                        data-accion-barrio="eliminar" data-barrio-id="${id}"
+                        style="padding:8px 12px;background:#7f1d1d;flex:1;">🗑️ Eliminar</button>
+                </div>
+            </article>`;
+    }).join('');
+
+    contenedor.querySelectorAll('[data-accion-barrio]').forEach(boton => {
+        boton.addEventListener('click', () => {
+            const accion = boton.dataset.accionBarrio;
+            if (accion === 'editar') {
+                editarBarrio(boton.dataset.barrioId);
+            } else if (accion === 'eliminar') {
+                eliminarBarrio(boton.dataset.barrioId);
+            } else if (accion === 'quitar-usuario') {
+                quitarUsuarioBarrio(boton.dataset.userPhone);
+            }
+        });
+    });
+}
+
+async function quitarUsuarioBarrio(phone) {
+    const usuarioAuth = getCurrentUser();
+    if (!usuarioAuth || usuarioAuth.role !== 'superadmin') {
+        alert('Solo un superadministrador puede desvincular usuarios.');
+        return;
+    }
+
+    const confirmacion = window.confirm(`¿Seguro que deseas desvincular al usuario (Tel: ${phone}) de su barrio actual?\nPasará a ser 'Forastero'.`);
+    if (!confirmacion) return;
+
+    const pinConfirmacion = window.prompt('Introduce tu PIN de superadministrador para confirmar:');
+    if (pinConfirmacion === null) return;
+    if (!/^\d{4}$/.test(pinConfirmacion.trim())) {
+        alert('El PIN debe contener exactamente cuatro dígitos.');
+        return;
+    }
+
+    // 1. Actualización local
+    let usuarios = typeof getUsuariosAutorizadosLocal === 'function' ? getUsuariosAutorizadosLocal() : [];
+    const index = usuarios.findIndex(u => String(u.phone) === String(phone));
+    if (index !== -1) {
+        usuarios[index].barrio_representado = 'Forastero';
+        usuarios[index].barrio_asignado = 'Forastero';
+        localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(usuarios));
+    }
+
+    // 2. Intentar actualizar Supabase si existe el RPC
+    const client = getSupabaseBarriosClient();
+    if (client) {
+        try {
+            await client.rpc('desvincular_usuario_barrio_superadmin', {
+                p_phone: String(usuarioAuth.phone || ''),
+                p_pin: pinConfirmacion.trim(),
+                p_target_phone: phone
+            });
+        } catch (e) {
+            console.warn('Aviso: No se pudo actualizar el usuario en Supabase (es posible que falte aplicar la migración SQL o el usuario sea solo local).', e);
+        }
+    }
+
+    renderListaBarrios();
+    if (typeof renderTablaUsuarios === 'function') renderTablaUsuarios();
+    alert('Usuario desvinculado correctamente del barrio. Ahora podrás eliminar el barrio si ya no tiene integrantes.');
+}
+
+function editarBarrio(id) {
+    const usuario = getCurrentUser();
+    if (!usuario || usuario.role !== 'superadmin') {
+        alert('Solo un superadministrador puede editar barrios.');
+        return;
+    }
+
+    const casa = casasCache.find(item => String(item.id) === String(id));
+    if (!casa) {
+        alert('No se encuentra el barrio seleccionado. Actualiza la lista.');
+        return;
+    }
+
+    const campoId = document.getElementById('barrio-id-edit');
+    const campoNombre = document.getElementById('barrio-nombre');
+    const campoLema = document.getElementById('barrio-lema');
+    const campoEmblema = document.getElementById('barrio-emblema');
+    const botonGuardar = document.getElementById('btn-guardar-barrio');
+    const botonCancelar = document.getElementById('btn-cancelar-barrio');
+
+    if (!campoId || !campoNombre || !campoLema || !campoEmblema) {
+        alert('No se encuentran todos los campos del formulario de barrios.');
+        return;
+    }
+
+    campoId.value = casa.id;
+    campoNombre.value = casa.nombre || '';
+    campoLema.value = casa.lema || '';
+
+    // Si un emblema antiguo no aparece en el selector, se añade temporalmente.
+    if (![...campoEmblema.options].some(option => option.value === (casa.emblema || '🏰'))) {
+        campoEmblema.add(new Option(casa.emblema || '🏰', casa.emblema || '🏰'));
+    }
+    campoEmblema.value = casa.emblema || '🏰';
+
+    if (botonGuardar) botonGuardar.textContent = '💾 Guardar Cambios';
+    if (botonCancelar) botonCancelar.style.display = 'inline-block';
+
+    document.getElementById('form-barrio')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+    });
+    campoNombre.focus();
 }
 
 async function guardarBarrio(event) {
     if (event) event.preventDefault();
+
     const usuario = getCurrentUser();
     if (!usuario || usuario.role !== 'superadmin') {
-        alert('Solo un superadministrador puede crear barrios.');
+        alert('Solo un superadministrador puede gestionar barrios.');
         return;
     }
+
     const nombre = document.getElementById('barrio-nombre')?.value.trim();
     const lema = document.getElementById('barrio-lema')?.value.trim() || null;
     const emblema = document.getElementById('barrio-emblema')?.value || '🏰';
     const idEdit = document.getElementById('barrio-id-edit')?.value;
-    if (idEdit) {
-        alert('La edición de barrios no está habilitada todavía; esta modificación implementa el alta segura de nuevos barrios.');
-        return;
-    }
+
     if (!nombre) {
         alert('Introduce el nombre del barrio.');
         return;
     }
-    if (casasCache.some(casa => casa.nombre.localeCompare(nombre, 'es', { sensitivity: 'base' }) === 0)) {
+
+    if (nombre.length > 100) {
+        alert('El nombre del barrio no puede superar los 100 caracteres.');
+        return;
+    }
+
+    const duplicado = casasCache.some(casa =>
+        casa.nombre.localeCompare(nombre, 'es', { sensitivity: 'base' }) === 0
+        && String(casa.id) !== String(idEdit || '')
+    );
+
+    if (duplicado) {
         alert('Ya existe un barrio con ese nombre.');
         return;
     }
+
     const client = getSupabaseBarriosClient();
     if (!client) {
-        alert('No se ha podido inicializar Supabase. Revisa la configuración de la aplicación.');
+        alert('No se ha podido inicializar Supabase. Revisa la configuración.');
         return;
     }
+
     const pinConfirmacion = window.prompt(
-        'Introduce tu PIN de superadministrador para confirmar la creación del barrio:'
+        `Introduce tu PIN de superadministrador para confirmar ${idEdit ? 'la edición' : 'la creación'} del barrio:`
     );
 
+    if (pinConfirmacion === null) return;
+    if (!/^\d{4}$/.test(pinConfirmacion.trim())) {
+        alert('El PIN debe contener exactamente cuatro dígitos.');
+        return;
+    }
+
+    const boton = document.getElementById('btn-guardar-barrio');
+    const textoOriginal = boton?.textContent || '➕ Añadir Nuevo Barrio';
+    if (boton) {
+        boton.disabled = true;
+        boton.textContent = 'Guardando…';
+    }
+
+    try {
+        let data;
+        let error;
+
+        if (idEdit) {
+            ({ data, error } = await client.rpc('editar_casa_superadmin', {
+                p_phone: String(usuario.phone || ''),
+                p_pin: pinConfirmacion.trim(),
+                p_casa_id: idEdit,
+                p_nombre: nombre,
+                p_lema: lema,
+                p_emblema: emblema,
+                p_color_heraldo: casasCache.find(c => String(c.id) === String(idEdit))?.color_heraldo || '#d4af37',
+                p_participa: casasCache.find(c => String(c.id) === String(idEdit))?.participa ?? true
+            }));
+        } else {
+            ({ data, error } = await client.rpc('crear_casa_superadmin', {
+                p_phone: String(usuario.phone || ''),
+                p_pin: pinConfirmacion.trim(),
+                p_nombre: nombre,
+                p_lema: lema,
+                p_emblema: emblema
+            }));
+        }
+
+        if (error) throw error;
+        if (!data) {
+            throw new Error('Supabase no confirmó la operación.');
+        }
+
+        resetFormBarrio();
+        await cargarBarriosDesdeSupabase();
+
+        alert(idEdit
+            ? `Barrio «${nombre}» actualizado correctamente.`
+            : `Barrio «${nombre}» creado correctamente.`);
+    } catch (error) {
+        console.error('Error guardando barrio:', error);
+        const mensaje = error?.message || 'Error desconocido';
+
+        if (/duplicate|unique|ya existe/i.test(mensaje)) {
+            alert('Ya existe un barrio con ese nombre.');
+        } else if (/no autorizado|superadministrador/i.test(mensaje)) {
+            alert('Supabase no ha autorizado la operación. Comprueba el teléfono, el PIN y el rol.');
+        } else {
+            alert(`No se pudo guardar el barrio: ${mensaje}`);
+        }
+    } finally {
+        if (boton) {
+            boton.disabled = false;
+            boton.textContent = document.getElementById('barrio-id-edit')?.value
+                ? '💾 Guardar Cambios'
+                : '➕ Añadir Nuevo Barrio';
+        }
+    }
+}
+
+async function eliminarBarrio(id) {
+    const usuario = getCurrentUser();
+    if (!usuario || usuario.role !== 'superadmin') {
+        alert('Solo un superadministrador puede eliminar barrios.');
+        return;
+    }
+
+    const casa = casasCache.find(item => String(item.id) === String(id));
+    if (!casa) {
+        alert('No se encuentra el barrio seleccionado. Actualiza la lista.');
+        return;
+    }
+
+    const confirmacion = window.confirm(
+        `¿Seguro que deseas eliminar el barrio «${casa.nombre}»?\n\n` +
+        'Esta operación solo se completará si no tiene votos, códigos diarios, maestres ni usuarios asociados.'
+    );
+    if (!confirmacion) return;
+
+    const pinConfirmacion = window.prompt(
+        `Introduce tu PIN de superadministrador para eliminar «${casa.nombre}»:`
+    );
     if (pinConfirmacion === null) return;
 
     if (!/^\d{4}$/.test(pinConfirmacion.trim())) {
@@ -2339,51 +2628,93 @@ async function guardarBarrio(event) {
         return;
     }
 
-    const boton = document.getElementById('btn-guardar-barrio');
-    if (boton) { boton.disabled = true; boton.textContent = 'Guardando…'; }
+    const client = getSupabaseBarriosClient();
+    if (!client) {
+        alert('No se ha podido inicializar Supabase. Revisa la configuración.');
+        return;
+    }
+
     try {
-        const { data, error } = await client.rpc('crear_casa_superadmin', {
+        const { data, error } = await client.rpc('eliminar_casa_superadmin', {
             p_phone: String(usuario.phone || ''),
             p_pin: pinConfirmacion.trim(),
-            p_nombre: nombre,
-            p_lema: lema,
-            p_emblema: emblema
+            p_casa_id: id
         });
+
         if (error) throw error;
-        if (!data) throw new Error('Supabase no confirmó la creación del barrio.');
-        document.getElementById('form-barrio')?.reset();
-        resetFormBarrio();
-        await cargarBarriosDesdeSupabase();
-        alert(`Barrio «${nombre}» creado correctamente en la tabla casas.`);
-    } catch (error) {
-        console.error('Error creando barrio:', error);
-        const mensaje = error?.message || 'Error desconocido';
-        if (/duplicate|unique|ya existe/i.test(mensaje)) {
-            alert('Ya existe un barrio con ese nombre.');
-        } else {
-            alert(`No se pudo crear el barrio en Supabase: ${mensaje}`);
+        if (!data) throw new Error('Supabase no confirmó la eliminación.');
+
+        if (String(document.getElementById('barrio-id-edit')?.value || '') === String(id)) {
+            resetFormBarrio();
         }
-    } finally {
-        if (boton) { boton.disabled = false; boton.textContent = '➕ Añadir Nuevo Barrio'; }
+
+        await cargarBarriosDesdeSupabase();
+        alert(`Barrio «${casa.nombre}» eliminado correctamente.`);
+    } catch (error) {
+        console.error('Error eliminando barrio:', error);
+        const mensaje = error?.message || 'Error desconocido';
+
+        if (/tiene votos|códigos diarios|maestres asociados|usuarios asociados|no se ha encontrado/i.test(mensaje)) {
+            alert(`${mensaje}\n\nPuedes desactivar la participación del barrio en lugar de eliminarlo.`);
+        } else if (/no autorizado|superadministrador/i.test(mensaje)) {
+            alert('Supabase no ha autorizado la operación. Comprueba el teléfono, el PIN y el rol.');
+        } else {
+            alert(`No se pudo eliminar el barrio: ${mensaje}`);
+        }
     }
 }
 
 function resetFormBarrio() {
     const form = document.getElementById('form-barrio');
     if (form) form.reset();
+
     const id = document.getElementById('barrio-id-edit');
     if (id) id.value = '';
+
     const boton = document.getElementById('btn-guardar-barrio');
-    if (boton) boton.textContent = '➕ Añadir Nuevo Barrio';
+    if (boton) {
+        boton.disabled = false;
+        boton.textContent = '➕ Añadir Nuevo Barrio';
+    }
+
     const cancelar = document.getElementById('btn-cancelar-barrio');
     if (cancelar) cancelar.style.display = 'none';
 }
 
 function generarLemaAleatorio() {
     const lemas = [
-        'Orgullo, unión y honor', 'Donde nace la leyenda', 'Fuerza en la unión',
-        'Tradición que conquista', 'Lealtad por encima de todo', 'Un barrio, mil historias'
+        'Por el honor de nuestra Casa',
+        'Donde nace la leyenda',
+        'Unidos bajo el mismo estandarte',
+        'La lealtad forja nuestro reino',
+        'Firme el escudo, noble el corazón',
+        'Ni temor ni rendición',
+        'Nuestra historia, nuestra gloria',
+        'El valor nos abre camino',
+        'Un barrio, mil hazañas',
+        'La unión es nuestra fortaleza',
+        'Que resuene nuestro blasón',
+        'Defensores de nuestro legado',
+        'La palabra dada es ley',
+        'Honor antes que fortuna',
+        'Con coraje hacia la victoria',
+        'De piedra firme y espíritu indomable',
+        'Nuestra casa jamás se rinde',
+        'Por la gloria del reino',
+        'El deber guía nuestra espada',
+        'Tradición que conquista',
+        'La nobleza está en los actos',
+        'Guardianes de nuestra tierra',
+        'El fuego de la casa nunca muere',
+        'Con astucia, honor y valor',
+        'Un estandarte, un destino',
+        'La victoria honra a los valientes',
+        'La historia recuerda a los audaces',
+        'Bajo nuestra bandera, unidos',
+        'Que la justicia reine en Bilbao',
+        'Lealtad eterna a nuestra Casa'
     ];
+
     const campo = document.getElementById('barrio-lema');
     if (campo) campo.value = lemas[Math.floor(Math.random() * lemas.length)];
 }
@@ -2920,3 +3251,426 @@ window.eliminarUsuario = eliminarUsuario;
 window.resetFormUsuario = resetFormUsuario;
 window.asignarTronistaAdmin = asignarTronistaAdmin;
 window.renderListaTronistas = renderListaTronistas;
+
+// ==============================================================================
+// 🔮 INTEGRACIÓN DE MODELOS DE IA (GEMINI API) & ORÁCULO IMPERIAL
+// ==============================================================================
+
+function obtenerGeminiConfig() {
+    const modelSelect = document.getElementById('select-modelo-gemini');
+    const keyInput = document.getElementById('input-gemini-api-key');
+
+    const model = modelSelect ? modelSelect.value : (localStorage.getItem('gemini_model') || 'gemini-2.5-flash');
+    const apiKey = keyInput && keyInput.value.trim() ? keyInput.value.trim() : (localStorage.getItem('gemini_api_key') || (window.__APP_CONFIG__ && window.__APP_CONFIG__.GEMINI_API_KEY) || '');
+
+    return { model, apiKey };
+}
+
+function guardarAjustesGemini() {
+    const { model, apiKey } = obtenerGeminiConfig();
+    localStorage.setItem('gemini_model', model);
+    localStorage.setItem('gemini_api_key', apiKey);
+
+    const statusEl = document.getElementById('gemini-config-status');
+    if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.textContent = `✅ Configuración guardada: Modelo ${model} seleccionado.`;
+        setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+    }
+}
+
+async function llamarModeloGemini(promptText, modelOverride) {
+    const { model: defaultModel, apiKey } = obtenerGeminiConfig();
+    const model = modelOverride || defaultModel;
+
+    if (apiKey) {
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: promptText }] }]
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error?.message || `HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (textResult) {
+                return { text: textResult, model, fuente: 'Gemini Live API' };
+            }
+        } catch (err) {
+            console.warn('Error llamando a la API oficial de Gemini, recurriendo a simulación:', err);
+        }
+    }
+
+    return {
+        text: `🔮 [Dictamen del Oráculo Feudal - ${model.toUpperCase()}]\n\n` +
+            `«¡Oíd, Maestres del Reino de Bilbao! El Oráculo ha procesado las plegarias e inspeccionado la mesa del festín.\n\n` +
+            promptText.substring(0, 150) + `...\n\n` +
+            `✨ Dictamen Feudal: ¡Que fluya el txakoli y que el honor de las Siete Calles brille en cada barra de pintxos!»\n\n` +
+            (apiKey ? `(Nota: Hubo un contratiempo con la clave API, se ha mostrado una crónica de respaldo)` : `💡 Consejo: Introduce tu Gemini API Key en los ajustes para conectar en directo con los servidores de Google Gemini API (${model}).`),
+        model,
+        fuente: 'Oráculo Feudal Autónomo'
+    };
+}
+
+async function generarCronicaGemini() {
+    const btn = document.getElementById('btn-generar-cronica');
+    const contenedor = document.getElementById('contenedor-resultado-gemini');
+    const salida = document.getElementById('salida-oraculo-gemini');
+    const badge = document.getElementById('badge-modelo-usado');
+    const tonoSelect = document.getElementById('select-tono-cronica');
+    const tono = tonoSelect ? tonoSelect.value : 'epico';
+
+    if (btn) btn.disabled = true;
+    if (salida) salida.textContent = '🔮 Invocando al Oráculo e interpretando los signos del Reino...';
+    if (contenedor) contenedor.style.display = 'block';
+
+    const votos = typeof getRepositorioVotos === 'function' ? getRepositorioVotos() : [];
+    const prompt = `Redacta una crónica medieval feudal sobre el concurso 'El Trono del Pintxo' en Bilbao.
+Tono: ${tono}.
+Total de juicios emitidos por Maestres: ${votos.length}.
+Instrucciones: Incluye referencias medievales a las Casas de Indautxu, Casco Viejo, Deusto, Santutxu y Abando, mencionando el festín, los caminos y el espíritu tabernero.`;
+
+    const { model } = obtenerGeminiConfig();
+    const res = await llamarModeloGemini(prompt, model);
+
+    if (salida) salida.textContent = res.text;
+    if (badge) badge.textContent = `${res.model} (${res.fuente})`;
+    if (btn) btn.disabled = false;
+}
+
+async function generarRecomendacionGemini() {
+    const btn = document.getElementById('btn-generar-recomendacion');
+    const contenedor = document.getElementById('contenedor-resultado-gemini');
+    const salida = document.getElementById('salida-oraculo-gemini');
+    const badge = document.getElementById('badge-modelo-usado');
+
+    const barrioSelect = document.getElementById('select-barrio-recomendacion');
+    const antojoInput = document.getElementById('input-antojo-gemini');
+
+    const barrio = barrioSelect ? barrioSelect.value : 'Casco Viejo';
+    const antojo = antojoInput && antojoInput.value.trim() ? antojoInput.value.trim() : 'Pintxos tradicionales y ambiente festivo';
+
+    if (btn) btn.disabled = true;
+    if (salida) salida.textContent = `🍷 Consultando a las mentes sabias sobre la mejor ruta en ${barrio}...`;
+    if (contenedor) contenedor.style.display = 'block';
+
+    const prompt = `Recomienda una ruta feudal de pintxos y maridaje en el barrio de ${barrio} (Bilbao) para un Maestre con preferencia: '${antojo}'.
+Instrucciones: Sugiere 3 especialidades (ej. Gilda imperial, Tortilla de patatas jugosa, Taco de bonito) con maridaje de vino/txakoli y un lema caballeresco para la ruta.`;
+
+    const { model } = obtenerGeminiConfig();
+    const res = await llamarModeloGemini(prompt, model);
+
+    if (salida) salida.textContent = res.text;
+    if (badge) badge.textContent = `${res.model} (${res.fuente})`;
+    if (btn) btn.disabled = false;
+}
+
+// Exponer funciones en window para invocación desde HTML
+window.obtenerGeminiConfig = obtenerGeminiConfig;
+window.guardarAjustesGemini = guardarAjustesGemini;
+window.llamarModeloGemini = llamarModeloGemini;
+window.generarCronicaGemini = generarCronicaGemini;
+window.generarRecomendacionGemini = generarRecomendacionGemini;
+
+/* ==========================================
+   CARGA DE DATOS DE SEMILLA (DEMO)
+   ========================================== */
+
+function cargarDatosSemilla() {
+    if (!confirm('⚠️ Esto reemplazará TODOS los datos actuales (usuarios, barrios, votos, eventos) con datos de demostración.\n\n¿Continuar?')) return;
+
+    const nombresM = ['Iker', 'Mikel', 'Aitor', 'Gorka', 'Jokin', 'Unai', 'Eneko', 'Iñaki', 'Kepa', 'Asier', 'Koldo', 'Patxi'];
+    const nombresF = ['Nerea', 'Ane', 'Leire', 'Miren', 'Izaro', 'Amaia', 'Ainara', 'Garazi', 'Nahia', 'Saioa', 'Maialen', 'Onintza'];
+    const apellidos = ['Etxebarria', 'Agirre', 'Zubiaurre', 'Goikoetxea', 'Uriarte', 'Bilbao', 'Larrinaga', 'Arteaga', 'Zabala', 'Mendizabal', 'Iturriaga', 'Elorza'];
+    const barriosActivos = ['Indautxu', 'Santutxu', 'Rekalde', 'Deusto', 'Casco Viejo'];
+    const emblemas = ['🍷', '🛡️', '🔥', '⚓', '🏰'];
+
+    function rItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function rPhone() { return '6' + String(Math.floor(10000000 + Math.random() * 90000000)); }
+    function rPin() { return String(Math.floor(1000 + Math.random() * 9000)); }
+
+    // Superadmins predeterminados
+    const superadmins = [
+        { id: 'user-julio-01', phone: '605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '1234', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu', gender: 'M' },
+        { id: 'user-julio-02', phone: '+34605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '1234', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu', gender: 'M' },
+        { id: 'user-superadmin-01', phone: '123456789', name: 'Superadmin Bilbao', role: 'superadmin', pin_code: '1234', barrio_representado: 'Casco Viejo', barrio_asignado: 'Casco Viejo', gender: 'M' },
+        { id: 'user-superadmin-02', phone: 'admin', name: 'Superadmin Sistema', role: 'superadmin', pin_code: '1234', barrio_representado: 'Casco Viejo', barrio_asignado: 'Casco Viejo', gender: 'M' },
+        { id: 'user-soraya', phone: '456123456', name: 'SORAYA', role: 'superadmin', pin_code: '1234', barrio_representado: 'Deusto', barrio_asignado: 'Deusto', gender: 'F' },
+        { id: 'user-ainhoa-01', phone: '663366786', name: 'Ainhoa', role: 'jugador', pin_code: '5678', barrio_representado: 'Deusto', barrio_asignado: '', gender: 'F' }
+    ];
+
+    const usedPhones = new Set(superadmins.map(u => u.phone));
+
+    // 10 jugadores (maestres) aleatorios
+    const jugadores = [];
+    for (let i = 0; i < 10; i++) {
+        const esFem = Math.random() < 0.5;
+        const nombre = esFem ? rItem(nombresF) : rItem(nombresM);
+        const apellido = rItem(apellidos);
+        let phone;
+        do { phone = rPhone(); } while (usedPhones.has(phone));
+        usedPhones.add(phone);
+        jugadores.push({
+            id: `user-jugador-${String(i + 1).padStart(2, '0')}`,
+            phone,
+            name: `${nombre} ${apellido}`,
+            role: 'jugador',
+            pin_code: rPin(),
+            barrio_representado: rItem(barriosActivos),
+            barrio_asignado: '',
+            gender: esFem ? 'F' : 'M'
+        });
+    }
+
+    // 2 tronistas por barrio (1 M + 1 F)
+    const tronistas = [];
+    let tIdx = 0;
+    barriosActivos.forEach(barrio => {
+        for (let t = 0; t < 2; t++) {
+            tIdx++;
+            const esFem = t === 1;
+            const nombre = esFem ? rItem(nombresF) : rItem(nombresM);
+            const apellido = rItem(apellidos);
+            let phone;
+            do { phone = rPhone(); } while (usedPhones.has(phone));
+            usedPhones.add(phone);
+            tronistas.push({
+                id: `user-tronista-${String(tIdx).padStart(2, '0')}`,
+                phone,
+                name: `${nombre} ${apellido}`,
+                role: 'tronista',
+                pin_code: rPin(),
+                barrio_representado: barrio,
+                barrio_asignado: barrio,
+                gender: esFem ? 'F' : 'M'
+            });
+        }
+    });
+
+    const todosUsuarios = [...superadmins, ...jugadores, ...tronistas];
+
+    // Barrios
+    const barriosData = barriosActivos.map((nombre, i) => ({
+        id: `casa-seed-${String(i + 1).padStart(2, '0')}`,
+        nombre,
+        lema: '',
+        emblema: emblemas[i],
+        color_heraldo: '',
+        imagen_url: '',
+        participa: true,
+        created_at: new Date().toISOString()
+    }));
+
+    // Escribir en localStorage
+    localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(todosUsuarios));
+    localStorage.setItem(STORAGE_KEYS.barrios, JSON.stringify(barriosData));
+    localStorage.setItem(STORAGE_KEYS.repositorioVotos, JSON.stringify([]));
+    localStorage.setItem('eventos_feudales_custom', JSON.stringify([]));
+    localStorage.setItem('repositorio_votos_simulacion', JSON.stringify([]));
+    localStorage.setItem('modo_sandbox_simulacion', 'false');
+
+    alert(`✅ Datos de semilla cargados:\n• ${superadmins.length} superadmins\n• ${jugadores.length} jugadores (maestres)\n• ${tronistas.length} tronistas (2 por barrio)\n• ${barriosActivos.length} barrios: ${barriosActivos.join(', ')}\n• 0 votos\n• 0 eventos\n\nLa página se recargará ahora.`);
+    location.reload();
+}
+
+
+// ==========================================
+// SORTEO Y ORDEN DE BARRIOS
+// ==========================================
+
+let ordenSorteoBarrios = [];
+
+function moverBarrioSorteo(indice, desplazamiento) {
+    const destino = indice + desplazamiento;
+    if (destino < 0 || destino >= ordenSorteoBarrios.length) return;
+
+    [ordenSorteoBarrios[indice], ordenSorteoBarrios[destino]] =
+        [ordenSorteoBarrios[destino], ordenSorteoBarrios[indice]];
+
+    renderOrdenSorteoBarrios();
+}
+
+function renderOrdenSorteoBarrios() {
+    const lista = document.getElementById('lista-orden-sorteo-barrios');
+    if (!lista) return;
+
+    lista.innerHTML = '';
+
+    if (!ordenSorteoBarrios.length) {
+        lista.innerHTML = '<li>No hay barrios participantes cargados.</li>';
+        return;
+    }
+
+    ordenSorteoBarrios.forEach((barrio, indice) => {
+        const li = document.createElement('li');
+        li.style.cssText = 'margin:10px 0;padding:10px;border:1px solid #57534e;border-radius:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;';
+
+        const nombre = document.createElement('span');
+        nombre.textContent = `${barrio.emblema || '🏰'} ${barrio.nombre}`;
+        nombre.style.cssText = 'flex:1;min-width:150px;';
+        li.appendChild(nombre);
+
+        const posicion = document.createElement('span');
+        posicion.textContent = `Posición ${indice + 1}`;
+        posicion.style.color = '#d6d3d1';
+        li.appendChild(posicion);
+
+        [
+            { texto: '↑', delta: -1, etiqueta: `Subir ${barrio.nombre}`, desactivado: indice === 0 },
+            { texto: '↓', delta: 1, etiqueta: `Bajar ${barrio.nombre}`, desactivado: indice === ordenSorteoBarrios.length - 1 }
+        ].forEach(opcion => {
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.textContent = opcion.texto;
+            boton.setAttribute('aria-label', opcion.etiqueta);
+            boton.disabled = opcion.desactivado;
+            boton.style.cssText = 'padding:6px 12px;border-radius:6px;cursor:pointer;';
+            boton.addEventListener('click', () => moverBarrioSorteo(indice, opcion.delta));
+            li.appendChild(boton);
+        });
+
+        lista.appendChild(li);
+    });
+}
+
+async function cargarOrdenSorteoBarrios() {
+    const estado = document.getElementById('estado-sorteo-barrios');
+    const boton = document.getElementById('btn-recargar-orden-sorteo');
+    const client = getSupabaseBarriosClient();
+
+    if (!client) {
+        if (estado) estado.textContent = 'Error: no se ha podido inicializar Supabase.';
+        return;
+    }
+
+    if (boton) boton.disabled = true;
+    if (estado) estado.textContent = 'Cargando orden desde Supabase…';
+
+    try {
+        const { data, error } = await client.rpc('obtener_orden_sorteo_barrios');
+        if (error) throw error;
+
+        ordenSorteoBarrios = (data || []).map(b => ({
+            id: b.barrio_id,
+            nombre: b.nombre,
+            emblema: b.emblema || '🏰'
+        }));
+
+        renderOrdenSorteoBarrios();
+        if (estado) estado.textContent = `Orden cargado: ${ordenSorteoBarrios.length} barrios participantes.`;
+    } catch (error) {
+        console.error('Error al cargar el orden del sorteo:', error);
+        if (estado) estado.textContent = `No se pudo cargar el orden: ${error.message || 'error desconocido'}`;
+    } finally {
+        if (boton) boton.disabled = false;
+    }
+}
+
+async function generarSorteoBarrios() {
+    const usuario = getCurrentUser();
+    const estado = document.getElementById('estado-sorteo-barrios');
+    const boton = document.getElementById('btn-generar-sorteo-barrios');
+    const client = getSupabaseBarriosClient();
+
+    if (!usuario || usuario.role !== 'superadmin') {
+        alert('Solo un superadministrador puede generar el sorteo.');
+        return;
+    }
+
+    if (!client) {
+        if (estado) estado.textContent = 'Error: no se ha podido inicializar Supabase.';
+        return;
+    }
+
+    const pin = window.prompt('Introduce tu PIN de superadministrador para generar el sorteo:');
+    if (pin === null) return;
+    if (!/^\d{4}$/.test(pin.trim())) {
+        alert('El PIN debe contener exactamente cuatro dígitos.');
+        return;
+    }
+
+    if (!window.confirm('Se generará y guardará un nuevo orden aleatorio de los barrios participantes. ¿Continuar?')) return;
+
+    if (boton) boton.disabled = true;
+    if (estado) estado.textContent = 'Generando sorteo…';
+
+    try {
+        const { data, error } = await client.rpc('generar_sorteo_barrios_superadmin', {
+            p_phone: String(usuario.phone || ''),
+            p_pin: pin.trim()
+        });
+        if (error) throw error;
+
+        await cargarOrdenSorteoBarrios();
+        if (estado) estado.textContent = `Sorteo guardado en Supabase: ${Number(data) || 0} barrios participantes.`;
+    } catch (error) {
+        console.error('Error al generar el sorteo:', error);
+        if (estado) estado.textContent = `No se pudo generar el sorteo: ${error.message || 'error desconocido'}`;
+    } finally {
+        if (boton) boton.disabled = false;
+    }
+}
+
+async function guardarOrdenSorteoBarrios() {
+    const usuario = getCurrentUser();
+    const estado = document.getElementById('estado-sorteo-barrios');
+    const boton = document.getElementById('btn-guardar-orden-sorteo');
+    const client = getSupabaseBarriosClient();
+
+    if (!usuario || usuario.role !== 'superadmin') {
+        alert('Solo un superadministrador puede guardar el orden.');
+        return;
+    }
+
+    if (!client) {
+        if (estado) estado.textContent = 'Error: no se ha podido inicializar Supabase.';
+        return;
+    }
+
+    if (!ordenSorteoBarrios.length) {
+        alert('Carga primero el orden de los barrios participantes.');
+        return;
+    }
+
+    const pin = window.prompt('Introduce tu PIN de superadministrador para guardar el orden:');
+    if (pin === null) return;
+    if (!/^\d{4}$/.test(pin.trim())) {
+        alert('El PIN debe contener exactamente cuatro dígitos.');
+        return;
+    }
+
+    if (!window.confirm('¿Guardar en Supabase el orden manual mostrado?')) return;
+
+    if (boton) boton.disabled = true;
+    if (estado) estado.textContent = 'Guardando orden…';
+
+    try {
+        const { data, error } = await client.rpc('guardar_orden_sorteo_barrios_superadmin', {
+            p_phone: String(usuario.phone || ''),
+            p_pin: pin.trim(),
+            p_orden: ordenSorteoBarrios.map(b => b.id)
+        });
+        if (error) throw error;
+
+        if (estado) estado.textContent = `Orden guardado correctamente: ${Number(data) || 0} barrios.`;
+    } catch (error) {
+        console.error('Error al guardar el orden:', error);
+        if (estado) estado.textContent = `No se pudo guardar el orden: ${error.message || 'error desconocido'}`;
+    } finally {
+        if (boton) boton.disabled = false;
+    }
+}
+
+
+window.cargarDatosSemilla = cargarDatosSemilla;
+
+window.generarSorteoBarrios = generarSorteoBarrios;
+window.guardarOrdenSorteoBarrios = guardarOrdenSorteoBarrios;
+window.cargarOrdenSorteoBarrios = cargarOrdenSorteoBarrios;

@@ -864,13 +864,16 @@ function exportarRepositorioCSV() {
 function descargarICSEvento(evento) {
     const safeName = (evento?.nombre || 'Evento del reino').replace(/[,;\\]/g, '');
     const start = evento?.fecha ? `${evento.fecha.replace(/-/g, '')}T${evento.hora || '20:00'}00` : '20261008T200000';
+    const fechaFin = evento?.fecha_fin || evento?.fecha;
+    const horaFin = evento?.hora_fin || evento?.hora || '20:00';
+    const end = fechaFin ? `${fechaFin.replace(/-/g, '')}T${horaFin}00` : start;
     const ics = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
         'BEGIN:VEVENT',
         `SUMMARY:${safeName}`,
         `DTSTART:${start}`,
-        `DTEND:${start}`,
+        `DTEND:${end}`,
         `LOCATION:${evento?.lugar || 'Bilbao'}`,
         'END:VEVENT',
         'END:VCALENDAR'
@@ -1214,10 +1217,17 @@ function getTodosLosEventos() {
             fecha: typeof row.fecha === 'string'
                 ? row.fecha.slice(0, 10)
                 : '',
+            fecha_fin: typeof row.fecha_fin === 'string'
+                ? row.fecha_fin.slice(0, 10)
+                : '',
             lugar: row.lugar || '',
             hora: row.hora || '20:00',
+            hora_fin: row.hora_fin || '',
             hora_inicio_votacion: row.hora_inicio_votacion || '20:30',
             hora_fin_votacion: row.hora_fin_votacion || '23:30',
+            fecha_fin_votacion: typeof row.fecha_fin_votacion === 'string'
+                ? row.fecha_fin_votacion.slice(0, 10)
+                : '',
             desc: row.descripcion || '',
             cerrado_manualmente: Boolean(row.cerrado_manualmente)
         });
@@ -1377,6 +1387,8 @@ function limpiarFiltroFechaCalendario() {
 function obtenerEstadoVotacionEvento(evento) {
     const horaInicio = evento.hora_inicio_votacion || evento.hora || '20:30';
     const horaFin = evento.hora_fin_votacion || '23:30';
+    const fechaInicio = evento.fecha || '';
+    const fechaFin = evento.fecha_fin_votacion || fechaInicio;
 
     if (evento.cerrado_manualmente) {
         return {
@@ -1384,58 +1396,66 @@ function obtenerEstadoVotacionEvento(evento) {
             texto: `🔒 Votación Finalizada (Resultados Actualizados)`,
             clase: 'badge-cerrado',
             horaInicio,
-            horaFin
+            horaFin,
+            fechaInicio,
+            fechaFin
         };
     }
 
     const ahora = new Date();
+    const ahoraHHMM = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
     const hoyStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
 
-    if (evento.fecha < hoyStr) {
+    if (!fechaInicio) {
         return {
-            estado: 'FINALIZADA',
-            texto: `🔒 Votación Finalizada (Resultados Publicados)`,
-            clase: 'badge-cerrado',
+            estado: 'NO_INICIADA',
+            texto: `⏳ Votación Programada (Votación: ${horaInicio} a ${horaFin})`,
+            clase: 'badge-pendiente',
             horaInicio,
-            horaFin
+            horaFin,
+            fechaInicio,
+            fechaFin
         };
     }
 
-    if (evento.fecha === hoyStr) {
-        const ahoraHHMM = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
-        if (ahoraHHMM > horaFin) {
-            return {
-                estado: 'FINALIZADA',
-                texto: `🔒 Votación Finalizada (Cerró a las ${horaFin})`,
-                clase: 'badge-cerrado',
-                horaInicio,
-                horaFin
-            };
-        } else if (ahoraHHMM >= horaInicio && ahoraHHMM <= horaFin) {
-            return {
-                estado: 'ABIERTA',
-                texto: `🟢 Votación Abierta (${horaInicio} - ${horaFin})`,
-                clase: 'badge-abierto',
-                horaInicio,
-                horaFin
-            };
-        } else {
-            return {
-                estado: 'NO_INICIADA',
-                texto: `⏳ Votación No Iniciada (Empieza a las ${horaInicio})`,
-                clase: 'badge-pendiente',
-                horaInicio,
-                horaFin
-            };
-        }
+    const momentoInicio = fechaInicio ? `${fechaInicio}T${horaInicio}` : '';
+    const momentoFin = fechaFin ? `${fechaFin}T${horaFin}` : '';
+    const momentoAhora = `${hoyStr}T${ahoraHHMM}`;
+
+    if (momentoInicio && momentoAhora < momentoInicio) {
+        return {
+            estado: 'NO_INICIADA',
+            texto: `⏳ Votación No Iniciada (Empieza a las ${horaInicio})`,
+            clase: 'badge-pendiente',
+            horaInicio,
+            horaFin,
+            fechaInicio,
+            fechaFin
+        };
+    }
+
+    if (momentoFin && momentoAhora > momentoFin) {
+        return {
+            estado: 'FINALIZADA',
+            texto: fechaFin !== fechaInicio
+                ? `🔒 Votación Finalizada (Cerró el ${fechaFin} a las ${horaFin})`
+                : `🔒 Votación Finalizada (Cerró a las ${horaFin})`,
+            clase: 'badge-cerrado',
+            horaInicio,
+            horaFin,
+            fechaInicio,
+            fechaFin
+        };
     }
 
     return {
-        estado: 'NO_INICIADA',
-        texto: `⏳ Votación Programada (Votación: ${horaInicio} a ${horaFin})`,
-        clase: 'badge-pendiente',
+        estado: 'ABIERTA',
+        texto: `🟢 Votación Abierta (${horaInicio} - ${horaFin})`,
+        clase: 'badge-abierto',
         horaInicio,
-        horaFin
+        horaFin,
+        fechaInicio,
+        fechaFin
     };
 }
 
@@ -1541,7 +1561,7 @@ function renderEventos() {
                     <span class="pill-user" style="background: rgba(185,28,28,0.8); color: #fff; font-weight: bold; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem;">
                         🏰 ${evt.barrio || 'Reino'}
                     </span>
-                    <span style="font-size: 0.82rem; color: var(--oro-brillante); font-weight: bold;">📅 ${evt.fecha} (${evt.hora || '20:00'})</span>
+                    <span style="font-size: 0.82rem; color: var(--oro-brillante); font-weight: bold;">📅 ${evt.fecha} (${evt.hora || '20:00'})${evt.fecha_fin || evt.hora_fin ? ` → ${evt.fecha_fin || evt.fecha}${evt.hora_fin ? ` (${evt.hora_fin})` : ''}` : ''}</span>
                 </div>
 
                 <div style="margin-bottom: 6px;">
@@ -1581,8 +1601,9 @@ function construirHTMLRelojCuentaAtras(evt) {
     const horaFin = evt.hora_fin_votacion || '23:30';
 
     const fechaEvtStr = evt.fecha || new Date().toISOString().split('T')[0];
+    const fechaFinVotStr = evt.fecha_fin_votacion || fechaEvtStr;
     const targetInicio = new Date(`${fechaEvtStr}T${horaInicio}:00`);
-    const targetFin = new Date(`${fechaEvtStr}T${horaFin}:00`);
+    const targetFin = new Date(`${fechaFinVotStr}T${horaFin}:00`);
     const ahora = new Date();
 
     if (evt.cerrado_manualmente || estadoVot.estado === 'FINALIZADA' || ahora > targetFin) {
@@ -1743,10 +1764,13 @@ async function guardarEventoEnSupabase(evento) {
         nombre: String(evento.nombre || '').trim(),
         barrio: String(evento.barrio || 'Reino').trim(),
         fecha: String(evento.fecha || '').slice(0, 10),
+        fecha_fin: evento.fecha_fin ? String(evento.fecha_fin).slice(0, 10) : null,
         lugar: String(evento.lugar || '').trim(),
         hora: evento.hora || '20:00',
+        hora_fin: evento.hora_fin || null,
         hora_inicio_votacion: evento.hora_inicio_votacion || '20:30',
         hora_fin_votacion: evento.hora_fin_votacion || '23:30',
+        fecha_fin_votacion: evento.fecha_fin_votacion ? String(evento.fecha_fin_votacion).slice(0, 10) : null,
         desc: evento.desc || evento.descripcion || '',
         cerrado_manualmente: Boolean(evento.cerrado_manualmente)
     };
@@ -1806,10 +1830,13 @@ function editarEventoBarrio(eventoId) {
     document.getElementById('evento-barrio').value = evt.barrio || 'Casco Viejo';
     document.getElementById('evento-nombre').value = evt.nombre || '';
     document.getElementById('evento-fecha').value = evt.fecha || '';
+    document.getElementById('evento-fecha-fin').value = evt.fecha_fin || '';
     document.getElementById('evento-lugar').value = evt.lugar || '';
     document.getElementById('evento-hora').value = evt.hora || '20:00';
+    document.getElementById('evento-hora-fin').value = evt.hora_fin || '';
     document.getElementById('evento-votacion-inicio').value = evt.hora_inicio_votacion || '20:30';
     document.getElementById('evento-votacion-fin').value = evt.hora_fin_votacion || '23:30';
+    document.getElementById('evento-votacion-fecha-fin').value = evt.fecha_fin_votacion || '';
     document.getElementById('evento-desc').value = evt.desc || '';
 
     const btnGuardar = document.getElementById('btn-guardar-evento');
@@ -1909,16 +1936,30 @@ async function guardarEventoBarrio(event) {
     const barrio = document.getElementById('evento-barrio')?.value || 'Reino';
     const nombre = document.getElementById('evento-nombre')?.value?.trim();
     const fecha = document.getElementById('evento-fecha')?.value;
+    const fechaFin = document.getElementById('evento-fecha-fin')?.value || '';
     const lugar = document.getElementById('evento-lugar')?.value?.trim();
     const hora = document.getElementById('evento-hora')?.value || '20:00';
+    const horaFin = document.getElementById('evento-hora-fin')?.value || '';
     const horaInicioVotacion =
         document.getElementById('evento-votacion-inicio')?.value || '20:30';
     const horaFinVotacion =
         document.getElementById('evento-votacion-fin')?.value || '23:30';
+    const fechaFinVotacion =
+        document.getElementById('evento-votacion-fecha-fin')?.value || '';
     const desc = document.getElementById('evento-desc')?.value || '';
 
     if (!nombre || !fecha || !lugar) {
         alert('Por favor completa los campos obligatorios del evento.');
+        return;
+    }
+
+    if (fechaFin && fechaFin < fecha) {
+        alert('La fecha de finalización del evento no puede ser anterior a la fecha de inicio.');
+        return;
+    }
+
+    if (fechaFinVotacion && fechaFinVotacion < fecha) {
+        alert('La fecha de cierre de votaciones no puede ser anterior a la fecha del evento.');
         return;
     }
 
@@ -1927,10 +1968,13 @@ async function guardarEventoBarrio(event) {
         nombre,
         barrio,
         fecha,
+        fecha_fin: fechaFin,
         lugar,
         hora,
+        hora_fin: horaFin,
         hora_inicio_votacion: horaInicioVotacion,
         hora_fin_votacion: horaFinVotacion,
+        fecha_fin_votacion: fechaFinVotacion,
         desc,
         cerrado_manualmente: editId
             ? Boolean(getTodosLosEventos().find(e => String(e.id) === String(editId))?.cerrado_manualmente)
@@ -1975,16 +2019,30 @@ async function guardarEventoBarrioDesdePestana(event) {
     const barrio = document.getElementById('evento-dedicated-barrio')?.value || 'Reino';
     const nombre = document.getElementById('evento-dedicated-nombre')?.value?.trim();
     const fecha = document.getElementById('evento-dedicated-fecha')?.value;
+    const fechaFin = document.getElementById('evento-dedicated-fecha-fin')?.value || '';
     const lugar = document.getElementById('evento-dedicated-lugar')?.value?.trim();
     const hora = document.getElementById('evento-dedicated-hora')?.value || '20:00';
+    const horaFin = document.getElementById('evento-dedicated-hora-fin')?.value || '';
     const horaInicioVotacion =
         document.getElementById('evento-dedicated-votacion-inicio')?.value || '20:30';
     const horaFinVotacion =
         document.getElementById('evento-dedicated-votacion-fin')?.value || '23:30';
+    const fechaFinVotacion =
+        document.getElementById('evento-dedicated-votacion-fecha-fin')?.value || '';
     const desc = document.getElementById('evento-dedicated-desc')?.value || '';
 
     if (!nombre || !fecha || !lugar) {
         alert('Por favor, completa los campos requeridos del evento.');
+        return;
+    }
+
+    if (fechaFin && fechaFin < fecha) {
+        alert('La fecha de finalización del evento no puede ser anterior a la fecha de inicio.');
+        return;
+    }
+
+    if (fechaFinVotacion && fechaFinVotacion < fecha) {
+        alert('La fecha de cierre de votaciones no puede ser anterior a la fecha del evento.');
         return;
     }
 
@@ -1993,10 +2051,13 @@ async function guardarEventoBarrioDesdePestana(event) {
         nombre,
         barrio,
         fecha,
+        fecha_fin: fechaFin,
         lugar,
         hora,
+        hora_fin: horaFin,
         hora_inicio_votacion: horaInicioVotacion,
         hora_fin_votacion: horaFinVotacion,
+        fecha_fin_votacion: fechaFinVotacion,
         desc,
         cerrado_manualmente: editId
             ? Boolean(getTodosLosEventos().find(e => String(e.id) === String(editId))?.cerrado_manualmente)
@@ -2037,10 +2098,13 @@ function editarEventoBarrioDesdePestana(eventoId) {
     document.getElementById('evento-dedicated-barrio').value = evt.barrio || 'Casco Viejo';
     document.getElementById('evento-dedicated-nombre').value = evt.nombre || '';
     document.getElementById('evento-dedicated-fecha').value = evt.fecha || '';
+    document.getElementById('evento-dedicated-fecha-fin').value = evt.fecha_fin || '';
     document.getElementById('evento-dedicated-lugar').value = evt.lugar || '';
     document.getElementById('evento-dedicated-hora').value = evt.hora || '20:00';
+    document.getElementById('evento-dedicated-hora-fin').value = evt.hora_fin || '';
     document.getElementById('evento-dedicated-votacion-inicio').value = evt.hora_inicio_votacion || '20:30';
     document.getElementById('evento-dedicated-votacion-fin').value = evt.hora_fin_votacion || '23:30';
+    document.getElementById('evento-dedicated-votacion-fecha-fin').value = evt.fecha_fin_votacion || '';
     document.getElementById('evento-dedicated-desc').value = evt.desc || '';
 
     const btnGuardar = document.getElementById('btn-guardar-evento-dedicated');
@@ -2070,7 +2134,7 @@ function renderEventosGeneradosPestanaAdmin() {
                     <span class="pill-user" style="background: rgba(185,28,28,0.8); color: #fff; font-weight: bold; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem;">
                         🏰 ${evt.barrio || 'Reino'}
                     </span>
-                    <span style="font-size: 0.82rem; color: var(--oro-brillante); font-weight: bold;">📅 ${evt.fecha} (${evt.hora || '20:00'})</span>
+                    <span style="font-size: 0.82rem; color: var(--oro-brillante); font-weight: bold;">📅 ${evt.fecha} (${evt.hora || '20:00'})${evt.fecha_fin || evt.hora_fin ? ` → ${evt.fecha_fin || evt.fecha}${evt.hora_fin ? ` (${evt.hora_fin})` : ''}` : ''}</span>
                 </div>
                 <h4 style="color: var(--oro-real); font-family: 'Cinzel', serif; margin: 4px 0;">${evt.nombre}</h4>
                 <p style="font-size: 0.85rem; color: #d6d3d1; margin-bottom: 4px;"><strong>📍 Lugar:</strong> ${evt.lugar || 'N/A'}</p>

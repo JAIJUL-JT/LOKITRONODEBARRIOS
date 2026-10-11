@@ -458,7 +458,19 @@
                                 <label>Hora de Inicio del Evento:</label>
                                 <input type="time" id="evento-hora" class="input-medieval" required>
                             </div>
-                            
+
+                            <!-- FINALIZACIÓN DEL EVENTO (OPCIONAL) -->
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 160px;">
+                                    <label>📆 Fecha de Finalización del Evento (opcional):</label>
+                                    <input type="date" id="evento-fecha-fin" class="input-medieval">
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 160px;">
+                                    <label>🌙 Hora de Finalización del Evento (opcional):</label>
+                                    <input type="time" id="evento-hora-fin" class="input-medieval">
+                                </div>
+                            </div>
+
                             <!-- HORAS INDEPENDIENTES DE VOTACIÓN -->
                             <div style="display: flex; gap: 15px; flex-wrap: wrap; background: rgba(30, 24, 16, 0.8); padding: 12px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.3); margin-bottom: 18px;">
                                 <div class="form-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
@@ -468,6 +480,10 @@
                                 <div class="form-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
                                     <label style="color: #ef4444; font-weight: bold;">🔴 Cierre de Votaciones:</label>
                                     <input type="time" id="evento-votacion-fin" class="input-medieval" value="23:30" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
+                                    <label style="color: #ef4444; font-weight: bold;">📆 Fecha de Cierre de Votaciones (opcional):</label>
+                                    <input type="date" id="evento-votacion-fecha-fin" class="input-medieval">
                                 </div>
                             </div>
 
@@ -491,7 +507,7 @@
             <section id="pestana-generar-evento" class="tab-content tema-guerra" data-tab="tab-generar-evento" style="display: none;">
                 <div class="panel-card">
                     <h2 style="font-family: 'Cinzel', serif; color: var(--oro-real);">📅 Generar y Programar Eventos con Votación</h2>
-                    <p style="color: #d6d3d1;">Crea y administra eventos oficiales o de prueba para los distintos barrios del reino, configurando la fecha, el lugar, la descripción y las horas independientes de inicio y cierre de votación.</p>
+                    <p style="color: #d6d3d1;">Crea y administra eventos oficiales o de prueba para los distintos barrios del reino, configurando la fecha y hora de inicio y de finalización del evento, el lugar, la descripción y las horas (y fecha de cierre) independientes de votación.</p>
 
                     <div style="background: rgba(30, 24, 16, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
                         <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0;">⚙️ Formulario de Generación de Eventos</h3>
@@ -524,6 +540,17 @@
                                 </div>
                             </div>
 
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 220px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">📆 Fecha de Finalización del Evento (opcional):</label>
+                                    <input type="date" id="evento-dedicated-fecha-fin" class="input-medieval">
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 220px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">🌙 Hora de Finalización del Evento (opcional):</label>
+                                    <input type="time" id="evento-dedicated-hora-fin" class="input-medieval">
+                                </div>
+                            </div>
+
                             <!-- FRANJA HORARIA INDEPENDIENTE DE VOTACIÓN -->
                             <div style="background: rgba(45, 35, 20, 0.85); padding: 15px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.4); margin: 15px 0;">
                                 <h4 style="color: var(--oro-brillante); margin: 0 0 10px; font-family: 'Cinzel', serif;">🗳️ Configuración del Periodo de Votaciones</h4>
@@ -535,6 +562,10 @@
                                     <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                                         <label style="color: #f87171; font-weight: bold;">🔴 Hora Cierre Votación:</label>
                                         <input type="time" id="evento-dedicated-votacion-fin" class="input-medieval" value="23:30" required>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                        <label style="color: #f87171; font-weight: bold;">📆 Fecha Cierre Votación (opcional):</label>
+                                        <input type="date" id="evento-dedicated-votacion-fecha-fin" class="input-medieval">
                                     </div>
                                 </div>
                                 <p style="font-size: 0.78rem; color: #a1a1aa; margin: 8px 0 0;">

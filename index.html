@@ -91,6 +91,9 @@
         window.__APP_CONFIG__.SUPABASE_ANON_KEY = window.__APP_CONFIG__.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzd2lrZGNrcHR6aXZzdXJ6cmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODAwNTEsImV4cCI6MjEwNjU1NjA1MX0.3kovmMBfC_JCGKyJ_1s5iyxtkKyqVMIt77CfHnytLzI';
         window.__APP_CONFIG__.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL || '';
         window.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL;
+        // Proxy del Oráculo Imperial (Edge Function de Supabase que oculta el token
+        // de Hugging Face). Si se deja vacío, se deduce de SUPABASE_URL.
+        window.__APP_CONFIG__.ORACULO_ENDPOINT = window.__APP_CONFIG__.ORACULO_ENDPOINT || '';
     </script>
 
     <!-- Config legal y consentimiento de cookies (RGPD/LSSI + Consent Mode v2) -->
@@ -149,7 +152,7 @@
                     <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
                 </optgroup>
                 <optgroup label="🔮 Oráculo Imperial (Master)" id="optgroup-master-menu" style="display:none;">
-                    <option value="pestana-oraculo-ia" data-tab="tab-oraculo-ia">🔮 Oráculo Imperial (IA Gemini)</option>
+                    <option value="pestana-oraculo-ia" data-tab="tab-oraculo-ia">🔮 Oráculo Imperial (IA)</option>
                 </optgroup>
                 <optgroup label="👑 Administración (Superadmin / Master)" id="optgroup-admin-menu">
                     <option value="pestana-generar-evento" data-tab="tab-generar-evento">📅 Generar y Gestionar Eventos</option>
@@ -1067,49 +1070,48 @@
                 </div>
             </section>
 
-            <!-- PESTAÑA: Oráculo Imperial e Integración de Modelos Gemini IA -->
+            <!-- PESTAÑA: Oráculo Imperial e Integración de Modelos de IA (Hugging Face) -->
             <section id="pestana-oraculo-ia" class="tab-content tema-oraculo" data-tab="tab-oraculo-ia" style="display: none;">
                 <div class="leaderboard-container" style="background: rgba(10, 10, 15, 0.95); border: 2px solid var(--oro-real); padding: 25px; border-radius: 12px;">
                     <div class="leaderboard-header" style="text-align: center; margin-bottom: 25px;">
-                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🔮 ORÁCULO IMPERIAL & MODELOS DE IA (GEMINI) 🔮</h2>
+                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🔮 ORÁCULO IMPERIAL & MODELOS DE IA 🔮</h2>
                         <p style="color: #d6d3d1;">Inteligencia Feudal para la Generación de Crónicas, Bandos de Guerra y Recomendaciones de Pintxos</p>
                     </div>
 
                     <div class="legal-aviso" role="note" style="margin-top: 0;">
                         🤖 <strong>Aviso de transparencia (IA):</strong> estás interactuando con un sistema de
-                        inteligencia artificial (Google Gemini). Los textos generados son contenido automático, pueden
+                        inteligencia artificial (Hugging Face, a través del servidor seguro del Reino). Los textos generados son contenido automático, pueden
                         contener errores y no constituyen asesoramiento profesional. No introduzcas datos personales
                         sensibles. <a href="legal/aviso-ia.html" target="_blank" rel="noopener">Más información</a>.
                     </div>
 
-                    <!-- SELECCIÓN DE MODELO GEMINI & CONFIGURACIÓN DE API KEY -->
+                    <!-- SELECCIÓN DE MODELO DE IA -->
                     <div style="background: rgba(20, 20, 30, 0.8); border: 1px solid var(--oro-real); padding: 18px; border-radius: 8px; margin-bottom: 25px;">
-                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0;">⚙️ Selección de Modelo Gemini & Ajustes</h3>
+                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0;">⚙️ Selección de Modelo de IA & Ajustes</h3>
                         <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
                             <div style="flex: 1; min-width: 220px;">
-                                <label style="display: block; font-size: 0.9rem; color: #d6d3d1; margin-bottom: 5px;">Modelo IA Gemini Seleccionado:</label>
-                                <select id="select-modelo-gemini" class="input-medieval" style="width: 100%; margin: 0; background: #000;">
-                                    <option value="gemini-2.5-flash" selected>⚡ Gemini 2.5 Flash (Velocidad & Eficiencia Imperial)</option>
-                                    <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (Razonamiento & Crónicas Poéticas)</option>
-                                    <option value="gemini-1.5-flash">🕊️ Gemini 1.5 Flash (Edición Ligera)</option>
+                                <label style="display: block; font-size: 0.9rem; color: #d6d3d1; margin-bottom: 5px;">Modelo IA Seleccionado:</label>
+                                <select id="select-modelo-oraculo" class="input-medieval" style="width: 100%; margin: 0; background: #000;">
+                                    <option value="meta-llama/Llama-3.1-8B-Instruct" selected>🦙 Llama 3.1 8B Instruct (Equilibrado)</option>
+                                    <option value="mistralai/Mistral-7B-Instruct-v0.3">🌬️ Mistral 7B Instruct (Crónicas Rápidas)</option>
+                                    <option value="Qwen/Qwen2.5-7B-Instruct">🧠 Qwen 2.5 7B Instruct (Razonamiento)</option>
                                 </select>
                             </div>
                             <div style="flex: 1; min-width: 260px;">
-                                <label style="display: block; font-size: 0.9rem; color: #d6d3d1; margin-bottom: 5px;">Gemini API Key (Opcional - usa clave por defecto/simulación):</label>
-                                <input type="password" id="input-gemini-api-key" placeholder="AIzaSy..." class="input-medieval" style="width: 100%; margin: 0;">
+                                <p style="font-size: 0.85rem; color: #94a3b8; margin: 0 0 5px 0;">🔒 El Oráculo se conecta a Hugging Face mediante el servidor seguro del Reino. No necesitas introducir ninguna clave: el token queda protegido en el servidor.</p>
                             </div>
                             <div>
-                                <button class="btn-cuervo" onclick="guardarAjustesGemini()" style="height: 42px;">💾 Guardar Ajustes</button>
+                                <button class="btn-cuervo" onclick="guardarAjustesOraculo()" style="height: 42px;">💾 Guardar Ajustes</button>
                             </div>
                         </div>
-                        <p id="gemini-config-status" style="font-size: 0.85rem; color: #4ade80; margin-top: 10px; margin-bottom: 0; display: none;"></p>
+                        <p id="oraculo-config-status" style="font-size: 0.85rem; color: #4ade80; margin-top: 10px; margin-bottom: 0; display: none;"></p>
                     </div>
 
                     <!-- MÓDULO 1: GENERADOR DE CRÓNICAS FEUDALES -->
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
                         <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid #3b82f6; padding: 20px; border-radius: 8px;">
                             <h3 style="color: #60a5fa; font-family: 'Cinzel', serif; margin-top: 0;">📜 Generador de Crónicas del Reino</h3>
-                            <p style="font-size: 0.88rem; color: #94a3b8;">El Oráculo analiza la tabla de clasificación actual y los juicios emitidos para redactar una crónica medieval única con el modelo Gemini activo.</p>
+                            <p style="font-size: 0.88rem; color: #94a3b8;">El Oráculo analiza la tabla de clasificación actual y los juicios emitidos para redactar una crónica medieval única con el modelo de IA activo.</p>
                             
                             <div style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 5px;">Tono de la Crónica:</label>
@@ -1120,13 +1122,13 @@
                                 </select>
                             </div>
 
-                            <button class="btn-cuervo" onclick="generarCronicaGemini()" id="btn-generar-cronica" style="width: 100%; background: #2563eb;">✨ Invocación del Oráculo (Generar Crónica)</button>
+                            <button class="btn-cuervo" onclick="generarCronicaOraculo()" id="btn-generar-cronica" style="width: 100%; background: #2563eb;">✨ Invocación del Oráculo (Generar Crónica)</button>
                         </div>
 
                         <!-- MÓDULO 2: RECOMENDADOR IMPERIAL DE PINTXOS -->
                         <div style="background: rgba(24, 16, 30, 0.8); border: 1px solid #a855f7; padding: 20px; border-radius: 8px;">
                             <h3 style="color: #c084fc; font-family: 'Cinzel', serif; margin-top: 0;">🍷 Recomendador Imperial de Pintxos</h3>
-                            <p style="font-size: 0.88rem; color: #e9d5ff;">Consulta a Gemini para obtener una recomendación personalizada según tus gustos, el barrio objetivo y tu espíritu tabernero.</p>
+                            <p style="font-size: 0.88rem; color: #e9d5ff;">Consulta al Oráculo para obtener una recomendación personalizada según tus gustos, el barrio objetivo y tu espíritu tabernero.</p>
                             
                             <div style="margin-bottom: 12px;">
                                 <label style="display: block; font-size: 0.85rem; color: #e2e8f0; margin-bottom: 5px;">Barrio o Casa a Visitar:</label>
@@ -1144,20 +1146,20 @@
 
                             <div style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 0.85rem; color: #e2e8f0; margin-bottom: 5px;">Preferencia o Antojo Feudal:</label>
-                                <input type="text" id="input-antojo-gemini" placeholder="Ej: Tortilla jugosa, gilda picante o maridaje con txakoli..." class="input-medieval" style="width: 100%;">
+                                <input type="text" id="input-antojo-oraculo" placeholder="Ej: Tortilla jugosa, gilda picante o maridaje con txakoli..." class="input-medieval" style="width: 100%;">
                             </div>
 
-                            <button class="btn-cuervo" onclick="generarRecomendacionGemini()" id="btn-generar-recomendacion" style="width: 100%; background: #7e22ce;">🍷 Solicitar Recomendación Imperial</button>
+                            <button class="btn-cuervo" onclick="generarRecomendacionOraculo()" id="btn-generar-recomendacion" style="width: 100%; background: #7e22ce;">🍷 Solicitar Recomendación Imperial</button>
                         </div>
                     </div>
 
-                    <!-- ÁREA DE RESULTADO DE LA IA GEMINI -->
-                    <div id="contenedor-resultado-gemini" style="display: none; margin-top: 25px; background: rgba(5, 5, 10, 0.95); border: 2px solid var(--oro-real); border-radius: 8px; padding: 20px;">
+                    <!-- ÁREA DE RESULTADO DE LA IA -->
+                    <div id="contenedor-resultado-oraculo" style="display: none; margin-top: 25px; background: rgba(5, 5, 10, 0.95); border: 2px solid var(--oro-real); border-radius: 8px; padding: 20px;">
                         <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
                             <span>📜 Dictamen del Oráculo Imperial</span>
-                            <span id="badge-modelo-usado" style="font-size: 0.75rem; background: var(--oro-real); color: #000; padding: 3px 8px; border-radius: 12px; font-weight: bold;">Gemini 2.5 Flash</span>
+                            <span id="badge-modelo-usado" style="font-size: 0.75rem; background: var(--oro-real); color: #000; padding: 3px 8px; border-radius: 12px; font-weight: bold;">Llama 3.1 8B</span>
                         </h3>
-                        <div id="salida-oraculo-gemini" style="color: #f1f5f9; font-size: 0.98rem; line-height: 1.6; white-space: pre-wrap; font-family: Georgia, serif; background: rgba(15,23,42,0.5); padding: 15px; border-radius: 6px; border-left: 4px solid var(--oro-real);">
+                        <div id="salida-oraculo" style="color: #f1f5f9; font-size: 0.98rem; line-height: 1.6; white-space: pre-wrap; font-family: Georgia, serif; background: rgba(15,23,42,0.5); padding: 15px; border-radius: 6px; border-left: 4px solid var(--oro-real);">
                         </div>
                     </div>
 
@@ -1216,7 +1218,7 @@
             <button type="button" data-consent-open>Configurar cookies</button>
         </nav>
         <p class="site-footer__ia">🤖 Este sitio y su contenido se han creado con ayuda de herramientas de
-            inteligencia artificial bajo supervisión humana. El «Oráculo Imperial» usa IA (Google Gemini) para generar
+            inteligencia artificial bajo supervisión humana. El «Oráculo Imperial» usa IA (Hugging Face) para generar
             textos que pueden contener errores. <a href="legal/aviso-ia.html">Más información</a>.</p>
         <div class="site-footer__legal">
             <p>© <span id="footer-year">2026</span> Julio Arteaga · LokiTrono de Barrios. Todos los derechos reservados.</p>

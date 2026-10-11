@@ -145,8 +145,12 @@ function actualizarInterfazSesion(usuario) {
         if (typeof renderOpcionesRolUsuario === 'function') renderOpcionesRolUsuario();
         if (typeof actualizarBadgeMake === 'function') actualizarBadgeMake();
 
+        if (esSuperadmin) iniciarAutoRefreshUsuarios();
+        else detenerAutoRefreshUsuarios();
+
         cambiarPestana('pestana-clasificacion');
     } else {
+        detenerAutoRefreshUsuarios();
         const panelSorteo = document.getElementById('panel-sorteo-barrios');
         if (panelSorteo) panelSorteo.style.display = 'none';
 
@@ -171,6 +175,7 @@ function cerrarSesionDirecta() {
             Promise.resolve(client.rpc('cerrar_sesion_lokitrono', { p_token: usuario.token })).catch(() => {});
         }
     }
+    detenerAutoRefreshUsuarios();
     setCurrentUser(null);
     actualizarInterfazSesion(null);
 }
@@ -3092,6 +3097,96 @@ function getSupabaseBarriosClient() {
     return supabaseBarriosClient;
 }
 
+// ==============================================================================
+// 🔄 ACTUALIZACIÓN DE DATOS EN TIEMPO REAL (SUPABASE REALTIME)
+// ==============================================================================
+// casas, eventos y votos_evento están publicadas en `supabase_realtime`, de modo
+// que cualquier cambio se propaga en vivo a todos los clientes. Los usuarios no
+// se publican (contienen datos sensibles); se refrescan por token de sesión.
+
+let realtimeLokitrono = null;
+const realtimeRefrescosPendientes = {};
+
+function programarRefrescoRealtime(clave, tarea, retraso = 1200) {
+    if (realtimeRefrescosPendientes[clave]) clearTimeout(realtimeRefrescosPendientes[clave]);
+    realtimeRefrescosPendientes[clave] = setTimeout(() => {
+        delete realtimeRefrescosPendientes[clave];
+        try {
+            tarea();
+        } catch (error) {
+            console.warn('Fallo en el refresco en tiempo real:', error);
+        }
+    }, retraso);
+}
+
+function iniciarRealtimeLokitrono() {
+    if (realtimeLokitrono) return;
+    const client = getSupabaseBarriosClient();
+    if (!client || typeof client.channel !== 'function') return;
+    try {
+        realtimeLokitrono = client
+            .channel('lokitrono-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'casas' },
+                () => programarRefrescoRealtime('casas', () => cargarBarriosDesdeSupabase()))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'eventos' },
+                () => programarRefrescoRealtime('eventos', () => cargarEventosDesdeSupabase()))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'votos_evento' },
+                () => programarRefrescoRealtime('votos', async () => {
+                    await cargarVotosDesdeSupabase();
+                    if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
+                }))
+            .subscribe((estado) => {
+                console.info('Supabase Realtime LokiTrono:', estado);
+            });
+    } catch (error) {
+        console.warn('No se pudo iniciar Supabase Realtime:', error);
+    }
+}
+
+function detenerRealtimeLokitrono() {
+    if (!realtimeLokitrono) return;
+    const client = getSupabaseBarriosClient();
+    try {
+        if (client && typeof client.removeChannel === 'function') client.removeChannel(realtimeLokitrono);
+    } catch (_) { /* sin conexión: nada que limpiar */ }
+    realtimeLokitrono = null;
+}
+
+// Refresco de usuarios para administradores autenticados, sin volver a pedir el PIN.
+let usuariosAutoRefreshTimer = null;
+
+async function refrescarUsuariosPorToken(silencioso = true) {
+    const usuario = getCurrentUser();
+    if (!usuario || !puedeAdministrar(usuario.role) || !usuario.token) return false;
+    const client = getSupabaseBarriosClient();
+    if (!client) return false;
+    try {
+        const { data, error } = await client.rpc('listar_usuarios_por_token', { p_token: usuario.token });
+        if (error) throw error;
+        const lista = Array.isArray(data) ? data : [];
+        if (!lista.length) return false;
+        localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(lista));
+        renderTablaUsuarios();
+        renderListaTronistas();
+        return true;
+    } catch (error) {
+        if (!silencioso) console.warn('No se pudieron refrescar los usuarios por token:', error?.message || error);
+        return false;
+    }
+}
+
+function iniciarAutoRefreshUsuarios() {
+    const usuario = getCurrentUser();
+    if (!usuario || !puedeAdministrar(usuario.role) || !usuario.token) return;
+    detenerAutoRefreshUsuarios();
+    usuariosAutoRefreshTimer = setInterval(() => refrescarUsuariosPorToken(true), 25000);
+}
+
+function detenerAutoRefreshUsuarios() {
+    if (usuariosAutoRefreshTimer) clearInterval(usuariosAutoRefreshTimer);
+    usuariosAutoRefreshTimer = null;
+}
+
 function escaparHTML(valor) {
     return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -3573,6 +3668,7 @@ function initApp() {
     if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
     if (typeof renderDashboardSimulacionCompleto === 'function') renderDashboardSimulacionCompleto();
     if (typeof iniciarTimerRelojCuentaAtras === 'function') iniciarTimerRelojCuentaAtras();
+    iniciarRealtimeLokitrono();
     const currentUser = getCurrentUser();
     if (currentUser) {
         actualizarInterfazSesion(currentUser);
@@ -4094,58 +4190,69 @@ window.asignarTronistaAdmin = asignarTronistaAdmin;
 window.renderListaTronistas = renderListaTronistas;
 
 // ==============================================================================
-// 🔮 INTEGRACIÓN DE MODELOS DE IA (GEMINI API) & ORÁCULO IMPERIAL
+// 🔮 INTEGRACIÓN DE MODELOS DE IA (HUGGING FACE VÍA PROXY) & ORÁCULO IMPERIAL
 // ==============================================================================
+// El Oráculo no llama directamente a Hugging Face: lo hace a través de la Edge
+// Function `oraculo-hf`, que guarda el token HF_TOKEN como secreto del servidor.
+// El navegador nunca ve la clave. Ver scripts/configurar_oraculo_hf.py.
 
-function obtenerGeminiConfig() {
-    const modelSelect = document.getElementById('select-modelo-gemini');
-    const keyInput = document.getElementById('input-gemini-api-key');
+const ORACULO_MODELO_DEFECTO = 'meta-llama/Llama-3.1-8B-Instruct';
 
-    const model = modelSelect ? modelSelect.value : (localStorage.getItem('gemini_model') || 'gemini-2.5-flash');
-    const apiKey = keyInput && keyInput.value.trim() ? keyInput.value.trim() : (localStorage.getItem('gemini_api_key') || (window.__APP_CONFIG__ && window.__APP_CONFIG__.GEMINI_API_KEY) || '');
-
-    return { model, apiKey };
+function obtenerEndpointOraculo() {
+    const config = window.__APP_CONFIG__ || {};
+    if (config.ORACULO_ENDPOINT) return config.ORACULO_ENDPOINT;
+    if (config.SUPABASE_URL) return `${String(config.SUPABASE_URL).replace(/\/$/, '')}/functions/v1/oraculo-hf`;
+    return '';
 }
 
-function guardarAjustesGemini() {
-    const { model, apiKey } = obtenerGeminiConfig();
-    localStorage.setItem('gemini_model', model);
-    localStorage.setItem('gemini_api_key', apiKey);
+function obtenerOraculoConfig() {
+    const modelSelect = document.getElementById('select-modelo-oraculo');
+    const model = modelSelect ? modelSelect.value : (localStorage.getItem('oraculo_modelo') || ORACULO_MODELO_DEFECTO);
+    return { model };
+}
 
-    const statusEl = document.getElementById('gemini-config-status');
+function guardarAjustesOraculo() {
+    const { model } = obtenerOraculoConfig();
+    localStorage.setItem('oraculo_modelo', model);
+
+    const statusEl = document.getElementById('oraculo-config-status');
     if (statusEl) {
         statusEl.style.display = 'block';
-        statusEl.textContent = `✅ Configuración guardada: Modelo ${model} seleccionado.`;
+        statusEl.textContent = `✅ Configuración guardada: modelo ${model} seleccionado.`;
         setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
     }
 }
 
-async function llamarModeloGemini(promptText, modelOverride) {
-    const { model: defaultModel, apiKey } = obtenerGeminiConfig();
+async function llamarModeloHuggingFace(promptText, modelOverride) {
+    const { model: defaultModel } = obtenerOraculoConfig();
     const model = modelOverride || defaultModel;
+    const endpoint = obtenerEndpointOraculo();
+    const config = window.__APP_CONFIG__ || {};
 
-    if (apiKey) {
+    if (endpoint) {
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+            const headers = { 'Content-Type': 'application/json' };
+            if (config.SUPABASE_ANON_KEY) {
+                headers['apikey'] = config.SUPABASE_ANON_KEY;
+                headers['Authorization'] = `Bearer ${config.SUPABASE_ANON_KEY}`;
+            }
+            const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: promptText }] }]
-                })
+                headers,
+                body: JSON.stringify({ prompt: promptText, model })
             });
 
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.error?.message || `HTTP ${response.status}`);
+                throw new Error(errData.error || `HTTP ${response.status}`);
             }
 
             const data = await response.json();
-            const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (textResult) {
-                return { text: textResult, model, fuente: 'Gemini Live API' };
+            if (data && data.text) {
+                return { text: data.text, model: data.model || model, fuente: 'Hugging Face (proxy)' };
             }
         } catch (err) {
-            console.warn('Error llamando a la API oficial de Gemini, recurriendo a simulación:', err);
+            console.warn('Error llamando al Oráculo (Hugging Face), recurriendo a simulación:', err);
         }
     }
 
@@ -4154,16 +4261,16 @@ async function llamarModeloGemini(promptText, modelOverride) {
             `«¡Oíd, Maestres del Reino de Bilbao! El Oráculo ha procesado las plegarias e inspeccionado la mesa del festín.\n\n` +
             promptText.substring(0, 150) + `...\n\n` +
             `✨ Dictamen Feudal: ¡Que fluya el txakoli y que el honor de las Siete Calles brille en cada barra de pintxos!»\n\n` +
-            (apiKey ? `(Nota: Hubo un contratiempo con la clave API, se ha mostrado una crónica de respaldo)` : `💡 Consejo: Introduce tu Gemini API Key en los ajustes para conectar en directo con los servidores de Google Gemini API (${model}).`),
+            `💡 Consejo: El Oráculo se conecta en directo con Hugging Face a través del servidor seguro. Si ves este mensaje, revisa la configuración del proxy (${model}).`,
         model,
         fuente: 'Oráculo Feudal Autónomo'
     };
 }
 
-async function generarCronicaGemini() {
+async function generarCronicaOraculo() {
     const btn = document.getElementById('btn-generar-cronica');
-    const contenedor = document.getElementById('contenedor-resultado-gemini');
-    const salida = document.getElementById('salida-oraculo-gemini');
+    const contenedor = document.getElementById('contenedor-resultado-oraculo');
+    const salida = document.getElementById('salida-oraculo');
     const badge = document.getElementById('badge-modelo-usado');
     const tonoSelect = document.getElementById('select-tono-cronica');
     const tono = tonoSelect ? tonoSelect.value : 'epico';
@@ -4178,22 +4285,22 @@ Tono: ${tono}.
 Total de juicios emitidos por Maestres: ${votos.length}.
 Instrucciones: Incluye referencias medievales a las Casas de Indautxu, Casco Viejo, Deusto, Santutxu y Abando, mencionando el festín, los caminos y el espíritu tabernero.`;
 
-    const { model } = obtenerGeminiConfig();
-    const res = await llamarModeloGemini(prompt, model);
+    const { model } = obtenerOraculoConfig();
+    const res = await llamarModeloHuggingFace(prompt, model);
 
     if (salida) salida.textContent = res.text;
     if (badge) badge.textContent = `${res.model} (${res.fuente})`;
     if (btn) btn.disabled = false;
 }
 
-async function generarRecomendacionGemini() {
+async function generarRecomendacionOraculo() {
     const btn = document.getElementById('btn-generar-recomendacion');
-    const contenedor = document.getElementById('contenedor-resultado-gemini');
-    const salida = document.getElementById('salida-oraculo-gemini');
+    const contenedor = document.getElementById('contenedor-resultado-oraculo');
+    const salida = document.getElementById('salida-oraculo');
     const badge = document.getElementById('badge-modelo-usado');
 
     const barrioSelect = document.getElementById('select-barrio-recomendacion');
-    const antojoInput = document.getElementById('input-antojo-gemini');
+    const antojoInput = document.getElementById('input-antojo-oraculo');
 
     const barrio = barrioSelect ? barrioSelect.value : 'Casco Viejo';
     const antojo = antojoInput && antojoInput.value.trim() ? antojoInput.value.trim() : 'Pintxos tradicionales y ambiente festivo';
@@ -4205,8 +4312,8 @@ async function generarRecomendacionGemini() {
     const prompt = `Recomienda una ruta feudal de pintxos y maridaje en el barrio de ${barrio} (Bilbao) para un Maestre con preferencia: '${antojo}'.
 Instrucciones: Sugiere 3 especialidades (ej. Gilda imperial, Tortilla de patatas jugosa, Taco de bonito) con maridaje de vino/txakoli y un lema caballeresco para la ruta.`;
 
-    const { model } = obtenerGeminiConfig();
-    const res = await llamarModeloGemini(prompt, model);
+    const { model } = obtenerOraculoConfig();
+    const res = await llamarModeloHuggingFace(prompt, model);
 
     if (salida) salida.textContent = res.text;
     if (badge) badge.textContent = `${res.model} (${res.fuente})`;
@@ -4214,11 +4321,11 @@ Instrucciones: Sugiere 3 especialidades (ej. Gilda imperial, Tortilla de patatas
 }
 
 // Exponer funciones en window para invocación desde HTML
-window.obtenerGeminiConfig = obtenerGeminiConfig;
-window.guardarAjustesGemini = guardarAjustesGemini;
-window.llamarModeloGemini = llamarModeloGemini;
-window.generarCronicaGemini = generarCronicaGemini;
-window.generarRecomendacionGemini = generarRecomendacionGemini;
+window.obtenerOraculoConfig = obtenerOraculoConfig;
+window.guardarAjustesOraculo = guardarAjustesOraculo;
+window.llamarModeloHuggingFace = llamarModeloHuggingFace;
+window.generarCronicaOraculo = generarCronicaOraculo;
+window.generarRecomendacionOraculo = generarRecomendacionOraculo;
 
 /* ==========================================
    CARGA DE DATOS DE SEMILLA (DEMO)

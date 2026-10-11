@@ -15,6 +15,9 @@ Thumbs.db
 .vercel
 .env*
 
+# Supabase CLI (temporales y enlazado local)
+supabase/.temp/
+
 # Ruido del repositorio: copias, respaldos y duplicados
 *.backup
 *.backup-*

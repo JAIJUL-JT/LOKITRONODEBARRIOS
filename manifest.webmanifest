@@ -1,0 +1,24 @@
+{
+    "name": "LokiTrono de Barrios",
+    "short_name": "LokiTrono",
+    "description": "Juego gastronómico y lúdico de los barrios de Bilbao: cata de pintxos, sellos y ranking según la Ley II de Bilbao.",
+    "lang": "es",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#050505",
+    "theme_color": "#d4af37",
+    "icons": [
+        {
+            "src": "/logo-lokitrono.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/favicon.ico",
+            "sizes": "any",
+            "type": "image/x-icon"
+        }
+    ]
+}

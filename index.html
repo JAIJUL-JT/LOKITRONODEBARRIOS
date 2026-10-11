@@ -4,12 +4,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LokiTrono de Barrios</title>
+    <title>LokiTrono de Barrios | Juego del Pintxo de Bilbao</title>
+
+    <!-- SEO básico -->
+    <meta name="description" content="LokiTrono de Barrios: el juego gastronómico feudal de Bilbao. Cata pintxos, sella tu pasaporte y compite por el trono según la Ley II de Bilbao.">
+    <meta name="keywords" content="LokiTrono de Barrios, juego de barrios Bilbao, pintxos Bilbao, concurso gastronómico, Ley II de Bilbao, cata de pintxos, competición de barrios">
+    <meta name="author" content="Julio Arteaga">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#050505">
+    <link rel="canonical" href="https://lokitronodebarrios.vercel.app/">
+    <link rel="manifest" href="/manifest.webmanifest">
+
+    <!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="LokiTrono de Barrios">
+    <meta property="og:locale" content="es_ES">
+    <meta property="og:title" content="LokiTrono de Barrios | Juego del Pintxo de Bilbao">
+    <meta property="og:description" content="El juego gastronómico feudal de Bilbao: cata pintxos, sella tu pasaporte y compite por el trono según la Ley II de Bilbao.">
+    <meta property="og:url" content="https://lokitronodebarrios.vercel.app/">
+    <meta property="og:image" content="https://lokitronodebarrios.vercel.app/logo-lokitrono.png">
+    <meta property="og:image:alt" content="Logo de LokiTrono de Barrios">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LokiTrono de Barrios | Juego del Pintxo de Bilbao">
+    <meta name="twitter:description" content="El juego gastronómico feudal de Bilbao: cata pintxos, sella tu pasaporte y compite por el trono.">
+    <meta name="twitter:image" content="https://lokitronodebarrios.vercel.app/logo-lokitrono.png">
+
+    <!-- Verificación en buscadores (rellenar al dar de alta el sitio) -->
+    <meta name="google-site-verification" content="">
+    <meta name="msvalidate.01" content="">
+
+    <!-- Rendimiento: precarga de orígenes externos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://uswikdckptzivsurzrlc.supabase.co">
+
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/legal.css">
     <!-- Carga del SDK oficial de Supabase y Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Datos estructurados (schema.org) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebSite",
+                "@id": "https://lokitronodebarrios.vercel.app/#website",
+                "url": "https://lokitronodebarrios.vercel.app/",
+                "name": "LokiTrono de Barrios",
+                "inLanguage": "es-ES",
+                "description": "Juego gastronómico feudal de los barrios de Bilbao: cata de pintxos, sellos y ranking según la Ley II de Bilbao."
+            },
+            {
+                "@type": "Organization",
+                "@id": "https://lokitronodebarrios.vercel.app/#organizacion",
+                "name": "LokiTrono de Barrios",
+                "url": "https://lokitronodebarrios.vercel.app/",
+                "logo": "https://lokitronodebarrios.vercel.app/logo-lokitrono.png",
+                "email": "afjbilbao@gmail.com"
+            },
+            {
+                "@type": "WebApplication",
+                "name": "LokiTrono de Barrios",
+                "url": "https://lokitronodebarrios.vercel.app/",
+                "applicationCategory": "GameApplication",
+                "operatingSystem": "Web",
+                "inLanguage": "es-ES",
+                "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "EUR"
+                }
+            }
+        ]
+    }
+    </script>
     <script>
         window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
         window.__APP_CONFIG__.SUPABASE_URL = window.__APP_CONFIG__.SUPABASE_URL || 'https://uswikdckptzivsurzrlc.supabase.co';
@@ -17,6 +92,11 @@
         window.__APP_CONFIG__.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL || '';
         window.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL;
     </script>
+
+    <!-- Config legal y consentimiento de cookies (RGPD/LSSI + Consent Mode v2) -->
+    <script src="js/legal-config.js"></script>
+    <script src="js/analytics.js" defer></script>
+    <script src="js/consent.js" defer></script>
 </head>
 
 <body>
@@ -29,7 +109,7 @@
         </div>
         <p>«En la justa por el Honor, o se conquista el Reino... o se vuelve con la garganta seca»</p>
 
-        <!-- PANTALLA INICIAL DE ACCESO / LOGIN (Teléfono + PIN de 4 dígitos) -->
+        <!-- PANTALLA INICIAL DE ACCESO / LOGIN (Teléfono + PIN de 6 dígitos) -->
         <div id="pantalla-login-inicio"
             style="margin: 20px auto; max-width: 380px; background: rgba(10, 10, 10, 0.95); border: var(--borde-oro-brillante); padding: 25px; border-radius: 12px; box-shadow: var(--sombra-oro); text-align: center;">
             <img src="logo-lokitrono.png?v=3" alt="Logo Acceso" class="login-logo">
@@ -601,7 +681,7 @@
                         </div>
                         <p style="font-size: 0.85rem; color: #d6d3d1; margin-top: 8px;">Configura la URL de tu Webhook
                             receptor en Make.com para disparar el envío automático de mensajes de bienvenida por
-                            WhatsApp con el PIN de 4 dígitos y notificaciones a Superadministradores.</p>
+                            WhatsApp con el PIN de 6 dígitos y notificaciones a los administradores del Reino.</p>
 
                         <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                             <input type="url" id="input-make-webhook-url" class="input-medieval"
@@ -651,6 +731,16 @@
                     <div style="margin-bottom:12px;">
                         <button type="button" class="btn-cuervo" style="background:#44403c;" onclick="cargarUsuariosDesdeSupabase()">🔄 Sincronizar usuarios desde Supabase</button>
                     </div>
+
+                    <!-- PANEL CONFIG TÍTULOS (solo visible para superadmin) -->
+                    <div id="panel-config-titulos-usuarios" style="display:none; margin-bottom:24px; background:rgba(20,16,5,0.9); border:1px solid var(--oro-real); border-radius:8px; padding:18px;">
+                        <h3 style="color:var(--oro-brillante);margin-top:0;font-family:'Cinzel',serif;">⚙️ Configuración de Títulos del Reino</h3>
+                        <p style="font-size:0.82rem;color:#d6d3d1;">Personaliza cómo se llaman los rangos de los usuarios en la corte.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">⚔️ Jugador (masculino):</label>
+                                <input type="text" id="titulo-config-jugador_masculino" class="input-medieval" placeholder="Lord">
+                            </div>
                             <div class="form-group">
                                 <label style="font-size:0.82rem;">⚔️ Jugador (femenino):</label>
                                 <input type="text" id="titulo-config-jugador_femenino" class="input-medieval" placeholder="Lady">
@@ -716,7 +806,14 @@
                                 <option value="jugador">Jugador / Maestre</option>
                                 <option value="tronista">👑 Tronista de Barrio</option>
                                 <option value="superadmin">Superadmin (Administrador del Sistema)</option>
+                                <option value="master">🌟 Master (Lokitrono Mayor)</option>
                             </select>
+                        </div>
+
+                        <div class="form-group" id="group-usuario-pin" style="display: none;">
+                            <label>PIN de acceso (solo Master, 6 dígitos — deja vacío para generar):</label>
+                            <input type="text" id="usuario-pin" class="input-medieval" inputmode="numeric"
+                                maxlength="6" pattern="[0-9]{6}" placeholder="Ej: 123456 (opcional)">
                         </div>
 
                         <div class="form-group">
@@ -738,6 +835,9 @@
                             Edición</button>
                     </form>
 
+                    <div id="acciones-credenciales-master" style="display: none; margin-top: 20px;">
+                        <button type="button" class="btn-cuervo" style="background: #166534;" onclick="descargarUsuariosCSV()">⬇️ Descargar credenciales (CSV)</button>
+                    </div>
                     <h3 style="margin-top: 30px; color: var(--oro-brillante);">Usuarios Autorizados Registrados</h3>
                     <div class="table-responsive">
                         <table class="leaderboard-table">
@@ -757,17 +857,6 @@
                             <tbody id="tabla-usuarios-body"></tbody>
                         </table>
                     </div>
-
-                    <!-- PANEL CONFIG TÍTULOS (solo visible para superadmin) -->
-                    <div id="panel-config-titulos-usuarios" style="display:none; margin-bottom:24px; background:rgba(20,16,5,0.9); border:1px solid var(--oro-real); border-radius:8px; padding:18px;">
-                        <h3 style="color:var(--oro-brillante);margin-top:0;font-family:'Cinzel',serif;">⚙️ Configuración de Títulos del Reino</h3>
-                        <p style="font-size:0.82rem;color:#d6d3d1;">Personaliza cómo se llaman los rangos de los usuarios en la corte.</p>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">⚔️ Jugador (masculino):</label>
-                                <input type="text" id="titulo-config-jugador_masculino" class="input-medieval" placeholder="Lord">
-                            </div>
-
 
                     <!-- VISTA EXCLUSIVA SUPERADMIN: LISTADO GENERAL DE 135 PARTICIPANTES Y AUDITORÍA DE VOTOS -->
                     <div id="seccion-superadmin-participantes"
@@ -967,6 +1056,13 @@
                         <p style="color: #d6d3d1;">Inteligencia Feudal para la Generación de Crónicas, Bandos de Guerra y Recomendaciones de Pintxos</p>
                     </div>
 
+                    <div class="legal-aviso" role="note" style="margin-top: 0;">
+                        🤖 <strong>Aviso de transparencia (IA):</strong> estás interactuando con un sistema de
+                        inteligencia artificial (Google Gemini). Los textos generados son contenido automático, pueden
+                        contener errores y no constituyen asesoramiento profesional. No introduzcas datos personales
+                        sensibles. <a href="legal/aviso-ia.html" target="_blank" rel="noopener">Más información</a>.
+                    </div>
+
                     <!-- SELECCIÓN DE MODELO GEMINI & CONFIGURACIÓN DE API KEY -->
                     <div style="background: rgba(20, 20, 30, 0.8); border: 1px solid var(--oro-real); padding: 18px; border-radius: 8px; margin-bottom: 25px;">
                         <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0;">⚙️ Selección de Modelo Gemini & Ajustes</h3>
@@ -1077,9 +1173,28 @@
     </div>
 
 
+    <!-- Pie de página con información legal y configuración de cookies -->
+    <footer class="site-footer">
+        <nav class="site-footer__nav" aria-label="Enlaces legales">
+            <a href="legal/aviso-legal.html">Aviso legal</a>
+            <a href="legal/politica-privacidad.html">Privacidad</a>
+            <a href="legal/politica-cookies.html">Cookies</a>
+            <a href="legal/terminos-uso.html">Términos de uso</a>
+            <a href="legal/aviso-ia.html">Aviso IA</a>
+            <button type="button" data-consent-open>Configurar cookies</button>
+        </nav>
+        <p class="site-footer__ia">🤖 Este sitio y su contenido se han creado con ayuda de herramientas de
+            inteligencia artificial bajo supervisión humana. El «Oráculo Imperial» usa IA (Google Gemini) para generar
+            textos que pueden contener errores. <a href="legal/aviso-ia.html">Más información</a>.</p>
+        <div class="site-footer__legal">
+            <p>© <span id="footer-year">2026</span> Julio Arteaga · LokiTrono de Barrios. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
     <!-- Código JS principal -->
     <script src="js/supabase.js"></script>
     <script src="js/app.js"></script>
+    <script>document.getElementById('footer-year').textContent = String(new Date().getFullYear());</script>
 </body>
 
 </html>

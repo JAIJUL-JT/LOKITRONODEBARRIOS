@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /js/
+Disallow: /sql/
+Disallow: /scripts/
+Disallow: /tests/
+Disallow: /make/
+Disallow: /node_modules/
+
+# Sitemap
+Sitemap: https://lokitronodebarrios.vercel.app/sitemap.xml

@@ -22,6 +22,51 @@ function puedeGestionarEventosBarrio(role) {
     return role === 'superadmin';
 }
 
+/*
+ * Jerarquía feudal de la corte:
+ *   master (Lokitrono Mayor) > superadmin > tronista (lokitronista) / jugador (maestre)
+ *
+ * El rol master se reserva a quien ostenta el Trono Mayor: puede conceder, editar
+ * y borrar cualquier rol, y es el único facultado para crear superadmins.
+ * Los superadmins solo crean maestres (jugador) y lokitronistas (tronista).
+ * Maestres y lokitronistas no crean roles, barrios ni eventos.
+ */
+const ROLES_VALIDOS = ['jugador', 'tronista', 'superadmin', 'master'];
+
+function esRolMaster(role) {
+    return role === 'master';
+}
+
+// Administradores de la corte: superadmin y master comparten el panel de gestión.
+function puedeAdministrar(role) {
+    return role === 'superadmin' || role === 'master';
+}
+
+// ¿Puede el actor asignar/crear el rol indicado?
+function puedeAsignarRol(actorRole, targetRole) {
+    if (actorRole === 'master') return ROLES_VALIDOS.includes(targetRole);
+    if (actorRole === 'superadmin') return targetRole === 'jugador' || targetRole === 'tronista';
+    return false;
+}
+
+// ¿Puede el actor editar o eliminar a un usuario que ya tiene cierto rol?
+function puedeGestionarRolDe(actorRole, targetRole) {
+    if (actorRole === 'master') return true;
+    if (actorRole === 'superadmin') return targetRole === 'jugador' || targetRole === 'tronista';
+    return false;
+}
+
+// Un lokitronista (tronista) no vota en eventos celebrados en su propio barrio.
+function lokitronistaNoPuedeVotarEn(evento, usuario) {
+    if (!usuario || usuario.role !== 'tronista' || !evento) return false;
+    const objetivo = String(evento.barrio || '').trim().toLowerCase();
+    if (!objetivo) return false;
+    const representado = String(usuario.barrio_representado || '').trim().toLowerCase();
+    const asignado = String(usuario.barrio_asignado || '').trim().toLowerCase();
+    return (representado && representado !== 'forastero' && representado === objetivo) ||
+        (asignado && asignado === objetivo);
+}
+
 function getCurrentUser() {
     try {
         const raw = localStorage.getItem(STORAGE_KEYS.usuarioActual);
@@ -39,7 +84,7 @@ const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usu
 
 function cambiarPestana(valor) {
     const usuario = getCurrentUser();
-    const esSuperadmin = !!(usuario && usuario.role === 'superadmin');
+    const esSuperadmin = !!(usuario && puedeAdministrar(usuario.role));
     if (!esSuperadmin && PESTANAS_ADMIN.includes(valor)) {
         valor = 'pestana-clasificacion';
     }
@@ -71,7 +116,7 @@ function actualizarInterfazSesion(usuario) {
         }
         if (nav) nav.style.display = 'block';
         if (contenido) contenido.style.display = 'block';
-        const esSuperadmin = usuario.role === 'superadmin';
+        const esSuperadmin = puedeAdministrar(usuario.role);
         if (optgroupAdmin) optgroupAdmin.style.display = esSuperadmin ? '' : 'none';
         const panelTronistasAdmin = document.getElementById('panel-superadmin-tronistas');
         if (panelTronistasAdmin) panelTronistasAdmin.style.display = esSuperadmin ? 'block' : 'none';
@@ -80,6 +125,15 @@ function actualizarInterfazSesion(usuario) {
 
         const panelSorteo = document.getElementById('panel-sorteo-barrios');
         if (panelSorteo) panelSorteo.style.display = esSuperadmin ? 'block' : 'none';
+
+        const esMaster = esRolMaster(usuario.role);
+        const grupoPin = document.getElementById('group-usuario-pin');
+        if (grupoPin) grupoPin.style.display = esMaster ? 'block' : 'none';
+        const accionesCredenciales = document.getElementById('acciones-credenciales-master');
+        if (accionesCredenciales) accionesCredenciales.style.display = esMaster ? 'block' : 'none';
+
+        if (typeof renderOpcionesRolUsuario === 'function') renderOpcionesRolUsuario();
+        if (typeof actualizarBadgeMake === 'function') actualizarBadgeMake();
 
         cambiarPestana('pestana-clasificacion');
     } else {
@@ -119,8 +173,8 @@ function getUsuariosAutorizadosLocal() {
         
         if (!Array.isArray(usuarios) || usuarios.length === 0) {
             usuarios = [
-                { id: 'user-julio-01', phone: '605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '123456', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu' },
-                { id: 'user-julio-02', phone: '+34605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '123456', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu' },
+                { id: 'user-julio-01', phone: '605676002', name: 'Julio', role: 'master', pin_code: '123456', barrio_representado: 'Forastero', barrio_asignado: 'Zorrotza' },
+                { id: 'user-julio-02', phone: '+34605676002', name: 'Julio', role: 'master', pin_code: '123456', barrio_representado: 'Forastero', barrio_asignado: 'Zorrotza' },
                 { id: 'user-superadmin-01', phone: '123456789', name: 'Superadmin Bilbao', role: 'superadmin', pin_code: '123456', barrio_representado: 'Abando', barrio_asignado: 'Abando' },
                 { id: 'user-superadmin-02', phone: 'admin', name: 'Superadmin Sistema', role: 'superadmin', pin_code: '123456', barrio_representado: 'Abando', barrio_asignado: 'Abando' },
                 { id: 'user-soraya', phone: '456123456', name: 'SORAYA', role: 'superadmin', pin_code: '123456', barrio_representado: 'Deusto', barrio_asignado: 'Deusto' },
@@ -131,9 +185,18 @@ function getUsuariosAutorizadosLocal() {
             // Asegurar que las cuentas con teléfonos superadmin tengan el rol superadmin actualizado
             let actualizado = false;
             usuarios.forEach(u => {
-                if (superadminPhones.includes(u.phone) && u.role !== 'superadmin') {
+                if (superadminPhones.includes(u.phone) && u.role !== 'superadmin' && u.role !== 'master') {
                     u.role = 'superadmin';
                     actualizado = true;
+                }
+                // El autor de la aplicación ostenta en exclusiva el Trono Mayor (rol master).
+                if (String(u.phone || '').replace(/\D/g, '').slice(-9) === '605676002') {
+                    if (u.role !== 'master' || u.name !== 'Julio' || u.barrio_asignado !== 'Zorrotza') {
+                        u.role = 'master';
+                        u.name = 'Julio';
+                        u.barrio_asignado = 'Zorrotza';
+                        actualizado = true;
+                    }
                 }
             });
             if (actualizado) {
@@ -157,6 +220,8 @@ const TITULOS_CONFIG_DEFAULT = {
     tronista_femenino: 'Lokitronista Lady',
     superadmin_masculino: 'Gran Maestre',
     superadmin_femenino: 'Gran Maestra',
+    master_masculino: 'Lokitrono Mayor',
+    master_femenino: 'Lokitrona Mayor',
     consejero_masculino: 'Consejero',
     consejero_femenino: 'Consejera'
 };
@@ -181,7 +246,7 @@ function guardarTitulosConfig(config) {
             // Save from form inputs
             const cfg = {};
             ['jugador_masculino', 'jugador_femenino', 'tronista_masculino', 'tronista_femenino',
-             'superadmin_masculino', 'superadmin_femenino'].forEach(key => {
+             'superadmin_masculino', 'superadmin_femenino', 'master_masculino', 'master_femenino'].forEach(key => {
                 const el = document.getElementById(`titulo-config-${key}`);
                 if (el) cfg[key] = el.value.trim() || TITULOS_CONFIG_DEFAULT[key];
             });
@@ -195,6 +260,7 @@ function guardarTitulosConfig(config) {
 
 function getIconoRango(rol, phone) {
     if (phone && CONSEJEROS_ESPECIALES.includes(String(phone))) return '🔱';
+    if (rol === 'master') return '🌟';
     if (rol === 'superadmin') return '🏰';
     if (rol === 'tronista') return '👑';
     return '⚔️';
@@ -225,7 +291,9 @@ function getTituloCompleto(usuario) {
 
     let titulo = '';
     const gender = usuario.gender || 'M';
-    if (rol === 'superadmin') {
+    if (rol === 'master') {
+        titulo = gender === 'F' ? (config.master_femenino || 'Lokitrona Mayor') : (config.master_masculino || 'Lokitrono Mayor');
+    } else if (rol === 'superadmin') {
         titulo = gender === 'F' ? config.superadmin_femenino : config.superadmin_masculino;
     } else if (rol === 'tronista') {
         titulo = gender === 'F' ? config.tronista_femenino : config.tronista_masculino;
@@ -369,14 +437,17 @@ function actualizarEstadoFormularioVoto() {
         String(v.maestre_id) === String(userId) &&
         String(v.evento_id || '') === String(evento.id)
     );
-    const puedeVotar = estadoVotacion.estado === 'ABIERTA' && !duplicado;
+    const bloqueadoPorBarrio = lokitronistaNoPuedeVotarEn(evento, user);
+    const puedeVotar = estadoVotacion.estado === 'ABIERTA' && !duplicado && !bloqueadoPorBarrio;
 
     if (estado) {
-        estado.textContent = duplicado
-            ? 'Ya has votado en este evento. Puedes consultar tu historial.'
-            : estadoVotacion.estado === 'ABIERTA'
-                ? `Votación abierta: ${estadoVotacion.horaInicio}–${estadoVotacion.horaFin}.`
-                : estadoVotacion.texto;
+        estado.textContent = bloqueadoPorBarrio
+            ? `Como Lokitronista de ${evento.barrio || 'este barrio'} no puedes votar en el evento de tu propio barrio.`
+            : duplicado
+                ? 'Ya has votado en este evento. Puedes consultar tu historial.'
+                : estadoVotacion.estado === 'ABIERTA'
+                    ? `Votación abierta: ${estadoVotacion.horaInicio}–${estadoVotacion.horaFin}.`
+                    : estadoVotacion.texto;
     }
     if (boton) boton.disabled = !puedeVotar;
 }
@@ -448,6 +519,12 @@ async function guardarVotoBarrioUsuario(event) {
 
     if (!evento) {
         alert('Selecciona un evento válido antes de votar.');
+        return;
+    }
+
+    if (lokitronistaNoPuedeVotarEn(evento, user)) {
+        alert(`Como Lokitronista de ${evento.barrio || 'este barrio'} no puedes votar en el evento de tu propio barrio.`);
+        actualizarEstadoFormularioVoto();
         return;
     }
 
@@ -599,7 +676,7 @@ function calcularNivelElemento(parentId, criterios) {
 
 function agregarNuevoCriterioJerarquico() {
     const usuario = getCurrentUser();
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Solo el Superadmin puede modificar los criterios.');
         return;
     }
@@ -646,7 +723,7 @@ function agregarNuevoCriterioJerarquico() {
 
 function eliminarCriterioJerarquico(id) {
     const usuario = getCurrentUser();
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Acceso denegado.');
         return;
     }
@@ -764,6 +841,7 @@ function descargarICSEvento(evento) {
 
 function puedeEditarEventoTronista(evento, role, usuario) {
     if (role === 'superadmin') return true;
+    if (role === 'master') return true;
     return false;
 }
 
@@ -773,7 +851,7 @@ function renderRepositorioVotos() {
     const key = getStorageKeyVotos ? getStorageKeyVotos() : STORAGE_KEYS.repositorioVotos;
     const votos = JSON.parse(localStorage.getItem(key) || '[]');
     const user = getCurrentUser ? getCurrentUser() : null;
-    const esAdmin = user && user.role === 'superadmin';
+    const esAdmin = user && puedeAdministrar(user.role);
 
     cuerpo.innerHTML = votos.length
         ? votos.map((v, index) => `
@@ -793,7 +871,7 @@ function renderRepositorioVotos() {
 
 function eliminarVotoRepositorio(index) {
     const user = getCurrentUser();
-    if (!user || user.role !== 'superadmin') {
+    if (!user || !puedeAdministrar(user.role)) {
         alert('Solo el Superadmin puede eliminar votos.');
         return;
     }
@@ -971,7 +1049,7 @@ function getStorageKeyVotos() {
 
 function generarEjemploCompeticionSimulada() {
     const usuario = getCurrentUser();
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Acceso restringido: Solo Superadministradores pueden generar partidas simuladas.');
         return;
     }
@@ -990,7 +1068,7 @@ function generarEjemploCompeticionSimulada() {
 
 function restaurarCompeticionCero() {
     const usuario = getCurrentUser();
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Acceso restringido: Solo Superadministradores.');
         return;
     }
@@ -1006,7 +1084,7 @@ function restaurarCompeticionCero() {
 function crearNuevoJuegoTorneo(event) {
     if (event) event.preventDefault();
     const usuario = getCurrentUser();
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Acceso restringido a Superadmin.');
         return;
     }
@@ -1322,7 +1400,7 @@ function renderEventos() {
     const panelAdmin = document.getElementById('contenedor-gestion-eventos-admin');
 
     const currentUser = getCurrentUser();
-    const esAdmin = currentUser && currentUser.role === 'superadmin';
+    const esAdmin = currentUser && puedeAdministrar(currentUser.role);
 
     if (panelAdmin) {
         panelAdmin.style.display = esAdmin ? 'block' : 'none';
@@ -1584,7 +1662,7 @@ function iniciarTimerRelojCuentaAtras() {
 
 async function pedirCredencialesSuperadmin() {
     const user = getCurrentUser();
-    if (!user || user.role !== 'superadmin') {
+    if (!user || !puedeAdministrar(user.role)) {
         throw new Error('Solo el superadministrador puede gestionar eventos.');
     }
 
@@ -1669,7 +1747,7 @@ async function eliminarEventoEnSupabase(eventoId) {
 
 function editarEventoBarrio(eventoId) {
     const user = getCurrentUser();
-    if (!user || user.role !== 'superadmin') {
+    if (!user || !puedeAdministrar(user.role)) {
         alert('Solo el Superadministrador puede editar eventos.');
         return;
     }
@@ -1714,7 +1792,7 @@ function resetFormEvento() {
 
 async function eliminarEventoBarrio(eventoId) {
     const user = getCurrentUser();
-    if (!user || user.role !== 'superadmin') {
+    if (!user || !puedeAdministrar(user.role)) {
         alert('Solo el Superadministrador puede borrar eventos.');
         return;
     }
@@ -1737,7 +1815,7 @@ async function eliminarEventoBarrio(eventoId) {
 
 async function toggleCerrarVotacionEvento(eventoId) {
     const user = getCurrentUser();
-    if (!user || user.role !== 'superadmin') {
+    if (!user || !puedeAdministrar(user.role)) {
         alert('Solo el Superadministrador puede cerrar o abrir votaciones.');
         return;
     }
@@ -1776,7 +1854,7 @@ async function guardarEventoBarrio(event) {
     if (event) event.preventDefault();
 
     const user = getCurrentUser();
-    if (!user || user.role !== 'superadmin') {
+    if (!user || !puedeAdministrar(user.role)) {
         alert('Solo el Superadministrador puede programar o editar eventos.');
         return;
     }
@@ -1842,7 +1920,7 @@ async function guardarEventoBarrioDesdePestana(event) {
     if (event) event.preventDefault();
 
     const user = getCurrentUser();
-    if (!user || user.role !== 'superadmin') {
+    if (!user || !puedeAdministrar(user.role)) {
         alert('Solo el Superadministrador puede gestionar eventos.');
         return;
     }
@@ -2002,7 +2080,7 @@ function renderGalaFinal() {
     if (displayPremio) displayPremio.textContent = config.premio || GALA_FINAL_DEFAULT.premio;
 
     const currentUser = getCurrentUser();
-    const esAdmin = currentUser && currentUser.role === 'superadmin';
+    const esAdmin = currentUser && puedeAdministrar(currentUser.role);
 
     const panelAdmin = document.getElementById('contenedor-gala-admin-panel');
     if (panelAdmin) panelAdmin.style.display = esAdmin ? 'block' : 'none';
@@ -2022,7 +2100,7 @@ function guardarEventoFinal(event) {
     if (event) event.preventDefault();
 
     const user = getCurrentUser();
-    if (!user || user.role !== 'superadmin') {
+    if (!user || !puedeAdministrar(user.role)) {
         alert('Acceso restringido: Solo el Superadministrador puede modificar la Gala Final.');
         return;
     }
@@ -2041,7 +2119,7 @@ function guardarEventoFinal(event) {
 
 function borrarConfiguracionGalaFinal() {
     const user = getCurrentUser();
-    if (!user || user.role !== 'superadmin') {
+    if (!user || !puedeAdministrar(user.role)) {
         alert('Acceso restringido a Superadmin.');
         return;
     }
@@ -2066,6 +2144,308 @@ function descargarICSGalaFinal() {
 }
 
 /* ==========================================
+   INTEGRACIÓN MAKE.COM & WHATSAPP (Bienvenidas y PIN)
+   ========================================== */
+
+function getSitioPublico() {
+    return (window.LOKI_LEGAL && window.LOKI_LEGAL.sitio) || window.location.origin;
+}
+
+function generarPinSeisDigitos() {
+    return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function etiquetaRol(role) {
+    const etiquetas = {
+        master: 'Lokitrono Mayor',
+        superadmin: 'Superadmin',
+        tronista: 'Lokitronista',
+        jugador: 'Maestre'
+    };
+    return etiquetas[role] || 'Maestre';
+}
+
+function getMakeWebhookUrl() {
+    try {
+        const guardada = localStorage.getItem('make_webhook_url');
+        if (guardada && guardada.trim()) return guardada.trim();
+    } catch (e) { /* almacenamiento no disponible */ }
+    const cfg = (window.__APP_CONFIG__ && window.__APP_CONFIG__.MAKE_WEBHOOK_URL) || window.MAKE_WEBHOOK_URL || '';
+    return String(cfg).trim();
+}
+
+function actualizarBadgeMake() {
+    const badge = document.getElementById('badge-make-webhook-status');
+    const input = document.getElementById('input-make-webhook-url');
+    const url = getMakeWebhookUrl();
+    if (input && !input.value) input.value = url;
+    if (!badge) return;
+    if (url) {
+        badge.textContent = '🟢 Configurado';
+        badge.style.background = '#22c55e';
+    } else {
+        badge.textContent = '🟡 No Configurado';
+        badge.style.background = '#eab308';
+    }
+    badge.style.color = '#000';
+}
+
+function guardarWebhookMakeConfig() {
+    const input = document.getElementById('input-make-webhook-url');
+    const estado = document.getElementById('make-webhook-test-status');
+    const url = (input?.value || '').trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+        if (estado) estado.textContent = 'La URL del webhook debe empezar por http:// o https://';
+        return;
+    }
+    try {
+        if (url) localStorage.setItem('make_webhook_url', url);
+        else localStorage.removeItem('make_webhook_url');
+    } catch (e) { /* noop */ }
+    actualizarBadgeMake();
+    if (estado) {
+        estado.textContent = url
+            ? '💾 Webhook guardado. Las bienvenidas por WhatsApp se enviarán a esta URL.'
+            : 'Webhook eliminado.';
+    }
+}
+
+async function enviarWebhookMake(payload) {
+    const url = getMakeWebhookUrl();
+    if (!url) return { ok: false, motivo: 'sin_webhook' };
+    try {
+        const respuesta = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return { ok: respuesta.ok, status: respuesta.status };
+    } catch (error) {
+        console.warn('No se pudo enviar el webhook de Make/WhatsApp:', error?.message || error);
+        return { ok: false, motivo: 'error_red' };
+    }
+}
+
+// Mensaje de bienvenida con la dirección pública del juego y el PIN de acceso.
+async function enviarBienvenidaWhatsApp({ phone, name, pin, role }) {
+    const sitio = getSitioPublico();
+    const nombre = (name || phone || '').trim() || 'Maestre';
+    const mensaje = [
+        `🏰 ¡Bienvenido/a a LokiTrono de Barrios, ${nombre}!`,
+        '',
+        `Ya formas parte de la corte como ${etiquetaRol(role)}.`,
+        `Accede al juego en: ${sitio}`,
+        `Teléfono de acceso: ${phone}`,
+        `PIN de acceso: ${pin}`,
+        '',
+        'Guarda este PIN. Si lo pierdes, pide a la organización que genere uno nuevo.'
+    ].join('\n');
+
+    return enviarWebhookMake({
+        evento: 'BIENVENIDA_USUARIO',
+        telefono: phone,
+        nombre,
+        pin,
+        rol: role || 'jugador',
+        rol_etiqueta: etiquetaRol(role),
+        url_publica: sitio,
+        mensaje
+    });
+}
+
+async function probarEnvioWebhookMake() {
+    const estado = document.getElementById('make-webhook-test-status');
+    if (!getMakeWebhookUrl()) {
+        if (estado) estado.textContent = 'Configura y guarda una URL de webhook antes de probar.';
+        return;
+    }
+    if (estado) estado.textContent = 'Enviando prueba…';
+    const resultado = await enviarWebhookMake({
+        evento: 'PRUEBA_WEBHOOK',
+        telefono: '000000000',
+        nombre: 'Prueba del Reino',
+        mensaje: '🧪 Prueba de conexión desde LokiTrono de Barrios. Si recibes este mensaje, el webhook está operativo.'
+    });
+    if (estado) {
+        estado.textContent = resultado.ok
+            ? `✅ Prueba enviada correctamente (HTTP ${resultado.status}).`
+            : `❌ No se pudo enviar la prueba (${resultado.motivo || 'HTTP ' + resultado.status}).`;
+    }
+}
+
+// Genera un PIN nuevo para un usuario y lo reenvía por WhatsApp.
+async function regenerarPinYEnviarWhatsApp(userId) {
+    const currentUser = getCurrentUser();
+    if (!currentUser || !puedeAdministrar(currentUser.role)) {
+        alert('Solo un administrador (Superadmin o Master) puede regenerar PINs.');
+        return;
+    }
+
+    const objetivo = getUsuariosAutorizadosLocal().find(u => u.id === userId) || null;
+    if (objetivo && !puedeGestionarRolDe(currentUser.role, objetivo.role)) {
+        alert('No tienes permiso para gestionar el PIN de un usuario con ese rol.');
+        return;
+    }
+    if (!esUUID(userId)) {
+        alert('Este usuario solo existe en el respaldo local; no se puede regenerar su PIN en el servidor.');
+        return;
+    }
+    if (!window.confirm('Se generará un PIN nuevo y se enviará por WhatsApp al usuario. ¿Continuar?')) return;
+
+    const nuevoPin = generarPinSeisDigitos();
+    try {
+        const credenciales = await pedirCredencialesSuperadmin();
+        if (!credenciales) return;
+        const { error } = await credenciales.client.rpc('restablecer_pin_superadmin', {
+            p_phone: credenciales.phone,
+            p_pin: credenciales.pin,
+            p_usuario_id: userId,
+            p_nuevo_pin: nuevoPin
+        });
+        if (error) throw error;
+
+        const envio = await enviarBienvenidaWhatsApp({
+            phone: objetivo?.phone || '',
+            name: objetivo?.name || '',
+            pin: nuevoPin,
+            role: objetivo?.role || 'jugador'
+        });
+        if (envio.ok) {
+            alert('✅ PIN regenerado y enviado por WhatsApp.');
+        } else if (envio.motivo === 'sin_webhook') {
+            alert(`✅ PIN regenerado: ${nuevoPin}\n⚠️ No hay webhook de Make configurado; no se pudo enviar por WhatsApp.`);
+        } else {
+            alert(`✅ PIN regenerado: ${nuevoPin}\n⚠️ No se pudo enviar por WhatsApp.`);
+        }
+    } catch (error) {
+        console.error('Error regenerando el PIN:', error);
+        alert(`No se pudo regenerar el PIN: ${error?.message || 'error desconocido'}`);
+    }
+}
+
+// Establece manualmente un PIN de 6 dígitos para un usuario (exclusivo del Master).
+async function editarPinUsuario(userId) {
+    const currentUser = getCurrentUser();
+    if (!currentUser || !esRolMaster(currentUser.role)) {
+        alert('Solo el Master puede editar el PIN de forma manual.');
+        return;
+    }
+
+    const objetivo = getUsuariosAutorizadosLocal().find(u => u.id === userId) || null;
+    if (!objetivo) {
+        alert('No se ha encontrado el usuario.');
+        return;
+    }
+    if (!esUUID(userId)) {
+        alert('Este usuario solo existe en el respaldo local; no se puede editar su PIN en el servidor.');
+        return;
+    }
+
+    const nuevo = window.prompt(`Introduce el nuevo PIN de 6 dígitos para ${objetivo.name || objetivo.phone}:`, objetivo.pin_code || '');
+    if (nuevo === null || !nuevo.trim()) return;
+    if (!/^\d{6}$/.test(nuevo.trim())) {
+        alert('El PIN debe contener exactamente 6 dígitos.');
+        return;
+    }
+
+    try {
+        const credenciales = await pedirCredencialesSuperadmin();
+        if (!credenciales) return;
+        const { error } = await credenciales.client.rpc('restablecer_pin_superadmin', {
+            p_phone: credenciales.phone,
+            p_pin: credenciales.pin,
+            p_usuario_id: userId,
+            p_nuevo_pin: nuevo.trim()
+        });
+        if (error) throw error;
+        await recargarUsuariosSupabase(credenciales);
+        alert('✅ PIN actualizado correctamente.');
+    } catch (error) {
+        console.error('Error al editar el PIN:', error);
+        alert(`No se pudo editar el PIN: ${error?.message || 'error desconocido'}`);
+    }
+}
+
+// Borra el PIN de un usuario y revoca sus sesiones (exclusivo del Master).
+async function borrarPinUsuario(userId) {
+    const currentUser = getCurrentUser();
+    if (!currentUser || !esRolMaster(currentUser.role)) {
+        alert('Solo el Master puede borrar PIN de acceso.');
+        return;
+    }
+    const objetivo = getUsuariosAutorizadosLocal().find(u => u.id === userId) || null;
+    if (!objetivo) {
+        alert('No se ha encontrado el usuario.');
+        return;
+    }
+    if (!esUUID(userId)) {
+        alert('Este usuario solo existe en el respaldo local; no se puede borrar su PIN en el servidor.');
+        return;
+    }
+    if (!window.confirm(`¿Eliminar el PIN de ${objetivo.name || objetivo.phone}? La cuenta no podrá iniciar sesión hasta que se le asigne uno nuevo.`)) return;
+
+    try {
+        const credenciales = await pedirCredencialesSuperadmin();
+        if (!credenciales) return;
+        const { error } = await credenciales.client.rpc('borrar_pin_superadmin', {
+            p_phone: credenciales.phone,
+            p_pin: credenciales.pin,
+            p_usuario_id: userId
+        });
+        if (error) throw error;
+        await recargarUsuariosSupabase(credenciales);
+        alert('✅ PIN eliminado. Genera uno nuevo para que el usuario pueda acceder.');
+    } catch (error) {
+        console.error('Error al borrar el PIN:', error);
+        alert(`No se pudo borrar el PIN: ${error?.message || 'error desconocido'}`);
+    }
+}
+
+// Descarga un CSV con las credenciales de todos los usuarios (exclusivo del Master).
+function descargarUsuariosCSV() {
+    const currentUser = getCurrentUser();
+    if (!currentUser || !esRolMaster(currentUser.role)) {
+        alert('Solo el Master puede descargar las credenciales de los usuarios.');
+        return;
+    }
+
+    const usuarios = getUsuariosAutorizadosLocal();
+    if (!usuarios || usuarios.length === 0) {
+        alert('No hay usuarios para exportar.');
+        return;
+    }
+
+    const escaparCsv = valor => {
+        const texto = valor === null || valor === undefined ? '' : String(valor);
+        return `"${texto.replace(/"/g, '""')}"`;
+    };
+
+    const cabecera = ['id', 'telefono', 'nombre', 'email', 'rol', 'pin', 'barrio_asignado', 'barrio_representado', 'genero'];
+    const filas = usuarios.map(u => [
+        u.id, u.phone, u.name, u.email, u.role, u.pin_code,
+        u.barrio_asignado, u.barrio_representado, u.gender
+    ].map(escaparCsv).join(','));
+
+    const csv = [cabecera.join(','), ...filas].join('\n');
+    const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `credenciales_lokitrono_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+window.guardarWebhookMakeConfig = guardarWebhookMakeConfig;
+window.probarEnvioWebhookMake = probarEnvioWebhookMake;
+window.regenerarPinYEnviarWhatsApp = regenerarPinYEnviarWhatsApp;
+window.editarPinUsuario = editarPinUsuario;
+window.borrarPinUsuario = borrarPinUsuario;
+window.descargarUsuariosCSV = descargarUsuariosCSV;
+
+/* ==========================================
    GESTIÓN DE USUARIOS AUTORIZADOS
    ========================================== */
 
@@ -2082,12 +2462,27 @@ window.cambiarOrdenUsuarios = function(col) {
     renderTablaUsuarios();
 };
 
+// Reconstruye las opciones del selector de rol según los permisos del administrador en sesión.
+function renderOpcionesRolUsuario() {
+    const select = document.getElementById('usuario-role');
+    if (!select) return;
+    const currentUser = getCurrentUser();
+    const actor = currentUser && currentUser.role;
+    const opcionesPermitidas = ROLES_VALIDOS.filter(rol => puedeAsignarRol(actor, rol));
+    const valorPrevio = select.value;
+    const etiquetas = { master: '🌟 Master (Lokitrono Mayor)', superadmin: '🏰 Superadmin', tronista: '👑 Lokitronista', jugador: '⚔️ Maestre' };
+    select.innerHTML = opcionesPermitidas
+        .map(rol => `<option value="${rol}">${etiquetas[rol] || rol}</option>`)
+        .join('');
+    if (opcionesPermitidas.includes(valorPrevio)) select.value = valorPrevio;
+}
+
 function renderTablaUsuarios() {
     const tbody = document.getElementById('tabla-usuarios-body');
     if (!tbody) return;
 
     const currentUser = getCurrentUser();
-    const esSuperadmin = currentUser && currentUser.role === 'superadmin';
+    const esSuperadmin = currentUser && puedeAdministrar(currentUser.role);
     let usuarios = getUsuariosAutorizadosLocal();
 
     if (usuarios && usuarios.length > 0 && ordenUsuariosCol) {
@@ -2110,7 +2505,9 @@ function renderTablaUsuarios() {
         const tituloCompleto = getTituloCompleto(user);
 
         let rolBadge = '';
-        if (user.role === 'superadmin') {
+        if (user.role === 'master') {
+            rolBadge = `<span class="pill-user" style="background:rgba(120,53,15,0.9);color:#fde68a;border:1px solid var(--oro-brillante);padding:2px 8px;border-radius:12px;font-size:0.78rem;">🌟 Master</span>`;
+        } else if (user.role === 'superadmin') {
             rolBadge = `<span class="pill-user" style="background:rgba(22,101,52,0.8);color:#86efac;border:1px solid #4ade80;padding:2px 8px;border-radius:12px;font-size:0.78rem;">🏰 Superadmin</span>`;
         } else if (user.role === 'tronista') {
             rolBadge = `<span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 8px;border-radius:12px;font-size:0.78rem;">👑 Tronista</span>`;
@@ -2118,10 +2515,27 @@ function renderTablaUsuarios() {
             rolBadge = `<span class="pill-user" style="background:rgba(63,63,70,0.8);color:#d4d4d8;border:1px solid #52525b;padding:2px 8px;border-radius:12px;font-size:0.78rem;">⚔️ Jugador</span>`;
         }
 
-        const acciones = esSuperadmin
+        const puedeGestionarFila = esSuperadmin &&
+            (!currentUser || puedeGestionarRolDe(currentUser.role, user.role));
+        const esMasterActor = !!(currentUser && esRolMaster(currentUser.role));
+        const acciones = puedeGestionarFila
             ? `<button class="btn-cuervo" style="padding:3px 8px;font-size:0.78rem;" onclick="editarUsuario('${user.id}')">✏️</button>
                <button class="btn-cuervo" style="padding:3px 8px;font-size:0.78rem;background:#7f1d1d;" onclick="eliminarUsuario('${user.id}')">🗑️</button>`
             : '-';
+
+        let celdaPin;
+        if (!puedeGestionarFila) {
+            celdaPin = '••••';
+        } else if (esMasterActor) {
+            const pinVisible = user.pin_code ? String(user.pin_code) : '—';
+            celdaPin = `<code style="color:#fde68a;font-weight:bold;">${pinVisible}</code>
+                <button class="btn-cuervo" style="padding:2px 6px;font-size:0.72rem;margin-left:6px;" title="Editar PIN" onclick="editarPinUsuario('${user.id}')">✏️</button>
+                <button class="btn-cuervo" style="padding:2px 6px;font-size:0.72rem;margin-left:4px;" title="Regenerar PIN y reenviar por WhatsApp" onclick="regenerarPinYEnviarWhatsApp('${user.id}')">🔑</button>
+                <button class="btn-cuervo" style="padding:2px 6px;font-size:0.72rem;margin-left:4px;background:#7f1d1d;" title="Borrar PIN" onclick="borrarPinUsuario('${user.id}')">🗑️</button>`;
+        } else {
+            celdaPin = `<span aria-hidden="true">••••••</span>
+                <button class="btn-cuervo" style="padding:2px 6px;font-size:0.72rem;margin-left:6px;" title="Regenerar PIN y reenviar por WhatsApp" onclick="regenerarPinYEnviarWhatsApp('${user.id}')">🔑</button>`;
+        }
 
         return `<tr>
             <td style="font-size:1.5rem;text-align:center;">${icono}</td>
@@ -2131,10 +2545,7 @@ function renderTablaUsuarios() {
             <td>${user.email || '-'}</td>
             <td>${user.barrio_representado || 'Forastero'}</td>
             <td>${user.barrio_asignado || '-'}</td>
-            <td>${esSuperadmin
-                ? `<span aria-hidden="true">••••••</span>
-                   <button class="btn-cuervo" style="padding:2px 6px;font-size:0.72rem;margin-left:6px;" title="Restablecer PIN" onclick="restablecerPinUsuario('${user.id}')">🔑</button>`
-                : '••••'}</td>
+            <td>${celdaPin}</td>
             <td>${acciones}</td>
         </tr>`;
     }).join('');
@@ -2179,7 +2590,7 @@ async function recargarUsuariosSupabase(credenciales) {
 
 async function cargarUsuariosDesdeSupabase() {
     const currentUser = getCurrentUser();
-    if (!currentUser || currentUser.role !== 'superadmin') return false;
+    if (!currentUser || !puedeAdministrar(currentUser.role)) return false;
     const credenciales = await pedirCredencialesSuperadmin();
     if (!credenciales) return false;
     return recargarUsuariosSupabase(credenciales);
@@ -2188,8 +2599,8 @@ async function cargarUsuariosDesdeSupabase() {
 async function guardarUsuario(event) {
     if (event) event.preventDefault();
     const currentUser = getCurrentUser();
-    if (!currentUser || currentUser.role !== 'superadmin') {
-        alert('Solo Superadmin puede gestionar usuarios.');
+    if (!currentUser || !puedeAdministrar(currentUser.role)) {
+        alert('Solo un administrador (Superadmin o Master) puede gestionar usuarios.');
         return;
     }
 
@@ -2202,11 +2613,35 @@ async function guardarUsuario(event) {
     const email = document.getElementById('usuario-email')?.value?.trim() || '';
     const tituloCustom = document.getElementById('usuario-titulo-custom')?.value?.trim() || '';
     const gender = document.getElementById('usuario-gender')?.value || 'M';
+    const pinManual = esRolMaster(currentUser.role)
+        ? (document.getElementById('usuario-pin')?.value?.trim() || '')
+        : '';
 
     if (!phone) {
         alert('El teléfono es obligatorio.');
         return;
     }
+
+    if (pinManual && !/^\d{6}$/.test(pinManual)) {
+        alert('El PIN debe contener exactamente 6 dígitos (o déjalo vacío para generar uno automáticamente).');
+        return;
+    }
+
+    // Jerarquía de roles: el master lo puede todo; el superadmin solo maestres y lokitronistas.
+    if (!puedeAsignarRol(currentUser.role, role)) {
+        alert('No tienes permiso para asignar ese rol. Solo el Master puede crear o editar Superadmins y Masters.');
+        return;
+    }
+
+    const usuariosExistentes = getUsuariosAutorizadosLocal();
+    const usuarioEditado = editId ? usuariosExistentes.find(u => u.id === editId) : null;
+    if (usuarioEditado && !puedeGestionarRolDe(currentUser.role, usuarioEditado.role)) {
+        alert('No tienes permiso para editar a un usuario con ese rol.');
+        return;
+    }
+
+    const esCreacion = !editId;
+    const pinAcceso = pinManual || generarPinSeisDigitos();
 
     // Persistencia central en Supabase (si el usuario editado ya procede de allí).
     if (!editId || esUUID(editId)) {
@@ -2223,6 +2658,7 @@ async function guardarUsuario(event) {
                 gender,
                 titulo_custom: tituloCustom
             };
+            if (pinManual) datos.pin_code = pinManual;
             if (editId) {
                 const { error } = await credenciales.client.rpc('editar_usuario_superadmin', {
                     p_phone: credenciales.phone,
@@ -2232,7 +2668,7 @@ async function guardarUsuario(event) {
                 });
                 if (error) throw error;
             } else {
-                datos.pin_code = String(Math.floor(100000 + Math.random() * 900000));
+                datos.pin_code = pinAcceso;
                 const { error } = await credenciales.client.rpc('crear_usuario_superadmin', {
                     p_phone: credenciales.phone,
                     p_pin: credenciales.pin,
@@ -2242,7 +2678,11 @@ async function guardarUsuario(event) {
             }
             await recargarUsuariosSupabase(credenciales);
             resetFormUsuario();
-            alert(editId ? '✅ Usuario actualizado.' : '✅ Usuario añadido.');
+            if (esCreacion) {
+                await enviarBienvenidaTrasAlta({ phone, name: nombre || phone, pin: pinAcceso, role });
+            } else {
+                alert('✅ Usuario actualizado.');
+            }
             return;
         } catch (error) {
             console.warn('Guardado de usuario en Supabase no disponible; se usa el respaldo local:', error?.message || error);
@@ -2263,18 +2703,18 @@ async function guardarUsuario(event) {
                 barrio_asignado: barrioAsig,
                 email,
                 titulo_custom: tituloCustom,
-                gender
+                gender,
+                ...(pinManual ? { pin_code: pinManual } : {})
             };
         }
     } else {
         const nuevoId = `user-${Date.now()}`;
-        const pin = String(Math.floor(100000 + Math.random() * 900000));
         usuarios.push({
             id: nuevoId,
             phone,
             name: nombre || phone,
             role,
-            pin_code: pin,
+            pin_code: pinAcceso,
             barrio_representado: barrioRep,
             barrio_asignado: barrioAsig,
             email,
@@ -2287,13 +2727,37 @@ async function guardarUsuario(event) {
     resetFormUsuario();
     renderTablaUsuarios();
     renderListaTronistas();
-    alert(editId ? '✅ Usuario actualizado.' : '✅ Usuario añadido.');
+    if (esCreacion) {
+        await enviarBienvenidaTrasAlta({ phone, name: nombre || phone, pin: pinAcceso, role });
+    } else {
+        alert('✅ Usuario actualizado.');
+    }
+}
+
+// Envía el mensaje de bienvenida por WhatsApp (vía Make) y avisa al administrador.
+async function enviarBienvenidaTrasAlta({ phone, name, pin, role }) {
+    const resultado = await enviarBienvenidaWhatsApp({ phone, name, pin, role });
+    if (resultado.ok) {
+        alert(`✅ Usuario añadido. Se ha enviado la bienvenida por WhatsApp con su PIN (${pin}).`);
+    } else if (resultado.motivo === 'sin_webhook') {
+        alert(`✅ Usuario añadido.\n⚠️ No hay webhook de Make configurado, así que no se pudo enviar la bienvenida automática.\n\nComparte tú el acceso:\n• Web: ${(window.LOKI_LEGAL && window.LOKI_LEGAL.sitio) || window.location.origin}\n• Teléfono: ${phone}\n• PIN: ${pin}`);
+    } else {
+        alert(`✅ Usuario añadido.\n⚠️ No se pudo enviar la bienvenida por WhatsApp.\n\nComparte tú el acceso:\n• Web: ${(window.LOKI_LEGAL && window.LOKI_LEGAL.sitio) || window.location.origin}\n• Teléfono: ${phone}\n• PIN: ${pin}`);
+    }
 }
 
 function editarUsuario(userId) {
     const usuarios = getUsuariosAutorizadosLocal();
     const user = usuarios.find(u => u.id === userId);
     if (!user) return;
+
+    const currentUser = getCurrentUser();
+    if (!currentUser || !puedeGestionarRolDe(currentUser.role, user.role)) {
+        alert('No tienes permiso para editar a un usuario con ese rol.');
+        return;
+    }
+
+    if (typeof renderOpcionesRolUsuario === 'function') renderOpcionesRolUsuario();
 
     const idEdit = document.getElementById('usuario-id-edit');
     const phoneEl = document.getElementById('usuario-phone');
@@ -2303,6 +2767,7 @@ function editarUsuario(userId) {
     const emailEl = document.getElementById('usuario-email');
     const tituloEl = document.getElementById('usuario-titulo-custom');
     const genderEl = document.getElementById('usuario-gender');
+    const pinEl = document.getElementById('usuario-pin');
     const btnGuardar = document.getElementById('btn-guardar-user');
     const btnCancelar = document.getElementById('btn-cancelar-user');
 
@@ -2314,6 +2779,7 @@ function editarUsuario(userId) {
     if (emailEl) emailEl.value = user.email || '';
     if (tituloEl) tituloEl.value = user.titulo_custom || '';
     if (genderEl) genderEl.value = user.gender || 'M';
+    if (pinEl) pinEl.value = esRolMaster(currentUser.role) ? (user.pin_code || '') : '';
     if (btnGuardar) btnGuardar.textContent = '💾 Actualizar Usuario';
     if (btnCancelar) btnCancelar.style.display = 'inline-block';
 
@@ -2323,8 +2789,13 @@ function editarUsuario(userId) {
 
 async function eliminarUsuario(userId) {
     const currentUser = getCurrentUser();
-    if (!currentUser || currentUser.role !== 'superadmin') {
-        alert('Solo Superadmin puede eliminar usuarios del Reino.');
+    if (!currentUser || !puedeAdministrar(currentUser.role)) {
+        alert('Solo un administrador (Superadmin o Master) puede eliminar usuarios del Reino.');
+        return;
+    }
+    const objetivo = getUsuariosAutorizadosLocal().find(u => u.id === userId) || null;
+    if (objetivo && !puedeGestionarRolDe(currentUser.role, objetivo.role)) {
+        alert('No tienes permiso para eliminar a un usuario con ese rol.');
         return;
     }
     if (!confirm('🗑️ ¿Eliminar este usuario del Reino?')) return;
@@ -2366,7 +2837,7 @@ function resetFormUsuario() {
 
 async function restablecerPinUsuario(userId) {
     const currentUser = getCurrentUser();
-    if (!currentUser || currentUser.role !== 'superadmin') {
+    if (!currentUser || !puedeAdministrar(currentUser.role)) {
         alert('Solo Superadmin puede restablecer PINs.');
         return;
     }
@@ -2402,7 +2873,7 @@ async function restablecerPinUsuario(userId) {
 async function asignarTronistaAdmin(event) {
     if (event) event.preventDefault();
     const currentUser = getCurrentUser();
-    if (!currentUser || currentUser.role !== 'superadmin') {
+    if (!currentUser || !puedeAdministrar(currentUser.role)) {
         alert('Solo Superadmin puede asignar títulos de Tronista.');
         return;
     }
@@ -2412,6 +2883,12 @@ async function asignarTronistaAdmin(event) {
 
     if (!userId || !barrio) {
         alert('Selecciona un usuario y un barrio.');
+        return;
+    }
+
+    const objetivo = getUsuariosAutorizadosLocal().find(u => u.id === userId) || null;
+    if (objetivo && !puedeGestionarRolDe(currentUser.role, objetivo.role)) {
+        alert('No tienes permiso para nombrar Lokitronista a este usuario.');
         return;
     }
 
@@ -2641,7 +3118,7 @@ function renderListaBarrios() {
 
     const usuarios = typeof getUsuariosAutorizadosLocal === 'function' ? getUsuariosAutorizadosLocal() : [];
     const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-    const esSuperadmin = !!(currentUser && currentUser.role === 'superadmin');
+    const esSuperadmin = !!(currentUser && puedeAdministrar(currentUser.role));
 
     contenedor.innerHTML = casasCache.map(casa => {
         const id = escaparHTML(String(casa.id || ''));
@@ -2707,7 +3184,7 @@ function renderListaBarrios() {
 
 async function quitarUsuarioBarrio(phone) {
     const usuarioAuth = getCurrentUser();
-    if (!usuarioAuth || usuarioAuth.role !== 'superadmin') {
+    if (!usuarioAuth || !puedeAdministrar(usuarioAuth.role)) {
         alert('Solo un superadministrador puede desvincular usuarios.');
         return;
     }
@@ -2752,7 +3229,7 @@ async function quitarUsuarioBarrio(phone) {
 
 function editarBarrio(id) {
     const usuario = getCurrentUser();
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Solo un superadministrador puede editar barrios.');
         return;
     }
@@ -2799,7 +3276,7 @@ async function guardarBarrio(event) {
     if (event) event.preventDefault();
 
     const usuario = getCurrentUser();
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Solo un superadministrador puede gestionar barrios.');
         return;
     }
@@ -2911,7 +3388,7 @@ async function guardarBarrio(event) {
 
 async function eliminarBarrio(id) {
     const usuario = getCurrentUser();
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Solo un superadministrador puede eliminar barrios.');
         return;
     }
@@ -3096,7 +3573,7 @@ function getRandomElement(arr) {
 
 function generarPartidaSimulacionCompleta() {
     const usuario = getCurrentUser();
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Acceso restringido: Solo el Superadministrador puede generar partidas simuladas.');
         return;
     }
@@ -3193,7 +3670,7 @@ function generarPartidaSimulacionCompleta() {
     const superadminPhones = ['605676002', '+34605676002', '123456789', 'admin', '456123456'];
 
     usuariosSim.forEach(usr => {
-        const esUsrSuperadmin = usr.role === 'superadmin' || superadminPhones.includes(usr.phone);
+        const esUsrSuperadmin = usr.role === 'superadmin' || usr.role === 'master' || superadminPhones.includes(usr.phone);
         if (!esUsrSuperadmin) {
             votosSim.push({
                 maestre_id: usr.phone,
@@ -3404,7 +3881,7 @@ function renderDirectorioUsuariosSim() {
 
     tbody.innerHTML = usuariosFiltrados.map(u => {
         const votosEmitidos = votos.filter(v => v.maestre_id === u.phone).length;
-        const badgeRol = u.role === 'superadmin' ? '👑 Superadmin' : (u.role === 'tronista' ? '🛡️ Tronista' : '👤 Jugador');
+        const badgeRol = u.role === 'master' ? '🌟 Master' : (u.role === 'superadmin' ? '👑 Superadmin' : (u.role === 'tronista' ? '🛡️ Tronista' : '👤 Jugador'));
         return `
             <tr>
                 <td><strong>${u.name}</strong></td>
@@ -3699,7 +4176,7 @@ window.generarRecomendacionGemini = generarRecomendacionGemini;
 
 function cargarDatosSemilla() {
     const currentUser = getCurrentUser();
-    if (!currentUser || currentUser.role !== 'superadmin') {
+    if (!currentUser || !puedeAdministrar(currentUser.role)) {
         alert('Solo Superadmin puede cargar los datos de demostración.');
         return;
     }
@@ -3898,7 +4375,7 @@ async function generarSorteoBarrios() {
     const boton = document.getElementById('btn-generar-sorteo-barrios');
     const client = getSupabaseBarriosClient();
 
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Solo un superadministrador puede generar el sorteo.');
         return;
     }
@@ -3943,7 +4420,7 @@ async function guardarOrdenSorteoBarrios() {
     const boton = document.getElementById('btn-guardar-orden-sorteo');
     const client = getSupabaseBarriosClient();
 
-    if (!usuario || usuario.role !== 'superadmin') {
+    if (!usuario || !puedeAdministrar(usuario.role)) {
         alert('Solo un superadministrador puede guardar el orden.');
         return;
     }

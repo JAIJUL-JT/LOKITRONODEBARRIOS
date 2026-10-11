@@ -1,5 +1,7 @@
 // js/supabase.js
-const SUPER_ADMIN_KEY = "BILBAO_REY_2026";
+// La clave de superadministrador se configura en runtime (window.__APP_CONFIG__.SUPERADMIN_KEY).
+// No se incrusta ningún secreto en el código fuente.
+const SUPER_ADMIN_KEY = (typeof window !== 'undefined' && window.__APP_CONFIG__ && window.__APP_CONFIG__.SUPERADMIN_KEY) || "";
 
 /**
  * Emite un juicio de valor sobre una casa culinaria.

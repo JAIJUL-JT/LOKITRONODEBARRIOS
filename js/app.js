@@ -35,7 +35,14 @@ function setCurrentUser(user) {
     localStorage.setItem(STORAGE_KEYS.usuarioActual, JSON.stringify(user || null));
 }
 
+const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios'];
+
 function cambiarPestana(valor) {
+    const usuario = getCurrentUser();
+    const esSuperadmin = !!(usuario && usuario.role === 'superadmin');
+    if (!esSuperadmin && PESTANAS_ADMIN.includes(valor)) {
+        valor = 'pestana-clasificacion';
+    }
     const sections = document.querySelectorAll('.tab-content');
     sections.forEach(section => {
         const shouldShow = section.id === valor || section.dataset.tab === valor;
@@ -73,6 +80,8 @@ function actualizarInterfazSesion(usuario) {
 
         const panelSorteo = document.getElementById('panel-sorteo-barrios');
         if (panelSorteo) panelSorteo.style.display = esSuperadmin ? 'block' : 'none';
+
+        cambiarPestana('pestana-clasificacion');
     } else {
         const panelSorteo = document.getElementById('panel-sorteo-barrios');
         if (panelSorteo) panelSorteo.style.display = 'none';
@@ -84,11 +93,20 @@ function actualizarInterfazSesion(usuario) {
         }
         if (nav) nav.style.display = 'none';
         if (contenido) contenido.style.display = 'none';
+
+        cambiarPestana('pestana-clasificacion');
     }
 }
 
 
 function cerrarSesionDirecta() {
+    const usuario = getCurrentUser();
+    if (usuario && usuario.token) {
+        const client = getSupabaseBarriosClient();
+        if (client) {
+            Promise.resolve(client.rpc('cerrar_sesion_lokitrono', { p_token: usuario.token })).catch(() => {});
+        }
+    }
     setCurrentUser(null);
     actualizarInterfazSesion(null);
 }
@@ -101,12 +119,12 @@ function getUsuariosAutorizadosLocal() {
         
         if (!Array.isArray(usuarios) || usuarios.length === 0) {
             usuarios = [
-                { id: 'user-julio-01', phone: '605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '1234', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu' },
-                { id: 'user-julio-02', phone: '+34605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '1234', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu' },
-                { id: 'user-superadmin-01', phone: '123456789', name: 'Superadmin Bilbao', role: 'superadmin', pin_code: '1234', barrio_representado: 'Abando', barrio_asignado: 'Abando' },
-                { id: 'user-superadmin-02', phone: 'admin', name: 'Superadmin Sistema', role: 'superadmin', pin_code: '1234', barrio_representado: 'Abando', barrio_asignado: 'Abando' },
-                { id: 'user-soraya', phone: '456123456', name: 'SORAYA', role: 'superadmin', pin_code: '1234', barrio_representado: 'Deusto', barrio_asignado: 'Deusto' },
-                { id: 'user-ainhoa-01', phone: '663366786', name: 'Ainhoa', role: 'jugador', pin_code: '5678', barrio_representado: 'Deusto', barrio_asignado: '' }
+                { id: 'user-julio-01', phone: '605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '123456', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu' },
+                { id: 'user-julio-02', phone: '+34605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '123456', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu' },
+                { id: 'user-superadmin-01', phone: '123456789', name: 'Superadmin Bilbao', role: 'superadmin', pin_code: '123456', barrio_representado: 'Abando', barrio_asignado: 'Abando' },
+                { id: 'user-superadmin-02', phone: 'admin', name: 'Superadmin Sistema', role: 'superadmin', pin_code: '123456', barrio_representado: 'Abando', barrio_asignado: 'Abando' },
+                { id: 'user-soraya', phone: '456123456', name: 'SORAYA', role: 'superadmin', pin_code: '123456', barrio_representado: 'Deusto', barrio_asignado: 'Deusto' },
+                { id: 'user-ainhoa-01', phone: '663366786', name: 'Ainhoa', role: 'jugador', pin_code: '123456', barrio_representado: 'Deusto', barrio_asignado: '' }
             ];
             localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(usuarios));
         } else {
@@ -233,8 +251,8 @@ async function iniciarSesionDirecta() {
         if (message) message.textContent = 'Completa teléfono y PIN para entrar.';
         return;
     }
-    if (!/^\d{4}$/.test(pin)) {
-        if (message) message.textContent = 'El PIN debe contener exactamente cuatro dígitos.';
+    if (!/^\d{6}$/.test(pin)) {
+        if (message) message.textContent = 'El PIN debe contener exactamente seis dígitos.';
         return;
     }
 
@@ -264,7 +282,11 @@ async function iniciarSesionDirecta() {
             email: data.email || null,
             role: data.role,
             barrio_asignado: data.barrio_asignado || '',
-            barrio_representado: data.barrio_representado || ''
+            barrio_representado: data.barrio_representado || '',
+            gender: data.gender || 'M',
+            titulo_custom: data.titulo_custom || '',
+            token: data.token || '',
+            token_expira_en: data.token_expira_en || null
         };
         setCurrentUser(usuario);
         // Mantener una copia de visualización actualizada, sin guardar el PIN.
@@ -410,7 +432,7 @@ function validarNotas(notas) {
     return true;
 }
 
-function guardarVotoBarrioUsuario(event) {
+async function guardarVotoBarrioUsuario(event) {
     if (event) event.preventDefault();
 
     const user = getCurrentUser();
@@ -460,18 +482,46 @@ function guardarVotoBarrioUsuario(event) {
         return;
     }
 
+    const notaFestin = notaCriterioODefecto('crit-festin', notas, ['crit-festin-sabor']);
+    const notaCaminos = notaCriterioODefecto('crit-caminos', notas);
+    const notaEspiritu = notaCriterioODefecto('crit-espiritu', notas);
+
     const voto = {
         maestre_id: maestreId,
         evento_id: String(evento.id),
         evento_nombre: evento.nombre || '',
         casa_visitada: barrio,
         barrio,
-        nota_festin: Number(notas['crit-festin-sabor'] || notas['crit-festin'] || 8),
-        nota_caminos: Number(notas['crit-caminos'] || 8),
-        nota_espiritu: Number(notas['crit-espiritu'] || 8),
+        nota_festin: Number(notaFestin !== null ? notaFestin : (notas['crit-festin-sabor'] || notas['crit-festin'] || 8)),
+        nota_caminos: Number(notaCaminos !== null ? notaCaminos : (notas['crit-caminos'] || 8)),
+        nota_espiritu: Number(notaEspiritu !== null ? notaEspiritu : (notas['crit-espiritu'] || 8)),
         detalles_notas: notas,
         fecha_juicio: new Date().toISOString()
     };
+
+    // Persistencia central en Supabase, autenticada por el token de sesión.
+    let sincronizado = false;
+    const client = getSupabaseBarriosClient();
+    if (client && user.token) {
+        try {
+            const casa = (typeof casasCache !== 'undefined' ? casasCache : [])
+                .find(c => String(c.nombre) === String(barrio));
+            const { error } = await client.rpc('emitir_voto_lokitrono', {
+                p_token: user.token,
+                p_evento_id: String(evento.id),
+                p_casa_id: casa ? casa.id : null,
+                p_barrio: barrio,
+                p_festin: voto.nota_festin,
+                p_caminos: voto.nota_caminos,
+                p_espiritu: voto.nota_espiritu,
+                p_detalles: notas
+            });
+            if (error) throw error;
+            sincronizado = true;
+        } catch (error) {
+            console.warn('No se pudo registrar el voto en Supabase; se guarda en el respaldo local:', error?.message || error);
+        }
+    }
 
     votosGuardados.push(voto);
     localStorage.setItem(getStorageKeyVotos(), JSON.stringify(votosGuardados));
@@ -483,15 +533,17 @@ function guardarVotoBarrioUsuario(event) {
 
     const formulario = document.getElementById('form-votar-barrio');
     if (formulario) formulario.reset();
-    alert('Voto registrado correctamente.');
+    alert(sincronizado
+        ? 'Voto registrado correctamente.'
+        : 'Voto guardado en este dispositivo. Se sincronizará con el Reino cuando la votación esté disponible en el servidor.');
 }
 
 const CRITERIOS_JERARQUICOS_DEFAULT = [
     { id: 'crit-festin', nombre: 'Festín / Pintxos', parentId: null, peso: 50, nivel: 1 },
     { id: 'crit-festin-sabor', nombre: 'Sabor & Calidad', parentId: 'crit-festin', peso: 60, nivel: 2 },
     { id: 'crit-festin-presentacion', nombre: 'Presentación', parentId: 'crit-festin', peso: 40, nivel: 2 },
-    { id: 'crit-caminos', nombre: 'Caminos / Rutas', parentId: null, peso: 20, nivel: 1 },
-    { id: 'crit-espiritu', nombre: 'Espíritu / Ambiente', parentId: null, peso: 30, nivel: 1 }
+    { id: 'crit-caminos', nombre: 'Caminos / Rutas', parentId: null, peso: 25, nivel: 1 },
+    { id: 'crit-espiritu', nombre: 'Espíritu / Ambiente', parentId: null, peso: 25, nivel: 1 }
 ];
 
 function getCriteriosJerarquicos() {
@@ -505,6 +557,37 @@ function getCriteriosJerarquicos() {
 
 function guardarCriteriosJerarquicos(criterios) {
     localStorage.setItem('criterios_valoracion_jerarquicos', JSON.stringify(criterios));
+}
+
+// Calcula la nota de un criterio: media ponderada de sus descendientes con nota,
+// o su propia nota si no tiene descendientes valorados.
+function obtenerNotaCriterio(id, notas) {
+    if (!id) return null;
+    const criterios = getCriteriosJerarquicos();
+    const hijos = criterios.filter(c => c.parentId === id);
+    if (hijos.length > 0) {
+        let suma = 0;
+        let pesos = 0;
+        hijos.forEach(h => {
+            const notaHijo = obtenerNotaCriterio(h.id, notas);
+            if (notaHijo !== null) {
+                const peso = Number(h.peso) || 0;
+                suma += peso * notaHijo;
+                pesos += peso;
+            }
+        });
+        if (pesos > 0) return suma / pesos;
+    }
+    const directo = notas[id];
+    return (directo === undefined || directo === null || directo === '') ? null : (Number(directo) || 0);
+}
+
+function notaCriterioODefecto(raizId, notas, alternativas = []) {
+    for (const id of [raizId, ...alternativas]) {
+        const valor = obtenerNotaCriterio(id, notas);
+        if (valor !== null) return valor;
+    }
+    return null;
 }
 
 function calcularNivelElemento(parentId, criterios) {
@@ -734,18 +817,92 @@ function getRepositorioVotos() {
     }
 }
 
+// Descarga los votos centralizados en Supabase y los fusiona con el respaldo local.
+async function cargarVotosDesdeSupabase() {
+    const client = getSupabaseBarriosClient();
+    if (!client) return;
+    try {
+        const { data, error } = await client.rpc('listar_votos_lokitrono');
+        if (error) throw error;
+        const remotos = Array.isArray(data) ? data : [];
+        if (!remotos.length) return;
+
+        const key = getStorageKeyVotos();
+        let locales = [];
+        try {
+            locales = JSON.parse(localStorage.getItem(key) || '[]');
+        } catch (_) {
+            locales = [];
+        }
+        if (!Array.isArray(locales)) locales = [];
+
+        const vistos = new Set(locales.map(v => String(v.id || `${v.maestre_id}|${v.evento_id}`)));
+        remotos.forEach(r => {
+            const id = String(r.id || `${r.usuario_phone}|${r.evento_id}`);
+            if (vistos.has(id)) return;
+            locales.push({
+                id: r.id,
+                maestre_id: r.usuario_phone || r.usuario_id,
+                evento_id: String(r.evento_id || ''),
+                casa_visitada: r.barrio || '',
+                barrio: r.barrio || '',
+                nota_festin: Number(r.nota_festin) || 0,
+                nota_caminos: Number(r.nota_caminos) || 0,
+                nota_espiritu: Number(r.nota_espiritu) || 0,
+                detalles_notas: r.detalles_notas || {},
+                fecha_juicio: r.created_at || new Date().toISOString()
+            });
+            vistos.add(id);
+        });
+
+        localStorage.setItem(key, JSON.stringify(locales));
+        if (typeof renderRepositorioVotos === 'function') renderRepositorioVotos();
+        if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
+        renderMisVotosPersonales();
+    } catch (error) {
+        console.warn('No se pudieron cargar los votos desde Supabase:', error?.message || error);
+    }
+}
+
+// Ley II de Bilbao: media ponderada 0,50 Festín + 0,25 Caminos + 0,25 Espíritu.
+function calcularNotaLeyII(festin, caminos, espiritu) {
+    if (typeof calcularMediaPonderada === 'function') {
+        return calcularMediaPonderada(Number(festin) || 0, Number(caminos) || 0, Number(espiritu) || 0);
+    }
+    return (Number(festin) || 0) * 0.50 + (Number(caminos) || 0) * 0.25 + (Number(espiritu) || 0) * 0.25;
+}
+
+// Regularización bayesiana de la Ley II: media global con umbral de confianza K.
+const LEY_II_K = 3.0;
+
+function calcularPuntuacionLeyII(festin, caminos, espiritu, n, mediaGlobal, k = LEY_II_K) {
+    if (!n || n <= 0) return 0;
+    const crudo = calcularNotaLeyII(festin, caminos, espiritu);
+    return ((n * crudo) + (k * (Number(mediaGlobal) || 0))) / (n + k);
+}
+
 function renderClasificacionReal() {
     const cuerpo = document.getElementById('clasificacion-body');
     if (!cuerpo) return;
 
     const votos = getRepositorioVotos();
-    const barrios = ['Casco Viejo', 'Indautxu', 'Deusto', 'Santutxu', 'Abando', 'San Mamés - Basurto'];
+    const barriosParticipantes = (typeof casasCache !== 'undefined' ? casasCache : [])
+        .filter(c => c.participa !== false)
+        .map(c => c.nombre)
+        .filter(Boolean);
+    const barrios = barriosParticipantes.length > 0
+        ? barriosParticipantes
+        : ['Casco Viejo', 'Indautxu', 'Deusto', 'Santutxu', 'Abando', 'San Mamés - Basurto'];
+
+    const mediaGlobal = votos.length === 0 ? 0 : votos.reduce((acc, v) => {
+        return acc + calcularNotaLeyII(v.nota_festin, v.nota_caminos, v.nota_espiritu);
+    }, 0) / votos.length;
 
     const estadisticas = barrios.map(barrio => {
         const votosBarrio = votos.filter(v => (v.barrio || v.casa_visitada) === barrio);
         const totalVotos = votosBarrio.length;
         if (totalVotos === 0) {
-            return { barrio, festin: 0, caminos: 0, espiritu: 0, notaFinal: 0, totalVotos: 0 };
+            return { barrio, festin: '0.0', caminos: '0.0', espiritu: '0.0', notaFinal: 0, totalVotos: 0 };
         }
         const sumFestin = votosBarrio.reduce((acc, v) => acc + Number(v.nota_festin || 0), 0);
         const sumCaminos = votosBarrio.reduce((acc, v) => acc + Number(v.nota_caminos || 0), 0);
@@ -754,9 +911,9 @@ function renderClasificacionReal() {
         const festin = (sumFestin / totalVotos).toFixed(1);
         const caminos = (sumCaminos / totalVotos).toFixed(1);
         const espiritu = (sumEspiritu / totalVotos).toFixed(1);
-        const notaFinal = (festin * 0.5 + caminos * 0.2 + espiritu * 0.3).toFixed(2);
+        const notaFinal = calcularPuntuacionLeyII(festin, caminos, espiritu, totalVotos, mediaGlobal);
 
-        return { barrio, festin, caminos, espiritu, notaFinal, totalVotos };
+        return { barrio, festin, caminos, espiritu, notaFinal: Number(notaFinal.toFixed(2)), totalVotos };
     });
 
     estadisticas.sort((a, b) => b.notaFinal - a.notaFinal);
@@ -1219,7 +1376,7 @@ function renderEventos() {
             const mediaF = (sumF / numVotos).toFixed(1);
             const mediaC = (sumC / numVotos).toFixed(1);
             const mediaE = (sumE / numVotos).toFixed(1);
-            const notaLey2 = (mediaF * 0.5 + mediaC * 0.2 + mediaE * 0.3).toFixed(2);
+            const notaLey2 = calcularNotaLeyII(mediaF, mediaC, mediaE).toFixed(2);
 
             resumenResultadosHTML = `
                 <div style="margin: 12px 0; background: rgba(20, 30, 20, 0.8); border: 1px solid #22c55e; padding: 10px; border-radius: 6px;">
@@ -1974,7 +2131,10 @@ function renderTablaUsuarios() {
             <td>${user.email || '-'}</td>
             <td>${user.barrio_representado || 'Forastero'}</td>
             <td>${user.barrio_asignado || '-'}</td>
-            <td>${user.pin_code || '-'}</td>
+            <td>${esSuperadmin
+                ? `<span aria-hidden="true">••••••</span>
+                   <button class="btn-cuervo" style="padding:2px 6px;font-size:0.72rem;margin-left:6px;" title="Restablecer PIN" onclick="restablecerPinUsuario('${user.id}')">🔑</button>`
+                : '••••'}</td>
             <td>${acciones}</td>
         </tr>`;
     }).join('');
@@ -1995,7 +2155,37 @@ function renderTablaUsuarios() {
     }
 }
 
-function guardarUsuario(event) {
+function esUUID(valor) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(valor || ''));
+}
+
+async function recargarUsuariosSupabase(credenciales) {
+    try {
+        const { data, error } = await credenciales.client.rpc('listar_usuarios_superadmin', {
+            p_phone: credenciales.phone,
+            p_pin: credenciales.pin
+        });
+        if (error) throw error;
+        const lista = Array.isArray(data) ? data : [];
+        localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(lista));
+        renderTablaUsuarios();
+        renderListaTronistas();
+        return true;
+    } catch (error) {
+        console.warn('No se pudieron cargar los usuarios desde Supabase:', error?.message || error);
+        return false;
+    }
+}
+
+async function cargarUsuariosDesdeSupabase() {
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'superadmin') return false;
+    const credenciales = await pedirCredencialesSuperadmin();
+    if (!credenciales) return false;
+    return recargarUsuariosSupabase(credenciales);
+}
+
+async function guardarUsuario(event) {
     if (event) event.preventDefault();
     const currentUser = getCurrentUser();
     if (!currentUser || currentUser.role !== 'superadmin') {
@@ -2018,6 +2208,47 @@ function guardarUsuario(event) {
         return;
     }
 
+    // Persistencia central en Supabase (si el usuario editado ya procede de allí).
+    if (!editId || esUUID(editId)) {
+        try {
+            const credenciales = await pedirCredencialesSuperadmin();
+            if (credenciales === null) return;
+            const datos = {
+                phone,
+                name: nombre || phone,
+                email,
+                role,
+                barrio_asignado: barrioAsig,
+                barrio_representado: barrioRep,
+                gender,
+                titulo_custom: tituloCustom
+            };
+            if (editId) {
+                const { error } = await credenciales.client.rpc('editar_usuario_superadmin', {
+                    p_phone: credenciales.phone,
+                    p_pin: credenciales.pin,
+                    p_usuario_id: editId,
+                    p_datos: datos
+                });
+                if (error) throw error;
+            } else {
+                datos.pin_code = String(Math.floor(100000 + Math.random() * 900000));
+                const { error } = await credenciales.client.rpc('crear_usuario_superadmin', {
+                    p_phone: credenciales.phone,
+                    p_pin: credenciales.pin,
+                    p_datos: datos
+                });
+                if (error) throw error;
+            }
+            await recargarUsuariosSupabase(credenciales);
+            resetFormUsuario();
+            alert(editId ? '✅ Usuario actualizado.' : '✅ Usuario añadido.');
+            return;
+        } catch (error) {
+            console.warn('Guardado de usuario en Supabase no disponible; se usa el respaldo local:', error?.message || error);
+        }
+    }
+
     let usuarios = getUsuariosAutorizadosLocal();
 
     if (editId) {
@@ -2037,7 +2268,7 @@ function guardarUsuario(event) {
         }
     } else {
         const nuevoId = `user-${Date.now()}`;
-        const pin = String(Math.floor(1000 + Math.random() * 9000));
+        const pin = String(Math.floor(100000 + Math.random() * 900000));
         usuarios.push({
             id: nuevoId,
             phone,
@@ -2090,8 +2321,31 @@ function editarUsuario(userId) {
     if (form) form.scrollIntoView({ behavior: 'smooth' });
 }
 
-function eliminarUsuario(userId) {
+async function eliminarUsuario(userId) {
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'superadmin') {
+        alert('Solo Superadmin puede eliminar usuarios del Reino.');
+        return;
+    }
     if (!confirm('🗑️ ¿Eliminar este usuario del Reino?')) return;
+
+    if (esUUID(userId)) {
+        try {
+            const credenciales = await pedirCredencialesSuperadmin();
+            if (credenciales === null) return;
+            const { error } = await credenciales.client.rpc('eliminar_usuario_superadmin', {
+                p_phone: credenciales.phone,
+                p_pin: credenciales.pin,
+                p_usuario_id: userId
+            });
+            if (error) throw error;
+            await recargarUsuariosSupabase(credenciales);
+            return;
+        } catch (error) {
+            console.warn('Eliminación en Supabase no disponible; se usa el respaldo local:', error?.message || error);
+        }
+    }
+
     let usuarios = getUsuariosAutorizadosLocal();
     usuarios = usuarios.filter(u => u.id !== userId);
     localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(usuarios));
@@ -2110,7 +2364,42 @@ function resetFormUsuario() {
     if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
-function asignarTronistaAdmin(event) {
+async function restablecerPinUsuario(userId) {
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'superadmin') {
+        alert('Solo Superadmin puede restablecer PINs.');
+        return;
+    }
+    if (!esUUID(userId)) {
+        alert('Este usuario solo existe en el respaldo local; no se puede restablecer su PIN.');
+        return;
+    }
+
+    const nuevoPin = window.prompt('Introduce el nuevo PIN de 6 dígitos para este usuario:');
+    if (nuevoPin === null) return;
+    if (!/^\d{6}$/.test(nuevoPin.trim())) {
+        alert('El PIN debe contener exactamente seis dígitos.');
+        return;
+    }
+
+    try {
+        const credenciales = await pedirCredencialesSuperadmin();
+        if (!credenciales) return;
+        const { error } = await credenciales.client.rpc('restablecer_pin_superadmin', {
+            p_phone: credenciales.phone,
+            p_pin: credenciales.pin,
+            p_usuario_id: userId,
+            p_nuevo_pin: nuevoPin.trim()
+        });
+        if (error) throw error;
+        alert('✅ PIN restablecido correctamente.');
+    } catch (error) {
+        console.error('Error restableciendo el PIN:', error);
+        alert(`No se pudo restablecer el PIN: ${error?.message || 'error desconocido'}`);
+    }
+}
+
+async function asignarTronistaAdmin(event) {
     if (event) event.preventDefault();
     const currentUser = getCurrentUser();
     if (!currentUser || currentUser.role !== 'superadmin') {
@@ -2124,6 +2413,25 @@ function asignarTronistaAdmin(event) {
     if (!userId || !barrio) {
         alert('Selecciona un usuario y un barrio.');
         return;
+    }
+
+    if (esUUID(userId)) {
+        try {
+            const credenciales = await pedirCredencialesSuperadmin();
+            if (credenciales === null) return;
+            const { error } = await credenciales.client.rpc('asignar_tronista_superadmin', {
+                p_phone: credenciales.phone,
+                p_pin: credenciales.pin,
+                p_usuario_id: userId,
+                p_barrio: barrio
+            });
+            if (error) throw error;
+            await recargarUsuariosSupabase(credenciales);
+            alert(`👑 ¡Título de Tronista de ${barrio} asignado!`);
+            return;
+        } catch (error) {
+            console.warn('Asignación de Tronista en Supabase no disponible; se usa el respaldo local:', error?.message || error);
+        }
     }
 
     let usuarios = getUsuariosAutorizadosLocal();
@@ -2170,7 +2478,7 @@ function renderListaTronistas() {
         }
 
         // Count votes emitted
-        const votosEmitidos = repositorioVotos.filter(v => v.userId === user.id || v.userPhone === phone).length;
+        const votosEmitidos = repositorioVotos.filter(v => String(v.maestre_id || '') === phone).length;
 
         const fechaDesig = user.fecha_designacion
             ? `📅 Designado/a: ${new Date(user.fecha_designacion).toLocaleDateString('es-ES')}`
@@ -2332,6 +2640,8 @@ function renderListaBarrios() {
     }
 
     const usuarios = typeof getUsuariosAutorizadosLocal === 'function' ? getUsuariosAutorizadosLocal() : [];
+    const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    const esSuperadmin = !!(currentUser && currentUser.role === 'superadmin');
 
     contenedor.innerHTML = casasCache.map(casa => {
         const id = escaparHTML(String(casa.id || ''));
@@ -2354,7 +2664,7 @@ function renderListaBarrios() {
             integrantes.forEach(u => {
                 integrantesHTML += `<li style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                     <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;" title="${escaparHTML(u.name || u.phone)}">👤 ${escaparHTML(u.name || u.phone)}</span>
-                    <button type="button" class="btn-cuervo" style="padding: 3px 8px; font-size: 0.7rem; background: #7f1d1d;" data-accion-barrio="quitar-usuario" data-user-phone="${escaparHTML(u.phone)}">Quitar</button>
+                    ${esSuperadmin ? `<button type="button" class="btn-cuervo" style="padding: 3px 8px; font-size: 0.7rem; background: #7f1d1d;" data-accion-barrio="quitar-usuario" data-user-phone="${escaparHTML(u.phone)}">Quitar</button>` : ''}
                 </li>`;
             });
             integrantesHTML += '</ul>';
@@ -2371,12 +2681,12 @@ function renderListaBarrios() {
                     ${integrantesHTML}
                 </div>
                 <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px;">
-                    <button type="button" class="btn-cuervo"
+                    ${esSuperadmin ? `<button type="button" class="btn-cuervo"
                         data-accion-barrio="editar" data-barrio-id="${id}"
                         style="padding:8px 12px;flex:1;">✏️ Editar</button>
                     <button type="button" class="btn-cuervo"
                         data-accion-barrio="eliminar" data-barrio-id="${id}"
-                        style="padding:8px 12px;background:#7f1d1d;flex:1;">🗑️ Eliminar</button>
+                        style="padding:8px 12px;background:#7f1d1d;flex:1;">🗑️ Eliminar</button>` : ''}
                 </div>
             </article>`;
     }).join('');
@@ -2407,8 +2717,8 @@ async function quitarUsuarioBarrio(phone) {
 
     const pinConfirmacion = window.prompt('Introduce tu PIN de superadministrador para confirmar:');
     if (pinConfirmacion === null) return;
-    if (!/^\d{4}$/.test(pinConfirmacion.trim())) {
-        alert('El PIN debe contener exactamente cuatro dígitos.');
+    if (!/^\d{6}$/.test(pinConfirmacion.trim())) {
+        alert('El PIN debe contener exactamente seis dígitos.');
         return;
     }
 
@@ -2530,8 +2840,8 @@ async function guardarBarrio(event) {
     );
 
     if (pinConfirmacion === null) return;
-    if (!/^\d{4}$/.test(pinConfirmacion.trim())) {
-        alert('El PIN debe contener exactamente cuatro dígitos.');
+    if (!/^\d{6}$/.test(pinConfirmacion.trim())) {
+        alert('El PIN debe contener exactamente seis dígitos.');
         return;
     }
 
@@ -2623,8 +2933,8 @@ async function eliminarBarrio(id) {
     );
     if (pinConfirmacion === null) return;
 
-    if (!/^\d{4}$/.test(pinConfirmacion.trim())) {
-        alert('El PIN debe contener exactamente cuatro dígitos.');
+    if (!/^\d{6}$/.test(pinConfirmacion.trim())) {
+        alert('El PIN debe contener exactamente seis dígitos.');
         return;
     }
 
@@ -2723,6 +3033,7 @@ function generarLemaAleatorio() {
 function initApp() {
     cargarBarriosDesdeSupabase();
     cargarEventosDesdeSupabase();
+    cargarVotosDesdeSupabase();
     poblarSelectBarriosEvento();
     initCalendarioMedieval();
     renderGalaFinal();
@@ -2825,7 +3136,7 @@ function generarPartidaSimulacionCompleta() {
                 phone,
                 email,
                 role: (bIdx === 0 && u === 0) ? 'superadmin' : getRandomElement(roles),
-                pin_code: '1234',
+                pin_code: '123456',
                 barrio_representado: barrio,
                 barrio_asignado: barrio
             });
@@ -2992,7 +3303,7 @@ function renderGraficosSimulacion(simData) {
         const festin = (sumF / total);
         const caminos = (sumC / total);
         const espiritu = (sumE / total);
-        const notaFinal = (festin * 0.5 + caminos * 0.2 + espiritu * 0.3);
+        const notaFinal = calcularNotaLeyII(festin, caminos, espiritu);
 
         return { barrio, festin: festin.toFixed(1), caminos: caminos.toFixed(1), espiritu: espiritu.toFixed(1), notaFinal: notaFinal.toFixed(2) };
     });
@@ -3166,7 +3477,7 @@ function renderUsuariosPorEventoSim() {
             </thead>
             <tbody>
                 ${votosEvento.map(v => {
-                    const notaLey2 = ((v.nota_festin * 0.5) + (v.nota_caminos * 0.2) + (v.nota_espiritu * 0.3)).toFixed(2);
+                    const notaLey2 = calcularNotaLeyII(v.nota_festin, v.nota_caminos, v.nota_espiritu).toFixed(2);
                     return `
                         <tr>
                             <td><strong>${v.maestre_nombre || v.maestre_id}</strong></td>
@@ -3202,6 +3513,8 @@ window.toggleFormularioEmitirVoto = toggleFormularioEmitirVoto;
 window.guardarVotoBarrioUsuario = guardarVotoBarrioUsuario;
 window.exportarRepositorioCSV = exportarRepositorioCSV;
 window.puedeGestionarUsuarios = puedeGestionarUsuarios;
+window.restablecerPinUsuario = restablecerPinUsuario;
+window.cargarVotosDesdeSupabase = cargarVotosDesdeSupabase;
 window.puedeGestionarEventosBarrio = puedeGestionarEventosBarrio;
 window.puedeEditarEventoTronista = puedeEditarEventoTronista;
 window.getCurrentUser = getCurrentUser;
@@ -3246,6 +3559,7 @@ window.getIconoRango = getIconoRango;
 // Gestión de usuarios
 window.renderTablaUsuarios = renderTablaUsuarios;
 window.guardarUsuario = guardarUsuario;
+window.cargarUsuariosDesdeSupabase = cargarUsuariosDesdeSupabase;
 window.editarUsuario = editarUsuario;
 window.eliminarUsuario = eliminarUsuario;
 window.resetFormUsuario = resetFormUsuario;
@@ -3384,6 +3698,11 @@ window.generarRecomendacionGemini = generarRecomendacionGemini;
    ========================================== */
 
 function cargarDatosSemilla() {
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'superadmin') {
+        alert('Solo Superadmin puede cargar los datos de demostración.');
+        return;
+    }
     if (!confirm('⚠️ Esto reemplazará TODOS los datos actuales (usuarios, barrios, votos, eventos) con datos de demostración.\n\n¿Continuar?')) return;
 
     const nombresM = ['Iker', 'Mikel', 'Aitor', 'Gorka', 'Jokin', 'Unai', 'Eneko', 'Iñaki', 'Kepa', 'Asier', 'Koldo', 'Patxi'];
@@ -3394,16 +3713,16 @@ function cargarDatosSemilla() {
 
     function rItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
     function rPhone() { return '6' + String(Math.floor(10000000 + Math.random() * 90000000)); }
-    function rPin() { return String(Math.floor(1000 + Math.random() * 9000)); }
+    function rPin() { return String(Math.floor(100000 + Math.random() * 900000)); }
 
     // Superadmins predeterminados
     const superadmins = [
-        { id: 'user-julio-01', phone: '605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '1234', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu', gender: 'M' },
-        { id: 'user-julio-02', phone: '+34605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '1234', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu', gender: 'M' },
-        { id: 'user-superadmin-01', phone: '123456789', name: 'Superadmin Bilbao', role: 'superadmin', pin_code: '1234', barrio_representado: 'Casco Viejo', barrio_asignado: 'Casco Viejo', gender: 'M' },
-        { id: 'user-superadmin-02', phone: 'admin', name: 'Superadmin Sistema', role: 'superadmin', pin_code: '1234', barrio_representado: 'Casco Viejo', barrio_asignado: 'Casco Viejo', gender: 'M' },
-        { id: 'user-soraya', phone: '456123456', name: 'SORAYA', role: 'superadmin', pin_code: '1234', barrio_representado: 'Deusto', barrio_asignado: 'Deusto', gender: 'F' },
-        { id: 'user-ainhoa-01', phone: '663366786', name: 'Ainhoa', role: 'jugador', pin_code: '5678', barrio_representado: 'Deusto', barrio_asignado: '', gender: 'F' }
+        { id: 'user-julio-01', phone: '605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '123456', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu', gender: 'M' },
+        { id: 'user-julio-02', phone: '+34605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '123456', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu', gender: 'M' },
+        { id: 'user-superadmin-01', phone: '123456789', name: 'Superadmin Bilbao', role: 'superadmin', pin_code: '123456', barrio_representado: 'Casco Viejo', barrio_asignado: 'Casco Viejo', gender: 'M' },
+        { id: 'user-superadmin-02', phone: 'admin', name: 'Superadmin Sistema', role: 'superadmin', pin_code: '123456', barrio_representado: 'Casco Viejo', barrio_asignado: 'Casco Viejo', gender: 'M' },
+        { id: 'user-soraya', phone: '456123456', name: 'SORAYA', role: 'superadmin', pin_code: '123456', barrio_representado: 'Deusto', barrio_asignado: 'Deusto', gender: 'F' },
+        { id: 'user-ainhoa-01', phone: '663366786', name: 'Ainhoa', role: 'jugador', pin_code: '123456', barrio_representado: 'Deusto', barrio_asignado: '', gender: 'F' }
     ];
 
     const usedPhones = new Set(superadmins.map(u => u.phone));
@@ -3591,8 +3910,8 @@ async function generarSorteoBarrios() {
 
     const pin = window.prompt('Introduce tu PIN de superadministrador para generar el sorteo:');
     if (pin === null) return;
-    if (!/^\d{4}$/.test(pin.trim())) {
-        alert('El PIN debe contener exactamente cuatro dígitos.');
+    if (!/^\d{6}$/.test(pin.trim())) {
+        alert('El PIN debe contener exactamente seis dígitos.');
         return;
     }
 
@@ -3641,8 +3960,8 @@ async function guardarOrdenSorteoBarrios() {
 
     const pin = window.prompt('Introduce tu PIN de superadministrador para guardar el orden:');
     if (pin === null) return;
-    if (!/^\d{4}$/.test(pin.trim())) {
-        alert('El PIN debe contener exactamente cuatro dígitos.');
+    if (!/^\d{6}$/.test(pin.trim())) {
+        alert('El PIN debe contener exactamente seis dígitos.');
         return;
     }
 

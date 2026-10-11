@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
-"""Configura de forma secreta el Oráculo Imperial (proxy Hugging Face).
+"""Configura de forma secreta el Oráculo Imperial (proxy de un proveedor de IA).
+
+Por defecto usa Groq (capa gratuita). El proxy es OpenAI-compatible, así que
+también sirve para OpenRouter, Google Gemini (endpoint OpenAI) u otros.
 
 Este script:
-  1. Lee el token de Hugging Face (HF_TOKEN) del entorno o lo pide por consola
-     (sin mostrarlo).
-  2. Registra HF_TOKEN como *secreto* de Supabase para la Edge Function
-     `oraculo-hf`, de modo que nunca viaje al navegador.
-  3. Despliega la Edge Function `oraculo-hf` (salvo que se indique --no-deploy).
+  1. Lee la clave del proveedor (GROQ_API_KEY por defecto) del entorno o la pide
+     por consola (sin mostrarla).
+  2. Registra la clave como *secreto* de Supabase para la Edge Function
+     `oraculo`, de modo que nunca viaje al navegador.
+  3. Despliega la Edge Function `oraculo` (salvo que se indique --no-deploy).
 
-El token NUNCA se imprime ni se incluye en el repositorio. Solo se guarda, de
+La clave NUNCA se imprime ni se incluye en el repositorio. Solo se guarda, de
 forma opcional, en `.env.local` (ignorado por git) para futuras ejecuciones.
 
 Requisitos:
   - Supabase CLI instalada (`supabase --version`).
   - Una Access Token de Supabase (https://supabase.com/dashboard/account/tokens)
-    exportada como SUPABASE_ACCESS_TOKEN.
+    exportada como SUPABASE_ACCESS_TOKEN (o sesión de `supabase login`).
 
 Uso:
-  SUPABASE_ACCESS_TOKEN=... HF_TOKEN=hf_xxx python3 scripts/configurar_oraculo_hf.py
-  python3 scripts/configurar_oraculo_hf.py --no-deploy
+  SUPABASE_ACCESS_TOKEN=... GROQ_API_KEY=gsk_xxx python3 scripts/configurar_oraculo.py
+  python3 scripts/configurar_oraculo.py --no-deploy
+
+Proveedores alternativos (OpenAI-compatible):
+  ORACULO_API_URL=https://openrouter.ai/api/v1/chat/completions \\
+  ORACULO_PROVIDER=OpenRouter ORACULO_API_KEY=sk-or-... \\
+  python3 scripts/configurar_oraculo.py
 """
 
 from __future__ import annotations
@@ -33,7 +41,7 @@ import sys
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-FUNCION = "oraculo-hf"
+FUNCION = "oraculo"
 ENV_LOCAL = RAIZ / ".env.local"
 FICHEROS_ENV = (".env.to_push", ".env.local", ".env.jpmw.production")
 
@@ -104,8 +112,8 @@ def detectar_project_ref() -> str:
     return ref
 
 
-def guardar_en_env_local(token: str) -> None:
-    """Registra HF_TOKEN en .env.local (ignorado por git) sin tocar otros valores."""
+def guardar_en_env_local(clave: str, variable: str) -> None:
+    """Registra el secreto en .env.local (ignorado por git) sin tocar el resto."""
     lineas: list[str] = []
     if ENV_LOCAL.is_file():
         lineas = ENV_LOCAL.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -113,19 +121,19 @@ def guardar_en_env_local(token: str) -> None:
     salida: list[str] = []
     encontrado = False
     for linea in lineas:
-        if linea.strip().startswith("HF_TOKEN="):
-            salida.append(f"HF_TOKEN={token}")
+        if linea.strip().startswith(f"{variable}="):
+            salida.append(f"{variable}={clave}")
             encontrado = True
         else:
             salida.append(linea)
     if not encontrado:
         if salida and salida[-1].strip():
             salida.append("")
-        salida.append("# Token del Oráculo Imperial (Hugging Face). NO subir al repositorio.")
-        salida.append(f"HF_TOKEN={token}")
+        salida.append(f"# Clave del Oráculo Imperial ({variable}). NO subir al repositorio.")
+        salida.append(f"{variable}={clave}")
 
     ENV_LOCAL.write_text("\n".join(salida) + "\n", encoding="utf-8")
-    log(f"HF_TOKEN guardado en {ENV_LOCAL.name} (ignorado por git).")
+    log(f"{variable} guardado en {ENV_LOCAL.name} (ignorado por git).")
 
 
 def ejecutar(cmd: list[str], env: dict[str, str]) -> None:
@@ -140,18 +148,25 @@ def main() -> None:
     parser.add_argument(
         "--no-deploy",
         action="store_true",
-        help="Solo registra el secreto HF_TOKEN, sin desplegar la función.",
+        help="Solo registra el secreto, sin desplegar la función.",
     )
     argumentos = parser.parse_args()
 
     if shutil.which("supabase") is None:
         error("No se encontró la Supabase CLI en el PATH (instala supabase).")
 
-    hf_token = pedir_secreto(
-        "Token de Hugging Face",
-        "HF_TOKEN",
-        "https://huggingface.co/settings/tokens",
+    variable_clave = (
+        "GROQ_API_KEY"
+        if not os.environ.get("ORACULO_API_KEY", "").strip()
+        else "ORACULO_API_KEY"
     )
+    ayuda = (
+        "https://console.groq.com/keys"
+        if variable_clave == "GROQ_API_KEY"
+        else "URL de tu proveedor OpenAI-compatible"
+    )
+    clave = pedir_secreto("Clave del proveedor de IA", variable_clave, ayuda)
+
     access_token = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
     if not access_token:
         log(
@@ -160,17 +175,24 @@ def main() -> None:
         )
     project_ref = detectar_project_ref()
 
-    guardar_en_env_local(hf_token)
+    guardar_en_env_local(clave, variable_clave)
     log(f"Proyecto Supabase detectado: {project_ref}")
 
     entorno = dict(os.environ)
-    entorno["HF_TOKEN"] = hf_token
+    entorno[variable_clave] = clave
     if access_token:
         entorno["SUPABASE_ACCESS_TOKEN"] = access_token
 
-    log("Registrando el secreto HF_TOKEN en Supabase…")
+    secretos = [f"{variable_clave}={clave}"]
+    # Permite cambiar de proveedor sin tocar el código de la función.
+    if os.environ.get("ORACULO_API_URL", "").strip():
+        secretos.append(f"ORACULO_API_URL={os.environ['ORACULO_API_URL'].strip()}")
+    if os.environ.get("ORACULO_PROVIDER", "").strip():
+        secretos.append(f"ORACULO_PROVIDER={os.environ['ORACULO_PROVIDER'].strip()}")
+
+    log(f"Registrando el secreto {variable_clave} en Supabase…")
     ejecutar(
-        ["supabase", "secrets", "set", f"HF_TOKEN={hf_token}", "--project-ref", project_ref],
+        ["supabase", "secrets", "set", *secretos, "--project-ref", project_ref],
         entorno,
     )
 
@@ -190,7 +212,7 @@ def main() -> None:
             entorno,
         )
 
-    log("Listo. El Oráculo Imperial ya usa Hugging Face con el token a salvo.")
+    log("Listo. El Oráculo Imperial ya funciona con la clave a salvo en el servidor.")
 
 
 if __name__ == "__main__":

@@ -4254,18 +4254,18 @@ window.asignarTronistaAdmin = asignarTronistaAdmin;
 window.renderListaTronistas = renderListaTronistas;
 
 // ==============================================================================
-// 🔮 INTEGRACIÓN DE MODELOS DE IA (HUGGING FACE VÍA PROXY) & ORÁCULO IMPERIAL
+// 🔮 INTEGRACIÓN DE MODELOS DE IA (GROQ VÍA PROXY) & ORÁCULO IMPERIAL
 // ==============================================================================
-// El Oráculo no llama directamente a Hugging Face: lo hace a través de la Edge
-// Function `oraculo-hf`, que guarda el token HF_TOKEN como secreto del servidor.
-// El navegador nunca ve la clave. Ver scripts/configurar_oraculo_hf.py.
+// El Oráculo no llama directamente al proveedor: lo hace a través de la Edge
+// Function `oraculo`, que guarda la clave GROQ_API_KEY como secreto del servidor.
+// El navegador nunca ve la clave. Ver scripts/configurar_oraculo.py.
 
-const ORACULO_MODELO_DEFECTO = 'meta-llama/Llama-3.1-8B-Instruct';
+const ORACULO_MODELO_DEFECTO = 'llama-3.3-70b-versatile';
 
 function obtenerEndpointOraculo() {
     const config = window.__APP_CONFIG__ || {};
     if (config.ORACULO_ENDPOINT) return config.ORACULO_ENDPOINT;
-    if (config.SUPABASE_URL) return `${String(config.SUPABASE_URL).replace(/\/$/, '')}/functions/v1/oraculo-hf`;
+    if (config.SUPABASE_URL) return `${String(config.SUPABASE_URL).replace(/\/$/, '')}/functions/v1/oraculo`;
     return '';
 }
 
@@ -4287,7 +4287,7 @@ function guardarAjustesOraculo() {
     }
 }
 
-async function llamarModeloHuggingFace(promptText, modelOverride) {
+async function llamarModeloOraculo(promptText, modelOverride) {
     const { model: defaultModel } = obtenerOraculoConfig();
     const model = modelOverride || defaultModel;
     const endpoint = obtenerEndpointOraculo();
@@ -4313,10 +4313,10 @@ async function llamarModeloHuggingFace(promptText, modelOverride) {
 
             const data = await response.json();
             if (data && data.text) {
-                return { text: data.text, model: data.model || model, fuente: 'Hugging Face (proxy)' };
+                return { text: data.text, model: data.model || model, fuente: 'Groq (proxy)' };
             }
         } catch (err) {
-            console.warn('Error llamando al Oráculo (Hugging Face), recurriendo a simulación:', err);
+            console.warn('Error llamando al Oráculo (Groq), recurriendo a simulación:', err);
         }
     }
 
@@ -4325,7 +4325,7 @@ async function llamarModeloHuggingFace(promptText, modelOverride) {
             `«¡Oíd, Maestres del Reino de Bilbao! El Oráculo ha procesado las plegarias e inspeccionado la mesa del festín.\n\n` +
             promptText.substring(0, 150) + `...\n\n` +
             `✨ Dictamen Feudal: ¡Que fluya el txakoli y que el honor de las Siete Calles brille en cada barra de pintxos!»\n\n` +
-            `💡 Consejo: El Oráculo se conecta en directo con Hugging Face a través del servidor seguro. Si ves este mensaje, revisa la configuración del proxy (${model}).`,
+            `💡 Consejo: El Oráculo se conecta en directo con Groq a través del servidor seguro. Si ves este mensaje, revisa la configuración del proxy (${model}).`,
         model,
         fuente: 'Oráculo Feudal Autónomo'
     };
@@ -4350,7 +4350,7 @@ Total de juicios emitidos por Maestres: ${votos.length}.
 Instrucciones: Incluye referencias medievales a las Casas de Indautxu, Casco Viejo, Deusto, Santutxu y Abando, mencionando el festín, los caminos y el espíritu tabernero.`;
 
     const { model } = obtenerOraculoConfig();
-    const res = await llamarModeloHuggingFace(prompt, model);
+    const res = await llamarModeloOraculo(prompt, model);
 
     if (salida) salida.textContent = res.text;
     if (badge) badge.textContent = `${res.model} (${res.fuente})`;
@@ -4377,7 +4377,7 @@ async function generarRecomendacionOraculo() {
 Instrucciones: Sugiere 3 especialidades (ej. Gilda imperial, Tortilla de patatas jugosa, Taco de bonito) con maridaje de vino/txakoli y un lema caballeresco para la ruta.`;
 
     const { model } = obtenerOraculoConfig();
-    const res = await llamarModeloHuggingFace(prompt, model);
+    const res = await llamarModeloOraculo(prompt, model);
 
     if (salida) salida.textContent = res.text;
     if (badge) badge.textContent = `${res.model} (${res.fuente})`;
@@ -4387,7 +4387,7 @@ Instrucciones: Sugiere 3 especialidades (ej. Gilda imperial, Tortilla de patatas
 // Exponer funciones en window para invocación desde HTML
 window.obtenerOraculoConfig = obtenerOraculoConfig;
 window.guardarAjustesOraculo = guardarAjustesOraculo;
-window.llamarModeloHuggingFace = llamarModeloHuggingFace;
+window.llamarModeloOraculo = llamarModeloOraculo;
 window.generarCronicaOraculo = generarCronicaOraculo;
 window.generarRecomendacionOraculo = generarRecomendacionOraculo;
 

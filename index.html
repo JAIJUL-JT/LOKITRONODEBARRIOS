@@ -91,8 +91,8 @@
         window.__APP_CONFIG__.SUPABASE_ANON_KEY = window.__APP_CONFIG__.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzd2lrZGNrcHR6aXZzdXJ6cmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODAwNTEsImV4cCI6MjEwNjU1NjA1MX0.3kovmMBfC_JCGKyJ_1s5iyxtkKyqVMIt77CfHnytLzI';
         window.__APP_CONFIG__.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL || '';
         window.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL;
-        // Proxy del Oráculo Imperial (Edge Function de Supabase que oculta el token
-        // de Hugging Face). Si se deja vacío, se deduce de SUPABASE_URL.
+        // Proxy del Oráculo Imperial (Edge Function de Supabase que oculta la
+        // clave del proveedor de IA). Si se deja vacío, se deduce de SUPABASE_URL.
         window.__APP_CONFIG__.ORACULO_ENDPOINT = window.__APP_CONFIG__.ORACULO_ENDPOINT || '';
     </script>
 
@@ -1101,7 +1101,7 @@
                 </div>
             </section>
 
-            <!-- PESTAÑA: Oráculo Imperial e Integración de Modelos de IA (Hugging Face) -->
+            <!-- PESTAÑA: Oráculo Imperial e Integración de Modelos de IA (Groq) -->
             <section id="pestana-oraculo-ia" class="tab-content tema-oraculo" data-tab="tab-oraculo-ia" style="display: none;">
                 <div class="leaderboard-container" style="background: rgba(10, 10, 15, 0.95); border: 2px solid var(--oro-real); padding: 25px; border-radius: 12px;">
                     <div class="leaderboard-header" style="text-align: center; margin-bottom: 25px;">
@@ -1111,7 +1111,7 @@
 
                     <div class="legal-aviso" role="note" style="margin-top: 0;">
                         🤖 <strong>Aviso de transparencia (IA):</strong> estás interactuando con un sistema de
-                        inteligencia artificial (Hugging Face, a través del servidor seguro del Reino). Los textos generados son contenido automático, pueden
+                        inteligencia artificial (Groq, a través del servidor seguro del Reino). Los textos generados son contenido automático, pueden
                         contener errores y no constituyen asesoramiento profesional. No introduzcas datos personales
                         sensibles. <a href="legal/aviso-ia.html" target="_blank" rel="noopener">Más información</a>.
                     </div>
@@ -1123,13 +1123,13 @@
                             <div style="flex: 1; min-width: 220px;">
                                 <label style="display: block; font-size: 0.9rem; color: #d6d3d1; margin-bottom: 5px;">Modelo IA Seleccionado:</label>
                                 <select id="select-modelo-oraculo" class="input-medieval" style="width: 100%; margin: 0; background: #000;">
-                                    <option value="meta-llama/Llama-3.1-8B-Instruct" selected>🦙 Llama 3.1 8B Instruct (Equilibrado)</option>
-                                    <option value="mistralai/Mistral-7B-Instruct-v0.3">🌬️ Mistral 7B Instruct (Crónicas Rápidas)</option>
-                                    <option value="Qwen/Qwen2.5-7B-Instruct">🧠 Qwen 2.5 7B Instruct (Razonamiento)</option>
+                                    <option value="llama-3.3-70b-versatile" selected>🦙 Llama 3.3 70B Versatile (Equilibrado)</option>
+                                    <option value="llama-3.1-8b-instant">⚡ Llama 3.1 8B Instant (Crónicas Rápidas)</option>
+                                    <option value="qwen/qwen3-32b">🧠 Qwen 3 32B Instruct (Razonamiento)</option>
                                 </select>
                             </div>
                             <div style="flex: 1; min-width: 260px;">
-                                <p style="font-size: 0.85rem; color: #94a3b8; margin: 0 0 5px 0;">🔒 El Oráculo se conecta a Hugging Face mediante el servidor seguro del Reino. No necesitas introducir ninguna clave: el token queda protegido en el servidor.</p>
+                                <p style="font-size: 0.85rem; color: #94a3b8; margin: 0 0 5px 0;">🔒 El Oráculo se conecta a Groq mediante el servidor seguro del Reino. No necesitas introducir ninguna clave: la clave queda protegida en el servidor.</p>
                             </div>
                             <div>
                                 <button class="btn-cuervo" onclick="guardarAjustesOraculo()" style="height: 42px;">💾 Guardar Ajustes</button>
@@ -1249,7 +1249,7 @@
             <button type="button" data-consent-open>Configurar cookies</button>
         </nav>
         <p class="site-footer__ia">🤖 Este sitio y su contenido se han creado con ayuda de herramientas de
-            inteligencia artificial bajo supervisión humana. El «Oráculo Imperial» usa IA (Hugging Face) para generar
+            inteligencia artificial bajo supervisión humana. El «Oráculo Imperial» usa IA (Groq) para generar
             textos que pueden contener errores. <a href="legal/aviso-ia.html">Más información</a>.</p>
         <div class="site-footer__legal">
             <p>© <span id="footer-year">2026</span> Julio Arteaga · LokiTrono de Barrios. Todos los derechos reservados.</p>

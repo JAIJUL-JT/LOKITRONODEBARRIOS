@@ -148,8 +148,10 @@
                     <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario Eventos</option>
                     <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
                 </optgroup>
-                <optgroup label="👑 Administración (Superadmin / Master)" id="optgroup-admin-menu">
+                <optgroup label="🔮 Oráculo Imperial (Master)" id="optgroup-master-menu" style="display:none;">
                     <option value="pestana-oraculo-ia" data-tab="tab-oraculo-ia">🔮 Oráculo Imperial (IA Gemini)</option>
+                </optgroup>
+                <optgroup label="👑 Administración (Superadmin / Master)" id="optgroup-admin-menu">
                     <option value="pestana-generar-evento" data-tab="tab-generar-evento">📅 Generar y Gestionar Eventos</option>
                     <option value="tab-superadmin" data-tab="tab-superadmin">📊 Auditoría de Votos (Admin)</option>
                     <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Alta y Control de Usuarios</option>
@@ -762,43 +764,6 @@
                         <button type="button" class="btn-cuervo" style="background:#44403c;" onclick="cargarUsuariosDesdeSupabase()">🔄 Sincronizar usuarios desde Supabase</button>
                     </div>
 
-                    <!-- PANEL CONFIG TÍTULOS (solo visible para superadmin) -->
-                    <div id="panel-config-titulos-usuarios" style="display:none; margin-bottom:24px; background:rgba(20,16,5,0.9); border:1px solid var(--oro-real); border-radius:8px; padding:18px;">
-                        <h3 style="color:var(--oro-brillante);margin-top:0;font-family:'Cinzel',serif;">⚙️ Configuración de Títulos del Reino</h3>
-                        <p style="font-size:0.82rem;color:#d6d3d1;">Personaliza cómo se llaman los rangos de los usuarios en la corte.</p>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">⚔️ Jugador (masculino):</label>
-                                <input type="text" id="titulo-config-jugador_masculino" class="input-medieval" placeholder="Lord">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">⚔️ Jugador (femenino):</label>
-                                <input type="text" id="titulo-config-jugador_femenino" class="input-medieval" placeholder="Lady">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">👑 Tronista (masculino):</label>
-                                <input type="text" id="titulo-config-tronista_masculino" class="input-medieval" placeholder="Lokitronista Lord">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">👑 Tronista (femenino):</label>
-                                <input type="text" id="titulo-config-tronista_femenino" class="input-medieval" placeholder="Lokitronista Lady">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">🏰 Superadmin (masculino):</label>
-                                <input type="text" id="titulo-config-superadmin_masculino" class="input-medieval" placeholder="Gran Maestre">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">🏰 Superadmin (femenino):</label>
-                                <input type="text" id="titulo-config-superadmin_femenino" class="input-medieval" placeholder="Gran Maestra">
-                            </div>
-                        </div>
-                        <p style="font-size:0.78rem;color:#a1a1aa;margin-bottom:10px;">🔱 Consejeros especiales (605676002, 663366786) siempre tendrán título Consejero/a, independientemente de la configuración.</p>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                            <button type="button" class="btn-cuervo" onclick="guardarTitulosConfig()">💾 Guardar Títulos</button>
-                            <button type="button" class="btn-cuervo" style="background:#44403c;" onclick="guardarTitulosConfig({});renderTablaUsuarios();renderListaTronistas();alert('✅ Títulos restablecidos a valores por defecto.');">↺ Restablecer Predeterminados</button>
-                        </div>
-                    </div>
-
                     <form id="form-usuario" onsubmit="guardarUsuario(event)">
                         <input type="hidden" id="usuario-id-edit">
                         <div class="form-group">
@@ -865,6 +830,43 @@
                             Edición</button>
                     </form>
 
+                    <!-- PANEL CONFIG TÍTULOS (solo visible para superadmin) -->
+                    <div id="panel-config-titulos-usuarios" style="display:none; margin:24px 0; background:rgba(20,16,5,0.9); border:1px solid var(--oro-real); border-radius:8px; padding:18px;">
+                        <h3 style="color:var(--oro-brillante);margin-top:0;font-family:'Cinzel',serif;">⚙️ Configuración de Títulos del Reino</h3>
+                        <p style="font-size:0.82rem;color:#d6d3d1;">Personaliza cómo se llaman los rangos de los usuarios en la corte.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">⚔️ Jugador (masculino):</label>
+                                <input type="text" id="titulo-config-jugador_masculino" class="input-medieval" placeholder="Lord">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">⚔️ Jugador (femenino):</label>
+                                <input type="text" id="titulo-config-jugador_femenino" class="input-medieval" placeholder="Lady">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">👑 Tronista (masculino):</label>
+                                <input type="text" id="titulo-config-tronista_masculino" class="input-medieval" placeholder="Lokitronista Lord">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">👑 Tronista (femenino):</label>
+                                <input type="text" id="titulo-config-tronista_femenino" class="input-medieval" placeholder="Lokitronista Lady">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">🏰 Superadmin (masculino):</label>
+                                <input type="text" id="titulo-config-superadmin_masculino" class="input-medieval" placeholder="Gran Maestre">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">🏰 Superadmin (femenino):</label>
+                                <input type="text" id="titulo-config-superadmin_femenino" class="input-medieval" placeholder="Gran Maestra">
+                            </div>
+                        </div>
+                        <p style="font-size:0.78rem;color:#a1a1aa;margin-bottom:10px;">🔱 Consejeros especiales (605676002, 663366786) siempre tendrán título Consejero/a, independientemente de la configuración.</p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <button type="button" class="btn-cuervo" onclick="guardarTitulosConfig()">💾 Guardar Títulos</button>
+                            <button type="button" class="btn-cuervo" style="background:#44403c;" onclick="guardarTitulosConfig({});renderTablaUsuarios();renderListaTronistas();alert('✅ Títulos restablecidos a valores por defecto.');">↺ Restablecer Predeterminados</button>
+                        </div>
+                    </div>
+
                     <div id="acciones-credenciales-master" style="display: none; margin-top: 20px;">
                         <button type="button" class="btn-cuervo" style="background: #166534;" onclick="descargarUsuariosCSV()">⬇️ Descargar credenciales (CSV)</button>
                     </div>
@@ -886,19 +888,6 @@
                             </thead>
                             <tbody id="tabla-usuarios-body"></tbody>
                         </table>
-                    </div>
-
-                    <!-- VISTA EXCLUSIVA SUPERADMIN: LISTADO GENERAL DE 135 PARTICIPANTES Y AUDITORÍA DE VOTOS -->
-                    <div id="seccion-superadmin-participantes"
-                        style="margin-top: 40px; background: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; padding: 20px; border-radius: 8px;">
-                        <h3 style="color: #60a5fa; margin-top: 0; font-family: 'Cinzel', serif;">📊 Listado General de
-                            Participantes (135 Maestres) y Auditoría de Votos</h3>
-                        <p style="font-size: 0.85rem; color: #93c5fd;">Acceso exclusivo para Superadministradores:
-                            Consulta el listado general de los 135 participantes de la competición, la asistencia
-                            separada por evento (media de 14 a 63) y los votos detallados emitidos por cada
-                            participante.</p>
-
-                        <div id="contenedor-participantes-eventos-body"></div>
                     </div>
                 </div>
             </section>
@@ -1170,6 +1159,19 @@
                         </h3>
                         <div id="salida-oraculo-gemini" style="color: #f1f5f9; font-size: 0.98rem; line-height: 1.6; white-space: pre-wrap; font-family: Georgia, serif; background: rgba(15,23,42,0.5); padding: 15px; border-radius: 6px; border-left: 4px solid var(--oro-real);">
                         </div>
+                    </div>
+
+                    <!-- VISTA EXCLUSIVA DEL TRONO MAYOR (MASTER): LISTADO GENERAL DE 135 PARTICIPANTES Y AUDITORÍA DE VOTOS -->
+                    <div id="seccion-superadmin-participantes"
+                        style="margin-top: 40px; background: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; padding: 20px; border-radius: 8px;">
+                        <h3 style="color: #60a5fa; margin-top: 0; font-family: 'Cinzel', serif;">📊 Listado General de
+                            Participantes (135 Maestres) y Auditoría de Votos</h3>
+                        <p style="font-size: 0.85rem; color: #93c5fd;">Acceso exclusivo del Trono Mayor (Master):
+                            Consulta el listado general de los 135 participantes de la competición, la asistencia
+                            separada por evento (media de 14 a 63) y los votos detallados emitidos por cada
+                            participante.</p>
+
+                        <div id="contenedor-participantes-eventos-body"></div>
                     </div>
                 </div>
             </section>

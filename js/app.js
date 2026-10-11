@@ -85,6 +85,12 @@ const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usu
 function cambiarPestana(valor) {
     const usuario = getCurrentUser();
     const esSuperadmin = !!(usuario && puedeAdministrar(usuario.role));
+    const esMaster = !!(usuario && esRolMaster(usuario.role));
+    // El Oráculo Imperial es territorio exclusivo del Trono Mayor (rol master).
+    const esOraculo = valor === 'pestana-oraculo-ia' || valor === 'tab-oraculo-ia';
+    if (esOraculo && !esMaster) {
+        valor = 'pestana-clasificacion';
+    }
     if (!esSuperadmin && PESTANAS_ADMIN.includes(valor)) {
         valor = 'pestana-clasificacion';
     }
@@ -94,6 +100,8 @@ function cambiarPestana(valor) {
         section.style.display = shouldShow ? 'block' : 'none';
         section.classList.toggle('active', shouldShow);
     });
+    const selector = document.getElementById('select-seccion-corte');
+    if (selector && selector.value !== valor) selector.value = valor;
 }
 
 function actualizarInterfazSesion(usuario) {
@@ -127,6 +135,8 @@ function actualizarInterfazSesion(usuario) {
         if (panelSorteo) panelSorteo.style.display = esSuperadmin ? 'block' : 'none';
 
         const esMaster = esRolMaster(usuario.role);
+        const optgroupMaster = document.getElementById('optgroup-master-menu');
+        if (optgroupMaster) optgroupMaster.style.display = esMaster ? '' : 'none';
         const grupoPin = document.getElementById('group-usuario-pin');
         if (grupoPin) grupoPin.style.display = esMaster ? 'block' : 'none';
         const accionesCredenciales = document.getElementById('acciones-credenciales-master');
@@ -2514,6 +2524,9 @@ function renderTablaUsuarios() {
 
     const currentUser = getCurrentUser();
     const esSuperadmin = currentUser && puedeAdministrar(currentUser.role);
+    // Solo el propio Trono Mayor (master) ve el rol master; ante el resto de
+    // usuarios el master se muestra con el mismo rango que un superadmin.
+    const viewerEsMaster = !!(currentUser && esRolMaster(currentUser.role));
     let usuarios = getUsuariosAutorizadosLocal();
 
     if (usuarios && usuarios.length > 0 && ordenUsuariosCol) {
@@ -2532,15 +2545,18 @@ function renderTablaUsuarios() {
     }
 
     tbody.innerHTML = usuarios.map(user => {
-        const icono = getIconoRango(user.role, user.phone);
-        const tituloCompleto = getTituloCompleto(user);
+        const ocultaComoSuperadmin = user.role === 'master' && !viewerEsMaster;
+        const rolVisible = ocultaComoSuperadmin ? 'superadmin' : user.role;
+        const usuarioVisible = ocultaComoSuperadmin ? { ...user, role: 'superadmin' } : user;
+        const icono = getIconoRango(rolVisible, user.phone);
+        const tituloCompleto = getTituloCompleto(usuarioVisible);
 
         let rolBadge = '';
-        if (user.role === 'master') {
+        if (rolVisible === 'master') {
             rolBadge = `<span class="pill-user" style="background:rgba(120,53,15,0.9);color:#fde68a;border:1px solid var(--oro-brillante);padding:2px 8px;border-radius:12px;font-size:0.78rem;">🌟 Master</span>`;
-        } else if (user.role === 'superadmin') {
+        } else if (rolVisible === 'superadmin') {
             rolBadge = `<span class="pill-user" style="background:rgba(22,101,52,0.8);color:#86efac;border:1px solid #4ade80;padding:2px 8px;border-radius:12px;font-size:0.78rem;">🏰 Superadmin</span>`;
-        } else if (user.role === 'tronista') {
+        } else if (rolVisible === 'tronista') {
             rolBadge = `<span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 8px;border-radius:12px;font-size:0.78rem;">👑 Tronista</span>`;
         } else {
             rolBadge = `<span class="pill-user" style="background:rgba(63,63,70,0.8);color:#d4d4d8;border:1px solid #52525b;padding:2px 8px;border-radius:12px;font-size:0.78rem;">⚔️ Jugador</span>`;
@@ -2586,7 +2602,10 @@ function renderTablaUsuarios() {
     const selectBarrio = document.getElementById('select-barrio-tronista');
     if (selectUsuario) {
         selectUsuario.innerHTML = usuarios
-            .map(u => `<option value="${u.id}">${getTituloCompleto(u)} (${u.phone})</option>`)
+            .map(u => {
+                const visible = (u.role === 'master' && !viewerEsMaster) ? { ...u, role: 'superadmin' } : u;
+                return `<option value="${u.id}">${getTituloCompleto(visible)} (${u.phone})</option>`;
+            })
             .join('');
     }
     if (selectBarrio) {

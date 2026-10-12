@@ -2301,6 +2301,15 @@ function generarPinSeisDigitos() {
     return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+// El escenario de Make antepone "34" al número (to = "34{{telefono}}").
+// Normalizamos a los 9 dígitos nacionales para evitar destinos como "34+34605676002".
+function normalizarTelefonoWhatsApp(phone) {
+    let p = String(phone || '').replace(/\D/g, '');
+    if (p.startsWith('0034')) p = p.slice(4);
+    else if (p.startsWith('34') && p.length > 9) p = p.slice(2);
+    return p;
+}
+
 function etiquetaRol(role) {
     const etiquetas = {
         master: 'Lokitrono Mayor',
@@ -2375,13 +2384,14 @@ async function enviarWebhookMake(payload) {
 // Mensaje de bienvenida con la dirección pública del juego y el PIN de acceso.
 async function enviarBienvenidaWhatsApp({ phone, name, pin, role }) {
     const sitio = getSitioPublico();
-    const nombre = (name || phone || '').trim() || 'Maestre';
+    const telefono = normalizarTelefonoWhatsApp(phone) || String(phone || '').trim();
+    const nombre = (name || telefono || '').trim() || 'Maestre';
     const mensaje = [
         `🏰 ¡Bienvenido/a a LokiTrono de Barrios, ${nombre}!`,
         '',
         `Ya formas parte de la corte como ${etiquetaRol(role)}.`,
         `Accede al juego en: ${sitio}`,
-        `Teléfono de acceso: ${phone}`,
+        `Teléfono de acceso: ${telefono}`,
         `PIN de acceso: ${pin}`,
         '',
         'Guarda este PIN. Si lo pierdes, pide a la organización que genere uno nuevo.'
@@ -2389,7 +2399,7 @@ async function enviarBienvenidaWhatsApp({ phone, name, pin, role }) {
 
     return enviarWebhookMake({
         evento: 'BIENVENIDA_USUARIO',
-        telefono: phone,
+        telefono,
         nombre,
         pin,
         rol: role || 'jugador',

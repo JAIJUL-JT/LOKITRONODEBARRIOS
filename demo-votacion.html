@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo · Sistema de Votos · LokiTrono de Barrios</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --oro-real: #d4af37;
+            --oro-brillante: #f5d76e;
+            --fondo: #0a0a0a;
+            --panel: rgba(28, 25, 23, 0.92);
+            --borde: #78350f;
+            --texto: #e7e5e4;
+            --suave: #d6d3d1;
+            --rojo: #f87171;
+            --verde: #86efac;
+            --azul: #2563eb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px 14px 60px;
+            font-family: 'MedievalSharp', 'Segoe UI', system-ui, sans-serif;
+            background: radial-gradient(circle at 50% 0%, #1c1917 0%, #0a0a0a 60%);
+            color: var(--texto);
+            min-height: 100vh;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        .cinzel {
+            font-family: 'Cinzel', 'Georgia', serif;
+            color: var(--oro-brillante);
+        }
+
+        .marco {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        header.titulo {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        header.titulo h1 {
+            font-size: 1.6rem;
+            margin: 0 0 4px;
+            text-shadow: 0 0 18px rgba(212, 175, 55, 0.35);
+        }
+
+        header.titulo p {
+            margin: 0;
+            color: var(--suave);
+            font-size: 0.82rem;
+        }
+
+        .badge-demo {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 3px 12px;
+            border: 1px solid var(--oro-real);
+            border-radius: 999px;
+            font-size: 0.72rem;
+            color: var(--oro-real);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--oro-real);
+            border-radius: 12px;
+            padding: 22px;
+            margin: 18px 0;
+            box-shadow: 0 0 26px rgba(0, 0, 0, 0.6);
+        }
+
+        .card.login {
+            max-width: 380px;
+            margin: 30px auto;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 3rem;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--suave);
+            margin: 12px 0 4px;
+            text-align: left;
+        }
+
+        input.input-medieval,
+        select.input-medieval {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0f0d0c;
+            border: 1px solid var(--borde);
+            border-radius: 7px;
+            color: var(--texto);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        input.input-medieval:focus,
+        select.input-medieval:focus {
+            border-color: var(--oro-real);
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+        }
+
+        input[readonly] {
+            background: #17140f;
+            color: var(--suave);
+        }
+
+        .btn {
+            display: inline-block;
+            cursor: pointer;
+            border: 1px solid var(--oro-real);
+            background: linear-gradient(180deg, #292524, #1c1917);
+            color: var(--oro-brillante);
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            padding: 10px 16px;
+            border-radius: 8px;
+            transition: all 0.15s ease;
+        }
+
+        .btn:hover {
+            background: var(--oro-real);
+            color: #1c1917;
+        }
+
+        .btn.ancho {
+            width: 100%;
+            margin-top: 14px;
+        }
+
+        .btn.azul {
+            background: var(--azul);
+            border-color: #3b82f6;
+            color: #fff;
+        }
+
+        .btn.rojo {
+            background: #7f1d1d;
+            border-color: #b91c1c;
+            color: #fff;
+        }
+
+        .btn.pequeno {
+            padding: 6px 12px;
+            font-size: 0.82rem;
+        }
+
+        .btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .fila {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .fila>* {
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .nav-tabs button {
+            background: #1c1917;
+            border: 1px solid var(--borde);
+            color: var(--suave);
+            padding: 9px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cinzel', serif;
+            font-size: 0.86rem;
+        }
+
+        .nav-tabs button.activa {
+            background: var(--oro-real);
+            color: #1c1917;
+            border-color: var(--oro-brillante);
+        }
+
+        .msg {
+            min-height: 20px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+
+        .msg.error {
+            color: var(--rojo);
+        }
+
+        .msg.ok {
+            color: var(--verde);
+        }
+
+        .msg.info {
+            color: var(--oro-brillante);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th,
+        td {
+            padding: 9px 10px;
+            border-bottom: 1px solid #292524;
+            text-align: left;
+        }
+
+        th {
+            color: var(--oro-real);
+            font-family: 'Cinzel', serif;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tabla-scroll {
+            overflow-x: auto;
+        }
+
+        .criterio-grupo {
+            margin-top: 14px;
+            padding: 12px;
+            border: 1px solid #292524;
+            border-radius: 8px;
+            background: rgba(41, 37, 36, 0.5);
+        }
+
+        .criterio-grupo h4 {
+            margin: 0 0 6px;
+            font-size: 0.95rem;
+        }
+
+        .criterio-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: space-between;
+            margin: 6px 0;
+        }
+
+        .criterio-item span {
+            font-size: 0.86rem;
+            color: var(--suave);
+        }
+
+        .criterio-item input {
+            width: 78px;
+            text-align: center;
+        }
+
+        .avatar-usuario {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: rgba(41, 37, 36, 0.7);
+            border: 1px solid var(--borde);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+
+        .chip-tel {
+            color: var(--oro-real);
+            font-family: 'Cinzel', serif;
+        }
+
+        .oculto {
+            display: none !important;
+        }
+
+        .pie {
+            text-align: center;
+            color: #78716c;
+            font-size: 0.74rem;
+            margin-top: 26px;
+            line-height: 1.6;
+        }
+
+        .hint {
+            font-size: 0.76rem;
+            color: #a8a29e;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        code {
+            background: #1c1917;
+            padding: 1px 6px;
+            border-radius: 5px;
+            color: var(--oro-brillante);
+            font-size: 0.82em;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="marco">
+        <header class="titulo">
+            <h1>⚔️ LokiTrono de Barrios ⚔️</h1>
+            <p>Simulación en pantalla del sistema de votos (demostración)</p>
+            <span class="badge-demo">Demo · no altera datos reales</span>
+        </header>
+
+        <!-- ===================== ACCESO ===================== -->
+        <section id="vista-login" class="card login">
+            <div class="logo">🏰</div>
+            <h3>Acceder</h3>
+            <label for="in-phone">Teléfono (ej: 123456789)</label>
+            <input id="in-phone" type="tel" class="input-medieval" placeholder="600000011" autocomplete="off">
+            <label for="in-pin">PIN de 6 dígitos</label>
+            <input id="in-pin" type="password" class="input-medieval" inputmode="numeric" maxlength="6"
+                placeholder="••••••" autocomplete="off">
+            <button class="btn ancho" onclick="iniciarSesion()">Entrar</button>
+            <div id="login-msg" class="msg error"></div>
+            <p class="hint">
+                Cuentas de la partida de ejemplo:<br>
+                <strong>600000011 / 222222</strong> · Maestre Prueba 1<br>
+                <strong>600000012 / 333333</strong> · Maestre Prueba 2<br>
+                <strong>600000013 / 444444</strong> · Maestre Prueba 3
+            </p>
+            <button class="btn pequeno" style="margin-top:8px"
+                onclick="document.getElementById('in-phone').value='600000011';document.getElementById('in-pin').value='222222';">Rellenar Maestre 1</button>
+        </section>
+
+        <!-- ===================== APP ===================== -->
+        <section id="vista-app" class="oculto">
+            <div class="card">
+                <div class="avatar-usuario">
+                    <div>👤 <strong id="u-nombre">—</strong> <span class="chip-tel" id="u-tel"></span>
+                        <span id="u-barrio" style="color:#a8a29e"></span></div>
+                    <div>
+                        <button class="btn pequeno azul"
+                            onclick="cargarEjemplo()">▶ Cargar partida ejemplo (6 votos)</button>
+                        <button class="btn pequeno rojo" onclick="reiniciarDemo()">↺ Reiniciar</button>
+                        <button class="btn pequeno" onclick="cerrarSesion()">Salir</button>
+                    </div>
+                </div>
+
+                <div class="nav-tabs">
+                    <button id="tab-clas" class="activa" onclick="cambiarVista('clas')">🏆 Clasificación Real</button>
+                    <button id="tab-voto" onclick="cambiarVista('voto')">🗳️ Votación de Barrio</button>
+                </div>
+
+                <!-- ====== PESTAÑA VOTACIÓN ====== -->
+                <div id="vista-voto" class="oculto">
+                    <div class="card" style="margin-top:0">
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+                            <h3 style="margin:0">📜 Mis votos emitidos</h3>
+                            <button class="btn pequeno azul" onclick="toggleFormulario()">🗳️ Emitir Nuevo Voto en Barrio</button>
+                        </div>
+                        <div id="formulario" class="oculto" style="margin-top:16px;border:1px solid var(--oro-real);border-radius:8px;padding:14px;background:rgba(41,37,36,0.6)">
+                            <h4 style="margin-top:0">🗳️ Formulario de Calificación Barrial</h4>
+                            <div id="alerta-repetido" class="msg error oculto">⚠️ Voto duplicado detectado en la Mesa del Rey.</div>
+                            <label for="sel-evento">Selecciona el evento:</label>
+                            <select id="sel-evento" class="input-medieval" onchange="actualizarFormulario()"></select>
+                            <label>Barrio del evento:</label>
+                            <input id="in-barrio-evento" class="input-medieval" readonly>
+                            <div id="estado-formulario" class="msg info"></div>
+                            <div id="opciones-voto">
+                                <label for="sel-barrio">Selecciona el Barrio A Evaluar:</label>
+                                <select id="sel-barrio" class="input-medieval"></select>
+                                <div id="criterios"></div>
+                                <button class="btn ancho" onclick="enviarVoto()">⚔️ Enviar Calificación al Reino</button>
+                            </div>
+                        </div>
+                        <div id="mis-votos" style="margin-top:18px"></div>
+                    </div>
+                </div>
+
+                <!-- ====== PESTAÑA CLASIFICACIÓN ====== -->
+                <div id="vista-clas">
+                    <p style="font-size:0.82rem;color:var(--suave)">
+                        Códice de la Villa: <strong>50% Ocio Hostelero + 20% Accesibilidad + 30% Ambiente de Barrio</strong>,
+                        con regularización bayesiana <strong>K = 3.0</strong>.
+                    </p>
+                    <div class="tabla-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Pos</th>
+                                    <th>Barrio</th>
+                                    <th>Ocio</th>
+                                    <th>Acceso</th>
+                                    <th>Ambiente</th>
+                                    <th>Puntuación</th>
+                                    <th>Votos</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clas-body"></tbody>
+                        </table>
+                    </div>
+                    <p id="media-global" class="hint"></p>
+                </div>
+            </div>
+
+            <p class="pie">
+                Demostración independiente: no se conecta a Supabase ni modifica datos.<br>
+                Reproduce el flujo, las reglas (voto único por maestre y evento) y la fórmula del Códice.
+            </p>
+        </section>
+    </div>
+
+    <script>
+        // ---------------------------------------------------------------------
+        // Datos de la partida de ejemplo (los mismos de la simulación en BD)
+        // ---------------------------------------------------------------------
+        const CASAS = [
+            { nombre: 'Barrio Prueba Norte', emblema: '🐺' },
+            { nombre: 'Barrio Prueba Centro', emblema: '🦁' },
+            { nombre: 'Barrio Prueba Sur', emblema: '🦅' }
+        ];
+
+        const EVENTOS = [
+            { id: 'evento-prueba-1', nombre: 'Evento Prueba I', barrio: 'Reino', fecha: '2026-10-12', ini: '20:30', fin: '23:30' },
+            { id: 'evento-prueba-2', nombre: 'Evento Prueba II', barrio: 'Reino', fecha: '2026-10-13', ini: '20:30', fin: '23:30' }
+        ];
+
+        const USUARIOS = [
+            { phone: '600000011', pin: '222222', name: 'Maestre Prueba 1', role: 'jugador', asignado: 'Barrio Prueba Norte', representado: 'Barrio Prueba Norte' },
+            { phone: '600000012', pin: '333333', name: 'Maestre Prueba 2', role: 'jugador', asignado: 'Barrio Prueba Centro', representado: 'Barrio Prueba Centro' },
+            { phone: '600000013', pin: '444444', name: 'Maestre Prueba 3', role: 'jugador', asignado: 'Barrio Prueba Sur', representado: 'Barrio Prueba Sur' }
+        ];
+
+        // Criterios del Códice (hojas, con su peso dentro de su disciplina)
+        const DISCIPLINAS = {
+            ocio: { titulo: '🍽️ Ocio Hostelero', peso: 50 },
+            acceso: { titulo: '🚌 Accesibilidad', peso: 20 },
+            ambiente: { titulo: '🎉 Ambiente de Barrio', peso: 30 }
+        };
+
+        const SUBCRITERIOS = [
+            { id: 'crit-ocio-plebeyo', nombre: '🍢 Pintxo de Plebeyo', padre: 'ocio', peso: 20, def: 9 },
+            { id: 'crit-ocio-real', nombre: '👑 Pintxo Real', padre: 'ocio', peso: 15, def: 9 },
+            { id: 'crit-ocio-elitista', nombre: '💎 Elixir Elitista', padre: 'ocio', peso: 10, def: 9 },
+            { id: 'crit-ocio-poteo', nombre: '🍺 Pócima de Poteo', padre: 'ocio', peso: 5, def: 9 },
+            { id: 'crit-acceso-carruajes', nombre: '🚍 Carruajes (Autobuses)', padre: 'acceso', peso: 5, def: 8 },
+            { id: 'crit-acceso-dragones', nombre: '🐲 Dragones Subterráneos (Metro)', padre: 'acceso', peso: 5, def: 8 },
+            { id: 'crit-acceso-establos', nombre: '🏇 Establos (Aparcamiento)', padre: 'acceso', peso: 5, def: 8 },
+            { id: 'crit-acceso-caminos', nombre: '🛤️ Solidez de Caminos', padre: 'acceso', peso: 5, def: 8 },
+            { id: 'crit-ambiente-originalidad', nombre: '✨ Originalidad', padre: 'ambiente', peso: 15, def: 7 },
+            { id: 'crit-ambiente-organizacion', nombre: '📯 Organización (Guía del Tronista)', padre: 'ambiente', peso: 10, def: 7 },
+            { id: 'crit-ambiente-gozo', nombre: '🎊 Gozo del Pueblo', padre: 'ambiente', peso: 5, def: 7 }
+        ];
+
+        // Partida de ejemplo: 3 maestres x 2 eventos = 6 votos (2 por barrio)
+        const VOTOS_EJEMPLO = [
+            { phone: '600000011', evento: 'evento-prueba-1', barrio: 'Barrio Prueba Norte', festin: 9, caminos: 8, espiritu: 7 },
+            { phone: '600000013', evento: 'evento-prueba-2', barrio: 'Barrio Prueba Norte', festin: 4, caminos: 5, espiritu: 3 },
+            { phone: '600000011', evento: 'evento-prueba-2', barrio: 'Barrio Prueba Centro', festin: 5, caminos: 6, espiritu: 4 },
+            { phone: '600000012', evento: 'evento-prueba-1', barrio: 'Barrio Prueba Centro', festin: 7, caminos: 7, espiritu: 8 },
+            { phone: '600000012', evento: 'evento-prueba-2', barrio: 'Barrio Prueba Sur', festin: 6, caminos: 5, espiritu: 6 },
+            { phone: '600000013', evento: 'evento-prueba-1', barrio: 'Barrio Prueba Sur', festin: 8, caminos: 9, espiritu: 7 }
+        ];
+
+        // ---------------------------------------------------------------------
+        // Estado
+        // ---------------------------------------------------------------------
+        let usuarioActual = null;
+        let votos = [];
+
+        const K_LEY_II = 3.0;
+
+        function $(id) { return document.getElementById(id); }
+
+        // ---------------------------------------------------------------------
+        // Acceso
+        // ---------------------------------------------------------------------
+        function iniciarSesion() {
+            const phone = ($('in-phone').value || '').replace(/\D/g, '');
+            const pin = $('in-pin').value || '';
+            const user = USUARIOS.find(u => u.phone === phone && u.pin === pin);
+            if (!user) {
+                $('login-msg').textContent = 'Teléfono o PIN incorrectos, o cuenta no autorizada.';
+                return;
+            }
+            usuarioActual = user;
+            $('vista-login').classList.add('oculto');
+            $('vista-app').classList.remove('oculto');
+            $('u-nombre').textContent = user.name;
+            $('u-tel').textContent = user.phone;
+            $('u-barrio').textContent = '· ' + (user.representado || '');
+            cargarEjemplo();
+            renderTodo();
+        }
+
+        function cerrarSesion() {
+            usuarioActual = null;
+            votos = [];
+            $('vista-app').classList.add('oculto');
+            $('vista-login').classList.remove('oculto');
+            $('in-pin').value = '';
+            $('login-msg').textContent = '';
+        }
+
+        function cargarEjemplo() {
+            votos = VOTOS_EJEMPLO.map(v => ({ ...v, fecha: new Date().toISOString() }));
+            renderTodo();
+            setMsg('estado-formulario', 'Partida de ejemplo cargada: 6 votos.', 'info');
+        }
+
+        function reiniciarDemo() {
+            votos = [];
+            renderTodo();
+            setMsg('estado-formulario', 'Demo reiniciada. Vota tú mismo desde el formulario.', 'info');
+        }
+
+        // ---------------------------------------------------------------------
+        // Navegación
+        // ---------------------------------------------------------------------
+        function cambiarVista(cual) {
+            $('vista-clas').classList.toggle('oculto', cual !== 'clas');
+            $('vista-voto').classList.toggle('oculto', cual !== 'voto');
+            $('tab-clas').classList.toggle('activa', cual === 'clas');
+            $('tab-voto').classList.toggle('activa', cual === 'voto');
+            if (cual === 'voto') { poblarFormulario(); renderMisVotos(); }
+            if (cual === 'clas') renderClasificacion();
+        }
+
+        function toggleFormulario() {
+            const f = $('formulario');
+            f.classList.toggle('oculto');
+            if (!f.classList.contains('oculto')) poblarFormulario();
+        }
+
+        // ---------------------------------------------------------------------
+        // Formulario de voto
+        // ---------------------------------------------------------------------
+        function poblarFormulario() {
+            $('sel-evento').innerHTML = '<option value="">Selecciona un evento...</option>' +
+                EVENTOS.map(e => `<option value="${e.id}">${e.fecha} — ${e.nombre} (${e.barrio})</option>`).join('');
+            $('sel-barrio').innerHTML = CASAS.map(c =>
+                `<option value="${c.nombre}">${c.nombre}</option>`).join('');
+            $('criterios').innerHTML = Object.keys(DISCIPLINAS).map(disc => {
+                const sub = SUBCRITERIOS.filter(s => s.padre === disc);
+                return `<div class="criterio-grupo">
+                    <h4>${DISCIPLINAS[disc].titulo} <span style="color:#a8a29e;font-weight:400">(${DISCIPLINAS[disc].peso}%)</span></h4>
+                    ${sub.map(s => `<div class="criterio-item">
+                        <span>${s.nombre} <em style="color:#78716c">(${s.peso}%)</em></span>
+                        <input id="v-${s.id}" data-crit="${s.id}" type="number" min="1" max="10" value="${s.def}" class="input-medieval">
+                    </div>`).join('')}
+                </div>`;
+            }).join('');
+            actualizarFormulario();
+        }
+
+        function actualizarFormulario() {
+            const ev = EVENTOS.find(e => e.id === $('sel-evento').value);
+            const estado = $('estado-formulario');
+            const btn = document.querySelector('#opciones-voto .btn');
+            if (!ev) {
+                $('in-barrio-evento').value = '';
+                setMsg('estado-formulario', 'Selecciona un evento para consultar su estado.', 'info');
+                $('opciones-voto').classList.add('oculto');
+                return;
+            }
+            $('in-barrio-evento').value = ev.barrio;
+            const yaVoto = votos.some(v => v.phone === usuarioActual.phone && v.evento === ev.id);
+            if (yaVoto) {
+                setMsg('estado-formulario', 'Ya has votado en este evento. Puedes consultar tu historial.', 'error');
+                $('alerta-repetido').classList.remove('oculto');
+                $('opciones-voto').classList.add('oculto');
+                return;
+            }
+            $('alerta-repetido').classList.add('oculto');
+            $('opciones-voto').classList.remove('oculto');
+            setMsg('estado-formulario', `Votación ABIERTA: ${ev.ini}–${ev.fin}.`, 'ok');
+            if (btn) btn.disabled = false;
+        }
+
+        function setMsg(id, texto, tipo) {
+            const el = $(id);
+            el.className = 'msg ' + (tipo || '');
+            el.textContent = texto;
+        }
+
+        // Media ponderada de una disciplina a partir de sus hojas
+        function notaDisciplina(disc) {
+            const sub = SUBCRITERIOS.filter(s => s.padre === disc);
+            let suma = 0, pesos = 0;
+            sub.forEach(s => {
+                const val = Number($('v-' + s.id).value || 0);
+                suma += s.peso * val;
+                pesos += s.peso;
+            });
+            return pesos ? (suma / pesos) : 0;
+        }
+
+        function enviarVoto() {
+            const ev = EVENTOS.find(e => e.id === $('sel-evento').value);
+            if (!ev) { setMsg('estado-formulario', 'Selecciona un evento válido antes de votar.', 'error'); return; }
+            if (votos.some(v => v.phone === usuarioActual.phone && v.evento === ev.id)) {
+                setMsg('estado-formulario', 'Ya has emitido un voto para este evento.', 'error');
+                return;
+            }
+            const barrio = $('sel-barrio').value; // FIX: el barrio evaluado es el del desplegable
+            const festin = notaDisciplina('ocio');
+            const caminos = notaDisciplina('acceso');
+            const espiritu = notaDisciplina('ambiente');
+            votos.push({
+                phone: usuarioActual.phone,
+                evento: ev.id,
+                eventoNombre: ev.nombre,
+                barrio,
+                festin: Number(festin.toFixed(2)),
+                caminos: Number(caminos.toFixed(2)),
+                espiritu: Number(espiritu.toFixed(2)),
+                fecha: new Date().toISOString()
+            });
+            setMsg('estado-formulario', '⚠️ Voto registrado correctamente.', 'ok');
+            renderTodo();
+            actualizarFormulario();
+        }
+
+        // ---------------------------------------------------------------------
+        // Render
+        // ---------------------------------------------------------------------
+        function renderTodo() {
+            renderMisVotos();
+            renderClasificacion();
+        }
+
+        function renderMisVotos() {
+            const cont = $('mis-votos');
+            if (!usuarioActual) { cont.innerHTML = '<p>Inicia sesión para consultar tus votos.</p>'; return; }
+            const mios = votos.filter(v => v.phone === usuarioActual.phone)
+                .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+            if (!mios.length) {
+                cont.innerHTML = '<p style="color:var(--suave)">Todavía no has emitido votos.</p>';
+                return;
+            }
+            cont.innerHTML = `<div class="tabla-scroll"><table>
+                <thead><tr><th>Evento</th><th>Barrio</th><th>Ocio</th><th>Acceso</th><th>Ambiente</th><th>Fecha</th></tr></thead>
+                <tbody>${mios.map(v => `<tr>
+                    <td>${v.eventoNombre || v.evento}</td>
+                    <td>${v.barrio}</td>
+                    <td>${v.festin}</td>
+                    <td>${v.caminos}</td>
+                    <td>${v.espiritu}</td>
+                    <td>${new Date(v.fecha).toLocaleString()}</td>
+                </tr>`).join('')}</tbody></table></div>`;
+        }
+
+        function renderClasificacion() {
+            const cuerpo = $('clas-body');
+            const barrios = CASAS.map(c => c.nombre);
+            const mediaGlobal = votos.length === 0 ? 0 :
+                votos.reduce((acc, v) => acc + (0.5 * v.festin + 0.2 * v.caminos + 0.3 * v.espiritu), 0) / votos.length;
+
+            const filas = barrios.map(barrio => {
+                const vs = votos.filter(v => v.barrio === barrio);
+                const n = vs.length;
+                if (!n) return { barrio, festin: 0, caminos: 0, espiritu: 0, final: 0, n: 0 };
+                const f = vs.reduce((a, v) => a + v.festin, 0) / n;
+                const c = vs.reduce((a, v) => a + v.caminos, 0) / n;
+                const e = vs.reduce((a, v) => a + v.espiritu, 0) / n;
+                const crudo = 0.5 * f + 0.2 * c + 0.3 * e;
+                const final = (n * crudo + K_LEY_II * mediaGlobal) / (n + K_LEY_II);
+                return { barrio, festin: f, caminos: c, espiritu: e, final, n };
+            }).sort((a, b) => b.final - a.final);
+
+            const medallas = ['🥇 1º', '🥈 2º', '🥉 3º'];
+            cuerpo.innerHTML = filas.map((item, i) => `<tr>
+                <td><strong>${medallas[i] || ('🏰 ' + (i + 1) + 'º')}</strong></td>
+                <td><strong>${item.barrio}</strong></td>
+                <td>${item.festin.toFixed(1)}</td>
+                <td>${item.caminos.toFixed(1)}</td>
+                <td>${item.espiritu.toFixed(1)}</td>
+                <td><strong style="color:var(--oro-brillante)">${item.final.toFixed(2)} pts</strong></td>
+                <td>${item.n}</td>
+            </tr>`).join('');
+
+            $('media-global').textContent = `Media global del Reino: ${mediaGlobal.toFixed(2)} · K = ${K_LEY_II} · Votos totales: ${votos.length}`;
+        }
+
+        // Arranque
+        renderTodo();
+    </script>
+</body>
+
+</html>

@@ -160,11 +160,11 @@ function actualizarInterfazSesion(usuario) {
         if (panelSorteo) panelSorteo.style.display = esSuperadmin ? 'block' : 'none';
 
         const esMaster = esRolMaster(usuario.role);
-        const optgroupMaster = document.getElementById('optgroup-master-menu');
+        const optgroupMaster = document.getElementById('optgroup-oraculo-menu');
         if (optgroupMaster) optgroupMaster.style.display = esMaster ? '' : 'none';
         const grupoPin = document.getElementById('group-usuario-pin');
         if (grupoPin) grupoPin.style.display = esMaster ? 'block' : 'none';
-        const accionesCredenciales = document.getElementById('acciones-credenciales-master');
+        const accionesCredenciales = document.getElementById('acciones-credenciales-pin');
         if (accionesCredenciales) accionesCredenciales.style.display = esMaster ? 'block' : 'none';
 
         if (typeof renderOpcionesRolUsuario === 'function') renderOpcionesRolUsuario();
@@ -506,7 +506,7 @@ function actualizarEstadoFormularioVoto() {
 
     if (estado) {
         estado.textContent = bloqueadoPorBarrio
-            ? `Como Lokitronista de ${evento.barrio || 'este barrio'} no puedes votar en el evento de tu propio barrio.`
+            ? `Como Lokitronista de ${evento.barrio || 'tu barrio'}, no puedes votar en el evento de tu propio barrio (se evita el conflicto de interés). Puedes votar en los eventos de otros barrios.`
             : duplicado
                 ? 'Ya has votado en este evento. Puedes consultar tu historial.'
                 : estadoVotacion.estado === 'ABIERTA'
@@ -589,7 +589,7 @@ async function guardarVotoBarrioUsuario(event) {
     }
 
     if (lokitronistaNoPuedeVotarEn(evento, user)) {
-        alert(`Como Lokitronista de ${evento.barrio || 'este barrio'} no puedes votar en el evento de tu propio barrio.`);
+        alert(`Como Lokitronista de ${evento.barrio || 'tu barrio'}, no puedes votar en el evento de tu propio barrio (se evita el conflicto de interés). Puedes votar en los eventos de otros barrios.`);
         actualizarEstadoFormularioVoto();
         return;
     }
@@ -613,7 +613,7 @@ async function guardarVotoBarrioUsuario(event) {
     }
 
     const selectBarrio = document.getElementById('voto-select-barrio');
-    const barrio = evento.barrio || (selectBarrio ? selectBarrio.value : '');
+    const barrio = (selectBarrio ? String(selectBarrio.value).trim() : '') || evento.barrio || '';
     const values = document.querySelectorAll('#contenedor-inputs-criterios-voto [data-criterio]');
     const notas = {};
     values.forEach(input => {
@@ -2425,7 +2425,7 @@ async function probarEnvioWebhookMake() {
 async function regenerarPinYEnviarWhatsApp(userId) {
     const currentUser = getCurrentUser();
     if (!currentUser || !puedeAdministrar(currentUser.role)) {
-        alert('Solo un administrador (Superadmin o Master) puede regenerar PINs.');
+        alert('Solo un administrador puede regenerar PINs.');
         return;
     }
 
@@ -2475,7 +2475,7 @@ async function regenerarPinYEnviarWhatsApp(userId) {
 async function editarPinUsuario(userId) {
     const currentUser = getCurrentUser();
     if (!currentUser || !esRolMaster(currentUser.role)) {
-        alert('Solo el Master puede editar el PIN de forma manual.');
+        alert('No tienes permiso para editar el PIN.');
         return;
     }
 
@@ -2518,7 +2518,7 @@ async function editarPinUsuario(userId) {
 async function borrarPinUsuario(userId) {
     const currentUser = getCurrentUser();
     if (!currentUser || !esRolMaster(currentUser.role)) {
-        alert('Solo el Master puede borrar PIN de acceso.');
+        alert('No tienes permiso para borrar el PIN de acceso.');
         return;
     }
     const objetivo = getUsuariosAutorizadosLocal().find(u => u.id === userId) || null;
@@ -2553,7 +2553,7 @@ async function borrarPinUsuario(userId) {
 function descargarUsuariosCSV() {
     const currentUser = getCurrentUser();
     if (!currentUser || !esRolMaster(currentUser.role)) {
-        alert('Solo el Master puede descargar las credenciales de los usuarios.');
+        alert('No tienes permiso para descargar las credenciales de los usuarios.');
         return;
     }
 
@@ -2757,7 +2757,7 @@ async function guardarUsuario(event) {
     if (event) event.preventDefault();
     const currentUser = getCurrentUser();
     if (!currentUser || !puedeAdministrar(currentUser.role)) {
-        alert('Solo un administrador (Superadmin o Master) puede gestionar usuarios.');
+        alert('Solo un administrador puede gestionar usuarios.');
         return;
     }
 
@@ -2786,7 +2786,7 @@ async function guardarUsuario(event) {
 
     // Jerarquía de roles: el master lo puede todo; el superadmin solo maestres y lokitronistas.
     if (!puedeAsignarRol(currentUser.role, role)) {
-        alert('No tienes permiso para asignar ese rol. Solo el Master puede crear o editar Superadmins y Masters.');
+        alert('No tienes permiso para asignar ese rol.');
         return;
     }
 
@@ -2956,7 +2956,7 @@ function editarUsuario(userId) {
 async function eliminarUsuario(userId) {
     const currentUser = getCurrentUser();
     if (!currentUser || !puedeAdministrar(currentUser.role)) {
-        alert('Solo un administrador (Superadmin o Master) puede eliminar usuarios del Reino.');
+        alert('Solo un administrador puede eliminar usuarios del Reino.');
         return;
     }
     const objetivo = getUsuariosAutorizadosLocal().find(u => u.id === userId) || null;
@@ -4804,7 +4804,7 @@ async function restaurarCompeticion() {
         return;
     }
 
-    if (!window.confirm('⚠️ Se borrarán votos, eventos, códigos diarios, barrios (excepto Forastero) y todas las cuentas salvo master/superadmin. Esta acción NO se puede deshacer. ¿Continuar?')) {
+    if (!window.confirm('⚠️ Se borrarán votos, eventos, códigos diarios, barrios (excepto Forastero) y todas las cuentas salvo superadmin. Esta acción NO se puede deshacer. ¿Continuar?')) {
         return;
     }
 

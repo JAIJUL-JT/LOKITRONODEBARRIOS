@@ -1,0 +1,53 @@
+{
+  "name": "Trono del Pintxo - Escenario E: Bienvenida y PIN por WhatsApp",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": "TRONO_WEBHOOK_BIENVENIDA"
+      },
+      "mapper": {
+        "hook": "TRONO_WEBHOOK_BIENVENIDA"
+      },
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0,
+          "name": "Webhook Bienvenida / PIN (desde la app)"
+        },
+        "restore": {},
+        "expect": [
+          { "name": "evento", "type": "text", "label": "Evento (BIENVENIDA_USUARIO / PRUEBA_WEBHOOK)" },
+          { "name": "telefono", "type": "text", "label": "Teléfono" },
+          { "name": "nombre", "type": "text", "label": "Nombre" },
+          { "name": "pin", "type": "text", "label": "PIN" },
+          { "name": "rol", "type": "text", "label": "Rol" },
+          { "name": "rol_etiqueta", "type": "text", "label": "Etiqueta del rol" },
+          { "name": "url_publica", "type": "text", "label": "URL pública del juego" },
+          { "name": "mensaje", "type": "text", "label": "Mensaje completo" }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "whatsapp-business-cloud:sendMessage",
+      "version": 1,
+      "parameters": {
+        "to": "34{{1.telefono}}",
+        "type": "text",
+        "text": {
+          "body": "{{1.mensaje}}"
+        }
+      },
+      "metadata": {
+        "designer": {
+          "x": 320,
+          "y": 0,
+          "name": "WhatsApp: enviar mensaje de bienvenida/PIN"
+        }
+      }
+    }
+  ]
+}

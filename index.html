@@ -92,7 +92,7 @@
         window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
         window.__APP_CONFIG__.SUPABASE_URL = window.__APP_CONFIG__.SUPABASE_URL || 'https://uswikdckptzivsurzrlc.supabase.co';
         window.__APP_CONFIG__.SUPABASE_ANON_KEY = window.__APP_CONFIG__.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzd2lrZGNrcHR6aXZzdXJ6cmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODAwNTEsImV4cCI6MjEwNjU1NjA1MX0.3kovmMBfC_JCGKyJ_1s5iyxtkKyqVMIt77CfHnytLzI';
-        window.__APP_CONFIG__.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL || '';
+        window.__APP_CONFIG__.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL || 'https://hook.eu1.make.com/uqb4kqpu9dnu82r3wyep3jegknqlsubk';
         window.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL;
         // Proxy del Oráculo Imperial (Edge Function de Supabase que oculta la
         // clave del proveedor de IA). Si se deja vacío, se deduce de SUPABASE_URL.
@@ -154,10 +154,10 @@
                     <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario Eventos</option>
                     <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
                 </optgroup>
-                <optgroup label="🔮 Oráculo Imperial (Master)" id="optgroup-master-menu" style="display:none;">
+                <optgroup label="🔮 Oráculo Imperial" id="optgroup-oraculo-menu" style="display:none;">
                     <option value="pestana-oraculo-ia" data-tab="tab-oraculo-ia">🔮 Oráculo Imperial (IA)</option>
                 </optgroup>
-                <optgroup label="👑 Administración (Superadmin / Master)" id="optgroup-admin-menu">
+                <optgroup label="👑 Administración" id="optgroup-admin-menu">
                     <option value="pestana-generar-evento" data-tab="tab-generar-evento">📅 Generar y Gestionar Eventos</option>
                     <option value="tab-superadmin" data-tab="tab-superadmin">📊 Auditoría de Votos (Admin)</option>
                     <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Alta y Control de Usuarios</option>
@@ -838,12 +838,11 @@
                                 <option value="jugador">Jugador / Maestre</option>
                                 <option value="tronista">👑 Tronista de Barrio</option>
                                 <option value="superadmin">Superadmin (Administrador del Sistema)</option>
-                                <option value="master">🌟 Master (Lokitrono Mayor)</option>
                             </select>
                         </div>
 
                         <div class="form-group" id="group-usuario-pin" style="display: none;">
-                            <label>PIN de acceso (solo Master, 6 dígitos — deja vacío para generar):</label>
+                            <label>PIN de acceso (6 dígitos — deja vacío para generar):</label>
                             <input type="text" id="usuario-pin" class="input-medieval" inputmode="numeric"
                                 maxlength="6" pattern="[0-9]{6}" placeholder="Ej: 123456 (opcional)">
                         </div>
@@ -907,7 +906,7 @@
                         </div>
                     </div>
 
-                    <div id="acciones-credenciales-master" style="display: none; margin-top: 20px;">
+                    <div id="acciones-credenciales-pin" style="display: none; margin-top: 20px;">
                         <button type="button" class="btn-cuervo" style="background: #166534;" onclick="descargarUsuariosCSV()">⬇️ Descargar credenciales (CSV)</button>
                     </div>
                     <h3 style="margin-top: 30px; color: var(--oro-brillante);">Usuarios Autorizados Registrados</h3>
@@ -1031,7 +1030,7 @@
                         <p style="color:#d6d3d1;">
                             Devuelve el juego a su estado inicial: elimina <strong>votos, eventos,
                             códigos diarios y barrios</strong> (excepto Forastero), y borra todas las
-                            cuentas salvo <strong>master</strong> y <strong>superadmin</strong>, que quedan
+                            cuentas salvo las de <strong>superadmin</strong>, que quedan
                             con barrio Forastero. También retira el barrio <strong>Altamira</strong>.
                             Esta acción es irreversible.
                         </p>
@@ -1265,12 +1264,12 @@
                         </div>
                     </div>
 
-                    <!-- VISTA EXCLUSIVA DEL TRONO MAYOR (MASTER): LISTADO GENERAL DE 135 PARTICIPANTES Y AUDITORÍA DE VOTOS -->
+                    <!-- VISTA EXCLUSIVA DE LA ADMINISTRACIÓN: LISTADO GENERAL DE 135 PARTICIPANTES Y AUDITORÍA DE VOTOS -->
                     <div id="seccion-superadmin-participantes"
                         style="margin-top: 40px; background: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; padding: 20px; border-radius: 8px;">
                         <h3 style="color: #60a5fa; margin-top: 0; font-family: 'Cinzel', serif;">📊 Listado General de
                             Participantes (135 Maestres) y Auditoría de Votos</h3>
-                        <p style="font-size: 0.85rem; color: #93c5fd;">Acceso exclusivo del Trono Mayor (Master):
+                        <p style="font-size: 0.85rem; color: #93c5fd;">Acceso exclusivo de la organización:
                             Consulta el listado general de los 135 participantes de la competición, la asistencia
                             separada por evento (media de 14 a 63) y los votos detallados emitidos por cada
                             participante.</p>

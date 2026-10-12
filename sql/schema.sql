@@ -274,7 +274,7 @@ CREATE TRIGGER juicios_solo_casas_participantes
 CREATE OR REPLACE FUNCTION notificar_make()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_url TEXT := 'https://hook.eu1.make.com/TU_WEBHOOK_ID'; -- Reemplazar con webhook de Make
+    v_url TEXT := 'https://hook.eu1.make.com/uqb4kqpu9dnu82r3wyep3jegknqlsubk'; -- Webhook Make (El Mayordomo del Reino)
     v_payload JSONB;
     v_casa_nombre TEXT;
     v_maestre_alias TEXT;

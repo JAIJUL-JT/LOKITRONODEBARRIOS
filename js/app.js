@@ -49,14 +49,12 @@ function puedeGestionarEventosBarrio(role) {
 
 /*
  * Jerarquía feudal de la corte:
- *   master (Lokitrono Mayor) > superadmin > tronista (lokitronista) / jugador (maestre)
+ *   superadmin > tronista (lokitronista) / jugador (maestre)
  *
- * El rol master se reserva a quien ostenta el Trono Mayor: puede conceder, editar
- * y borrar cualquier rol, y es el único facultado para crear superadmins.
- * Los superadmins solo crean maestres (jugador) y lokitronistas (tronista).
+ * Los superadmins gestionan usuarios, barrios y eventos.
  * Maestres y lokitronistas no crean roles, barrios ni eventos.
  */
-const ROLES_VALIDOS = ['jugador', 'tronista', 'superadmin', 'master'];
+const ROLES_VALIDOS = ['jugador', 'tronista', 'superadmin'];
 
 function esRolMaster(role) {
     return role === 'master';
@@ -69,7 +67,7 @@ function puedeAdministrar(role) {
 
 // ¿Puede el actor asignar/crear el rol indicado?
 function puedeAsignarRol(actorRole, targetRole) {
-    if (actorRole === 'master') return ROLES_VALIDOS.includes(targetRole);
+    if (actorRole === 'master') return targetRole === 'jugador' || targetRole === 'tronista' || targetRole === 'superadmin';
     if (actorRole === 'superadmin') return targetRole === 'jugador' || targetRole === 'tronista';
     return false;
 }
@@ -2471,7 +2469,7 @@ async function regenerarPinYEnviarWhatsApp(userId) {
     }
 }
 
-// Establece manualmente un PIN de 6 dígitos para un usuario (exclusivo del Master).
+// Establece manualmente un PIN de 6 dígitos para un usuario (solo rol Master).
 async function editarPinUsuario(userId) {
     const currentUser = getCurrentUser();
     if (!currentUser || !esRolMaster(currentUser.role)) {
@@ -2618,7 +2616,7 @@ function renderOpcionesRolUsuario() {
     const actor = currentUser && currentUser.role;
     const opcionesPermitidas = ROLES_VALIDOS.filter(rol => puedeAsignarRol(actor, rol));
     const valorPrevio = select.value;
-    const etiquetas = { master: '🌟 Master (Lokitrono Mayor)', superadmin: '🏰 Superadmin', tronista: '👑 Lokitronista', jugador: '⚔️ Maestre' };
+    const etiquetas = { master: 'Master', superadmin: '🏰 Superadmin', tronista: '👑 Lokitronista', jugador: '⚔️ Maestre' };
     select.innerHTML = opcionesPermitidas
         .map(rol => `<option value="${rol}">${etiquetas[rol] || rol}</option>`)
         .join('');
@@ -2686,9 +2684,11 @@ function renderTablaUsuarios() {
                 <button class="btn-cuervo" style="padding:2px 6px;font-size:0.72rem;margin-left:6px;" title="Editar PIN" onclick="editarPinUsuario('${user.id}')">✏️</button>
                 <button class="btn-cuervo" style="padding:2px 6px;font-size:0.72rem;margin-left:4px;" title="Regenerar PIN y reenviar por WhatsApp" onclick="regenerarPinYEnviarWhatsApp('${user.id}')">🔑</button>
                 <button class="btn-cuervo" style="padding:2px 6px;font-size:0.72rem;margin-left:4px;background:#7f1d1d;" title="Borrar PIN" onclick="borrarPinUsuario('${user.id}')">🗑️</button>`;
-        } else {
+        } else if (esSuperadmin && puedeGestionarFila) {
             celdaPin = `<span aria-hidden="true">••••••</span>
                 <button class="btn-cuervo" style="padding:2px 6px;font-size:0.72rem;margin-left:6px;" title="Regenerar PIN y reenviar por WhatsApp" onclick="regenerarPinYEnviarWhatsApp('${user.id}')">🔑</button>`;
+        } else {
+            celdaPin = '••••';
         }
 
         return `<tr>

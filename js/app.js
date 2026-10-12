@@ -134,6 +134,8 @@ function actualizarInterfazSesion(usuario) {
     const contenido = document.getElementById('contenido-reino-protegido');
     const optgroupAdmin = document.getElementById('optgroup-admin-menu');
 
+    if (typeof lokibotActualizarVisibilidad === 'function') lokibotActualizarVisibilidad(usuario);
+
     if (usuario) {
         if (loginBox) loginBox.style.display = 'none';
         if (authStatus) {
@@ -4942,6 +4944,312 @@ window.abrirResultadoSorteo = abrirResultadoSorteo;
 window.cerrarResultadoSorteo = cerrarResultadoSorteo;
 window.realizarSorteoDesdeVentana = realizarSorteoDesdeVentana;
 window.restaurarCompeticion = restaurarCompeticion;
+
+
+/* ============================================================================
+ * LOKI-BOT — ASISTENTE DE AYUDA (FAQ LOCAL, SIN IA)
+ * Responde sobre el sistema de votación, la ventana para votar, las vistas del
+ * menú, los roles y los conceptos del juego. Si no sabe responder, registra la
+ * pregunta en Supabase (RPC registrar_consulta_lokibot) para ampliar la ayuda.
+ * ========================================================================== */
+
+const LOKIBOT_FAQ = [
+    {
+        id: 'acceso',
+        categoria: 'Acceso',
+        claves: ['entrar', 'entrar al juego', 'iniciar sesion', 'login', 'acceder', 'como entro', 'como inicio', 'acceso', 'telefono y pin', 'credenciales'],
+        respuesta: 'Para entrar necesitas tu teléfono y un PIN de 6 dígitos. Escribe ambos en la pantalla de acceso y pulsa «Entrar al Reino». Si es tu primera vez, la organización te habrá enviado el PIN por WhatsApp.'
+    },
+    {
+        id: 'pin-perdido',
+        categoria: 'Acceso',
+        claves: ['olvide', 'olvidado', 'perdi el pin', 'perdi mi pin', 'no recuerdo el pin', 'recuperar pin', 'nuevo pin', 'cambiar pin', 'restablecer pin', 'regenerar pin'],
+        respuesta: 'Si pierdes el PIN, un administrador puede generar uno nuevo por ti. Pide a la organización que lo regenere: aparecerá un botón 🔑 junto a tu usuario en la gestión de usuarios, y el nuevo PIN se reenviará por WhatsApp.'
+    },
+    {
+        id: 'roles',
+        categoria: 'Roles',
+        claves: ['roles', 'que es un rol', 'significan los roles', 'maestre', 'lokitronista', 'tronista', 'superadmin', 'master', 'lokitrono mayor', 'administrador', 'permisos', 'jerarquia'],
+        respuesta: 'Estos son los roles del reino:\n• 👑 Maestre (jugador): participa y vota en los eventos.\n• ⚔️ Lokitronista (tronista): representa a un barrio; hay un máximo de 2 por barrio.\n• 🏰 Superadmin: gestiona usuarios, roles, eventos y barrios.\n• 🔱 Lokitrono Mayor (master): rango superior; puede gestionar superadmins, ver los PIN y usar el Oráculo Imperial.'
+    },
+    {
+        id: 'lokitronista-que-hace',
+        categoria: 'Roles',
+        claves: ['que hace un lokitronista', 'que hace un tronista', 'funcion del lokitronista', 'representar barrio', 'maximo lokitronistas', 'cuantos lokitronistas', 'ser lokitronista'],
+        respuesta: 'Un Lokitronista representa oficialmente a un barrio. Cada barrio puede tener como máximo 2 Lokitronistas. Para evitar conflictos de interés, un Lokitronista no puede votar en los eventos que se celebran en su propio barrio, aunque sí puede votar en los de otros barrios.'
+    },
+    {
+        id: 'votar-cuando',
+        categoria: 'Votación',
+        claves: ['cuando puedo votar', 'cuando se vota', 'horario votacion', 'hora votacion', 'a que hora', 'ventana votacion', 'se puede votar', 'empieza la votacion', 'termina la votacion'],
+        respuesta: 'Cada evento abre su propia ventana de votación. Empieza a la hora de inicio indicada por la organización (por defecto 20:30) y termina a la hora de cierre (por defecto 23:30), pudiendo abarcar hasta la fecha de fin de votación. En la ficha del evento verás una etiqueta con el estado: 🟢 Abierta, 🟡 No iniciada o 🔒 Finalizada.'
+    },
+    {
+        id: 'votar-estados',
+        categoria: 'Votación',
+        claves: ['estado de la votacion', 'votacion cerrada', 'votacion abierta', 'votacion finalizada', 'no iniciada', 'cerrada', 'abierta', 'pendiente', 'etiqueta estado'],
+        respuesta: 'Los estados de una votación son:\n• 🟡 No iniciada: aún no ha llegado la hora de apertura.\n• 🟢 Abierta: puedes emitir tu juicio.\n• 🔒 Finalizada: se superó la hora de cierre o un administrador la cerró manualmente; ya no se puede votar.'
+    },
+    {
+        id: 'votar-dos-veces',
+        categoria: 'Votación',
+        claves: ['votar dos veces', 'voto unico', 'cuantos votos', 'repetir voto', 'voto repetido', 'volver a votar', 'varias veces'],
+        respuesta: 'El voto es único por Maestre y Casa: un Maestre solo puede valorar cada Casa (barrio participante) una sola vez. Si intentas votar de nuevo la misma Casa, el sistema te avisará de que ya lo has hecho.'
+    },
+    {
+        id: 'votar-no-puedo',
+        categoria: 'Votación',
+        claves: ['no me deja votar', 'no puedo votar', 'por que no puedo votar', 'no me deja', 'bloqueado', 'no me funciona el voto', 'sin permiso para votar'],
+        respuesta: 'No puedes votar cuando se cumple alguna de estas causas:\n• La votación no está abierta (fuera de la ventana horaria o ya finalizada).\n• Ya has votado a esa Casa (voto único por Maestre y Casa).\n• Eres Lokitronista y el evento es de tu propio barrio.\nRevisa la etiqueta de estado del evento; si crees que es un error, avisa a la organización.'
+    },
+    {
+        id: 'criterios',
+        categoria: 'Votación',
+        claves: ['que criterios', 'criterios de valoracion', 'como valoro', 'que valoro', 'ocio', 'accesibilidad', 'ambiente', 'notas', 'puntuacion', 'subcriterios', 'que puntuo'],
+        respuesta: 'Al votar una Casa valoras tres grandes bloques:\n• 🍷 Ocio Hostelero (50%): el festín y la pócima de poteo.\n• 🚌 Accesibilidad (20%): carruajes, dragones subterráneos (metro), establos y solidez de caminos.\n• 🎉 Ambiente de Barrio (30%): originalidad, organización y gozo del pueblo.\nDentro de cada bloque hay subcriterios que se combinan entre sí.'
+    },
+    {
+        id: 'clasificacion',
+        categoria: 'Clasificación',
+        claves: ['como se calcula la clasificacion', 'clasificacion real', 'ranking', 'codice de la villa', 'quien va primero', 'puntuacion final', 'ley ii', 'media ponderada'],
+        respuesta: 'La clasificación (el «Códice de la Villa») es una media ponderada: 0,50 Ocio Hostelero + 0,20 Accesibilidad + 0,30 Ambiente. Además se regulariza con un factor (K = 3) para que pocas valoraciones no disparen la nota. La encuentras en la vista 🏆 Clasificación Real.'
+    },
+    {
+        id: 'menus',
+        categoria: 'Menú',
+        claves: ['que vistas hay', 'vistas del menu', 'opciones del menu', 'pestanas', 'que puedo hacer en el menu', 'menu', 'secciones', 'navegacion'],
+        respuesta: 'El menú del reino incluye:\n• 🏆 Clasificación Real\n• 🗳️ Votación de Barrio\n• 👑 Lokitronistas de Barrios\n• 📅 Calendario de Eventos\n• 🎉 Gala Final\nSi eres administrador verás además: ⚙️ Generar y Gestionar Eventos, 📊 Auditoría de Votos, 👤 Usuarios y 🏰 Barrios. El 🔮 Oráculo Imperial es exclusivo del rango Lokitrono Mayor (master).'
+    },
+    {
+        id: 'vista-votacion-barrio',
+        categoria: 'Menú',
+        claves: ['votacion de barrio', 'donde voto', 'formulario de voto', 'emitir voto', 'como voto'],
+        respuesta: 'En 🗳️ Votación de Barrio eliges el barrio y la Casa, y emites tu juicio con las notas de cada criterio. Solo verás la opción de votar cuando la ventana del evento esté 🟢 Abierta y no hayas votado ya esa Casa (ni seas Lokitronista de ese barrio).'
+    },
+    {
+        id: 'vista-calendario',
+        categoria: 'Menú',
+        claves: ['calendario', 'calendario de eventos', 'fechas de eventos', 'proximos eventos', 'sincronizar calendario', 'ics'],
+        respuesta: 'El 📅 Calendario de Eventos muestra las fiestas del reino por fechas. Puedes filtrar por día, volver a hoy y sincronizar cada evento con tu calendario (.ics) para no perderte ninguna votación.'
+    },
+    {
+        id: 'vista-gala',
+        categoria: 'Menú',
+        claves: ['gala final', 'gala', 'final', 'premios', 'ganadores', 'ceremonia'],
+        respuesta: 'La 🎉 Gala Final es la ceremonia de clausura donde se proclaman las Casas ganadoras según el Códice de la Villa. Puede incluir un sorteo entre los barrios participantes.'
+    },
+    {
+        id: 'evento',
+        categoria: 'Conceptos',
+        claves: ['que es un evento', 'eventos', 'como funciona un evento', 'crear evento', 'fecha del evento', 'duracion evento'],
+        respuesta: 'Un evento es una jornada de la contienda en un barrio concreto: tiene fecha, hora de celebración y una ventana de votación (inicio, fin y fecha de cierre). Tras el evento, los Maestres emiten sus juicios mientras la ventana esté abierta; al cerrarse, las notas se consolidan en la clasificación.'
+    },
+    {
+        id: 'forastero',
+        categoria: 'Conceptos',
+        claves: ['forastero', 'barrio forastero', 'participar sin barrio', 'no competitivo', 'sin barrio'],
+        respuesta: '«Forastero» es el barrio especial para usuarios sin barrio asignado. Es un caso no competitivo: sirve para poder participar sin representar a ningún barrio del reino.'
+    },
+    {
+        id: 'oraculo',
+        categoria: 'Conceptos',
+        claves: ['oraculo', 'oraculo imperial', 'ia', 'inteligencia artificial', 'cronica', 'recomendacion del oraculo', 'groq'],
+        respuesta: 'El 🔮 Oráculo Imperial es un asistente con IA (Groq) que redacta crónicas y recomendaciones del reino. Es exclusivo del rango Lokitrono Mayor (master). Yo, Loki-Bot, no uso IA: respondo solo con la información de ayuda del reino.'
+    },
+    {
+        id: 'sellos-codigos',
+        categoria: 'Conceptos',
+        claves: ['sellos', 'codigos diarios', 'codigo diario', 'sellos por maestre', 'pase dorado', 'puntos'],
+        respuesta: 'Los códigos diarios y sellos se generan para los taberneros y premian la participación de los Maestres. Acumular sellos puede desbloquear reconocimientos como el Pase Dorado para la Gran Gala.'
+    },
+    {
+        id: 'cerrar-sesion',
+        categoria: 'Acceso',
+        claves: ['cerrar sesion', 'salir', 'logout', 'desconectarme'],
+        respuesta: 'Para salir, pulsa el botón «🚪 Cerrar Sesión» que aparece junto a tu nombre, en la parte superior de la corte. Tu PIN no se guarda: para volver a entrar tendrás que escribirlo de nuevo.'
+    },
+    {
+        id: 'contacto',
+        categoria: 'Ayuda',
+        claves: ['contacto', 'contactar', 'organizacion', 'soporte', 'ayuda humana', 'problema', 'error'],
+        respuesta: 'Si algo no funciona o necesitas ayuda humana, contacta con la organización del juego (los administradores del reino). Ellos pueden regenerar tu PIN, corregir tu barrio o ajustar un evento.'
+    }
+];
+
+const LOKIBOT_SUGERENCIAS = [
+    '¿Cuándo puedo votar?',
+    '¿Puedo votar dos veces?',
+    '¿Qué significan los roles?',
+    '¿Qué vistas tiene el menú?',
+    '¿Cómo se calcula la clasificación?'
+];
+
+function lokibotNormalizar(texto) {
+    return String(texto || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9ñ\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function lokibotPuntuar(consulta, claves) {
+    const palabras = consulta.split(' ');
+    let puntuacion = 0;
+    claves.forEach(clave => {
+        const c = lokibotNormalizar(clave);
+        if (!c) return;
+        if (c.includes(' ')) {
+            if (consulta.includes(c)) puntuacion += 3;
+        } else if (palabras.includes(c)) {
+            puntuacion += 1;
+        } else if (c.length >= 6 && consulta.includes(c)) {
+            puntuacion += 1;
+        }
+    });
+    return puntuacion;
+}
+
+function lokibotBuscarRespuesta(mensaje) {
+    const consulta = lokibotNormalizar(mensaje);
+    if (!consulta) return null;
+    let mejor = null;
+    let mejorPuntuacion = 0;
+    LOKIBOT_FAQ.forEach(faq => {
+        const p = lokibotPuntuar(consulta, faq.claves);
+        if (p > mejorPuntuacion) {
+            mejorPuntuacion = p;
+            mejor = faq;
+        }
+    });
+    return (mejor && mejorPuntuacion >= 1) ? mejor : null;
+}
+
+function lokibotRespuestaSocial(consulta) {
+    if (!consulta) return null;
+    if (/^(hola|buenas|buenos dias|buenas tardes|hey|que tal|saludos)\b/.test(consulta)) {
+        return '¡Saludos, Maestre! 🏰 Soy Loki-Bot, el ayuda del reino. Pregúntame por la votación, sus horarios, los roles o las vistas del menú.';
+    }
+    if (/\b(gracias|muchas gracias)\b/.test(consulta)) {
+        return '¡De nada, Maestre! Para eso está este humilde bot. ⚔️ ¿Algo más?';
+    }
+    if (/^(adios|hasta luego|chao|nos vemos)\b/.test(consulta)) {
+        return '¡Que el honor de las Casas te acompañe! Vuelve cuando necesites ayuda. 👑';
+    }
+    return null;
+}
+
+function lokibotResolver(mensaje) {
+    const consulta = lokibotNormalizar(mensaje);
+    const social = lokibotRespuestaSocial(consulta);
+    if (social) return { texto: social, resuelta: true, id: null };
+    const hallazgo = lokibotBuscarRespuesta(mensaje);
+    if (hallazgo) return { texto: hallazgo.respuesta, resuelta: true, id: hallazgo.id };
+    return {
+        texto: 'Aún no tengo una respuesta guardada para eso. 🤔\nPrueba con algo como:\n• ¿Cuándo puedo votar?\n• ¿Puedo votar dos veces?\n• ¿Qué significan los roles?\n• ¿Qué vistas tiene el menú?\n• ¿Cómo se calcula la clasificación?\n\nHe anotado tu pregunta para ampliar el manual de ayuda.',
+        resuelta: false,
+        id: null
+    };
+}
+
+function lokibotAnadirMensaje(texto, quien) {
+    const cont = document.getElementById('lokibot-mensajes');
+    if (!cont) return;
+    const div = document.createElement('div');
+    div.className = 'lokibot-msg ' + (quien === 'user' ? 'lokibot-msg-user' : 'lokibot-msg-bot');
+    div.textContent = texto;
+    cont.appendChild(div);
+    cont.scrollTop = cont.scrollHeight;
+}
+
+function lokibotRenderSugerencias() {
+    const cont = document.getElementById('lokibot-sugerencias');
+    if (!cont || cont.dataset.listado === '1') return;
+    cont.dataset.listado = '1';
+    cont.innerHTML = LOKIBOT_SUGERENCIAS
+        .map(s => `<button type="button" class="lokibot-chip" onclick="lokibotResponderChip(this.textContent)">${escaparHTML(s)}</button>`)
+        .join('');
+}
+
+function lokibotAbrirPanel() {
+    const panel = document.getElementById('lokibot-panel');
+    if (!panel) return;
+    panel.classList.add('lokibot-abierto');
+    lokibotRenderSugerencias();
+    const cont = document.getElementById('lokibot-mensajes');
+    if (cont && cont.dataset.saludo !== '1') {
+        cont.dataset.saludo = '1';
+        lokibotAnadirMensaje('¡Saludos, Maestre! Soy Loki-Bot, el ayuda del reino. Pregúntame sobre la votación, los horarios, los roles o las vistas del menú.', 'bot');
+    }
+    const input = document.getElementById('lokibot-input');
+    if (input) input.focus();
+}
+
+function lokibotCerrarPanel() {
+    const panel = document.getElementById('lokibot-panel');
+    if (panel) panel.classList.remove('lokibot-abierto');
+}
+
+function lokibotAlternarPanel() {
+    const panel = document.getElementById('lokibot-panel');
+    if (!panel) return;
+    if (panel.classList.contains('lokibot-abierto')) lokibotCerrarPanel();
+    else lokibotAbrirPanel();
+}
+
+function lokibotEnviar(event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const input = document.getElementById('lokibot-input');
+    const texto = (input ? input.value : '').trim();
+    if (!texto) return;
+    if (input) input.value = '';
+    lokibotProcesarMensaje(texto);
+}
+
+function lokibotResponderChip(texto) {
+    lokibotProcesarMensaje(String(texto || '').trim());
+}
+
+function lokibotProcesarMensaje(texto) {
+    if (!texto) return;
+    lokibotAnadirMensaje(texto, 'user');
+    const res = lokibotResolver(texto);
+    lokibotAnadirMensaje(res.texto, 'bot');
+    if (!res.resuelta) lokibotRegistrarConsulta(texto, false);
+    else lokibotRegistrarConsulta(texto, true);
+}
+
+function lokibotActualizarVisibilidad(usuario) {
+    const burbuja = document.getElementById('lokibot-burbuja');
+    if (!burbuja) return;
+    if (usuario) {
+        burbuja.classList.add('lokibot-visible');
+    } else {
+        burbuja.classList.remove('lokibot-visible');
+        lokibotCerrarPanel();
+    }
+}
+
+async function lokibotRegistrarConsulta(pregunta, resuelta) {
+    try {
+        const usuario = getCurrentUser();
+        if (!usuario || !usuario.token) return;
+        const client = getSupabaseBarriosClient();
+        if (!client) return;
+        await client.rpc('registrar_consulta_lokibot', {
+            p_token: usuario.token,
+            p_pregunta: String(pregunta || '').slice(0, 2000),
+            p_resuelta: !!resuelta
+        });
+    } catch (error) {
+        console.warn('No se pudo registrar la consulta de Loki-Bot:', error?.message || error);
+    }
+}
+
+window.lokibotAlternarPanel = lokibotAlternarPanel;
+window.lokibotCerrarPanel = lokibotCerrarPanel;
+window.lokibotEnviar = lokibotEnviar;
+window.lokibotResponderChip = lokibotResponderChip;
 
 
 /* ============================================================================

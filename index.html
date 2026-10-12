@@ -1345,6 +1345,23 @@
         </div>
     </footer>
 
+    <!-- Loki-Bot: botón flotante de ayuda (visible solo con sesión iniciada) -->
+    <button id="lokibot-burbuja" type="button" title="Loki-Bot — ayuda del reino" aria-label="Abrir Loki-Bot"
+        onclick="lokibotAlternarPanel()">🤖</button>
+    <section id="lokibot-panel" role="dialog" aria-label="Ayuda de Loki-Bot">
+        <div class="lokibot-header">
+            <div>🤖 Loki-Bot<small>Ayuda del reino · respuestas instantáneas</small></div>
+            <button type="button" class="lokibot-cerrar" onclick="lokibotCerrarPanel()" aria-label="Cerrar">✕</button>
+        </div>
+        <div id="lokibot-mensajes" class="lokibot-mensajes"></div>
+        <div id="lokibot-sugerencias" class="lokibot-sugerencias"></div>
+        <form class="lokibot-entrada" onsubmit="lokibotEnviar(event)">
+            <input id="lokibot-input" type="text" autocomplete="off" placeholder="Escribe tu pregunta…"
+                aria-label="Pregunta para Loki-Bot" />
+            <button type="submit">Enviar</button>
+        </form>
+    </section>
+
     <!-- Código JS principal -->
     <script src="js/supabase.js"></script>
     <script src="js/app.js"></script>

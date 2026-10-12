@@ -5,6 +5,31 @@ const STORAGE_KEYS = {
     barrios: 'barrios_reino'
 };
 
+/* ==========================================
+   MODO EDICIÓN (resaltado visual de formularios)
+   ==========================================
+   Aplica un color distintivo al formulario cuando se está editando un
+   registro existente (usuario, barrio, evento, rol, votos…) para
+   diferenciarlo claramente de la creación de uno nuevo. */
+function activarModoEdicion(form, etiqueta) {
+    const formulario = typeof form === 'string' ? document.getElementById(form) : form;
+    if (!formulario) return null;
+    formulario.classList.add('modo-edicion');
+    formulario.setAttribute(
+        'data-modo-edicion',
+        `✏️ MODO EDICIÓN — ${etiqueta || 'modificando un registro existente'}`
+    );
+    return formulario;
+}
+
+function desactivarModoEdicion(form) {
+    const formulario = typeof form === 'string' ? document.getElementById(form) : form;
+    if (!formulario) return null;
+    formulario.classList.remove('modo-edicion');
+    formulario.removeAttribute('data-modo-edicion');
+    return formulario;
+}
+
 const EVENTOS_FEUDALES = [
     { id: 'evt-01', nombre: 'Ruta del Pintxo del Casco Viejo', barrio: 'Casco Viejo', casaId: 'casa-01', fecha: '2026-10-10', hora: '20:30', lugar: 'Plaza Nueva' },
     { id: 'evt-02', nombre: 'Velada de Indautxu', barrio: 'Indautxu', casaId: 'casa-02', fecha: '2026-10-11', hora: '21:00', lugar: 'Avenida Lehendakari Aguirre' },
@@ -233,6 +258,15 @@ function getUsuariosAutorizadosLocal() {
                 localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(usuarios));
             }
         }
+        // Barrio por defecto «Forastero» cuando no se configura ninguno.
+        let barriosNormalizados = false;
+        usuarios.forEach(u => {
+            if (!u.barrio_asignado) { u.barrio_asignado = 'Forastero'; barriosNormalizados = true; }
+            if (!u.barrio_representado) { u.barrio_representado = 'Forastero'; barriosNormalizados = true; }
+        });
+        if (barriosNormalizados) {
+            localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(usuarios));
+        }
         return usuarios;
     } catch (e) {
         return [];
@@ -379,8 +413,8 @@ async function iniciarSesionDirecta() {
             name: data.name || data.phone,
             email: data.email || null,
             role: data.role,
-            barrio_asignado: data.barrio_asignado || '',
-            barrio_representado: data.barrio_representado || '',
+            barrio_asignado: data.barrio_asignado || 'Forastero',
+            barrio_representado: data.barrio_representado || 'Forastero',
             gender: data.gender || 'M',
             titulo_custom: data.titulo_custom || '',
             token: data.token || '',
@@ -1849,11 +1883,13 @@ function editarEventoBarrio(eventoId) {
         panelAdmin.style.display = 'block';
         panelAdmin.scrollIntoView({ behavior: 'smooth' });
     }
+    activarModoEdicion(document.getElementById('form-evento'), `evento: ${evt.nombre || evt.id}`);
 }
 
 function resetFormEvento() {
     const form = document.getElementById('form-evento');
     if (form) form.reset();
+    desactivarModoEdicion(form);
     const editId = document.getElementById('evento-id-edit');
     if (editId) editId.value = '';
     const btnGuardar = document.getElementById('btn-guardar-evento');
@@ -2081,6 +2117,7 @@ async function guardarEventoBarrioDesdePestana(event) {
 function resetFormEventoDedicated() {
     const form = document.getElementById('form-evento-admin-dedicated');
     if (form) form.reset();
+    desactivarModoEdicion(form);
     const editId = document.getElementById('evento-dedicated-id-edit');
     if (editId) editId.value = '';
     const btnGuardar = document.getElementById('btn-guardar-evento-dedicated');
@@ -2114,6 +2151,7 @@ function editarEventoBarrioDesdePestana(eventoId) {
 
     const form = document.getElementById('form-evento-admin-dedicated');
     if (form) form.scrollIntoView({ behavior: 'smooth' });
+    activarModoEdicion(form, `evento: ${evt.nombre || evt.id}`);
 }
 
 function renderEventosGeneradosPestanaAdmin() {
@@ -2660,7 +2698,7 @@ function renderTablaUsuarios() {
             <td>${rolBadge}</td>
             <td>${user.email || '-'}</td>
             <td>${user.barrio_representado || 'Forastero'}</td>
-            <td>${user.barrio_asignado || '-'}</td>
+            <td>${user.barrio_asignado || 'Forastero'}</td>
             <td>${celdaPin}</td>
             <td>${acciones}</td>
         </tr>`;
@@ -2728,7 +2766,7 @@ async function guardarUsuario(event) {
     const nombre = document.getElementById('usuario-nombre')?.value?.trim();
     const role = document.getElementById('usuario-role')?.value || 'jugador';
     const barrioRep = document.getElementById('usuario-barrio-representado')?.value || 'Forastero';
-    const barrioAsig = document.getElementById('usuario-barrio-asignado')?.value || '';
+    const barrioAsig = document.getElementById('usuario-barrio-asignado')?.value?.trim() || 'Forastero';
     const email = document.getElementById('usuario-email')?.value?.trim() || '';
     const tituloCustom = document.getElementById('usuario-titulo-custom')?.value?.trim() || '';
     const gender = document.getElementById('usuario-gender')?.value || 'M';
@@ -2883,6 +2921,7 @@ function editarUsuario(userId) {
     const nombreEl = document.getElementById('usuario-nombre');
     const roleEl = document.getElementById('usuario-role');
     const barrioRepEl = document.getElementById('usuario-barrio-representado');
+    const barrioAsigEl = document.getElementById('usuario-barrio-asignado');
     const emailEl = document.getElementById('usuario-email');
     const tituloEl = document.getElementById('usuario-titulo-custom');
     const genderEl = document.getElementById('usuario-gender');
@@ -2895,6 +2934,13 @@ function editarUsuario(userId) {
     if (nombreEl) nombreEl.value = user.name || '';
     if (roleEl) roleEl.value = user.role || 'jugador';
     if (barrioRepEl) barrioRepEl.value = user.barrio_representado || 'Forastero';
+    if (barrioAsigEl) {
+        const valorAsignado = user.barrio_asignado || 'Forastero';
+        if (valorAsignado && ![].some.call(barrioAsigEl.options, option => option.value === valorAsignado)) {
+            barrioAsigEl.add(new Option(valorAsignado, valorAsignado));
+        }
+        barrioAsigEl.value = valorAsignado;
+    }
     if (emailEl) emailEl.value = user.email || '';
     if (tituloEl) tituloEl.value = user.titulo_custom || '';
     if (genderEl) genderEl.value = user.gender || 'M';
@@ -2903,6 +2949,7 @@ function editarUsuario(userId) {
     if (btnCancelar) btnCancelar.style.display = 'inline-block';
 
     const form = document.getElementById('form-usuario');
+    activarModoEdicion(form, `usuario: ${user.name || user.phone || user.id}`);
     if (form) form.scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -2946,6 +2993,7 @@ async function eliminarUsuario(userId) {
 function resetFormUsuario() {
     const form = document.getElementById('form-usuario');
     if (form) form.reset();
+    desactivarModoEdicion(form);
     const idEdit = document.getElementById('usuario-id-edit');
     if (idEdit) idEdit.value = '';
     const btnGuardar = document.getElementById('btn-guardar-user');
@@ -3307,7 +3355,10 @@ function actualizarSelectoresBarriosDinamicos() {
             ? { value: select.options[0].value, text: select.options[0].textContent } : null;
         select.innerHTML = '';
         if (primera) select.add(new Option(primera.text, primera.value));
-        nombres.forEach(nombre => select.add(new Option(nombre, nombre)));
+        nombres.forEach(nombre => {
+            if (primera && String(nombre) === String(primera.value)) return;
+            select.add(new Option(nombre, nombre));
+        });
         if (valorActual && [...select.options].some(option => option.value === valorActual)) select.value = valorActual;
     });
 }
@@ -3478,6 +3529,7 @@ function editarBarrio(id) {
         behavior: 'smooth',
         block: 'center'
     });
+    activarModoEdicion(document.getElementById('form-barrio'), `barrio: ${casa.nombre}`);
     campoNombre.focus();
 }
 
@@ -3663,6 +3715,7 @@ async function eliminarBarrio(id) {
 function resetFormBarrio() {
     const form = document.getElementById('form-barrio');
     if (form) form.reset();
+    desactivarModoEdicion(form);
 
     const id = document.getElementById('barrio-id-edit');
     if (id) id.value = '';
@@ -4099,7 +4152,7 @@ function renderDirectorioUsuariosSim() {
                 <td>${u.email || '-'}</td>
                 <td><span class="pill-user" style="font-size: 0.75rem;">${badgeRol}</span></td>
                 <td>${u.barrio_representado || 'Forastero'}</td>
-                <td>${u.barrio_asignado || '-'}</td>
+                <td>${u.barrio_asignado || 'Forastero'}</td>
                 <td><strong style="color: #60a5fa;">${votosEmitidos} votos</strong></td>
             </tr>
         `;
@@ -4555,7 +4608,57 @@ function renderOrdenSorteoBarrios() {
 
         lista.appendChild(li);
     });
+
+    renderResultadoSorteoModal();
 }
+
+function renderResultadoSorteoModal() {
+    const detalle = document.getElementById('detalle-resultado-sorteo');
+    if (!detalle) return;
+
+    detalle.innerHTML = '';
+
+    if (!ordenSorteoBarrios.length) {
+        detalle.innerHTML = '<li>No hay barrios participantes cargados. Genera un sorteo o carga el orden.</li>';
+        return;
+    }
+
+    ordenSorteoBarrios.forEach((barrio, indice) => {
+        const li = document.createElement('li');
+        li.style.cssText = 'margin:10px 0;padding:10px 14px;border:1px solid #57534e;border-left:4px solid var(--oro-brillante, #d4af37);border-radius:8px;display:flex;gap:12px;align-items:center;';
+
+        const posicion = document.createElement('span');
+        posicion.textContent = String(indice + 1);
+        posicion.style.cssText = 'width:28px;height:28px;border-radius:50%;background:var(--oro-brillante, #d4af37);color:#221c0a;font-weight:bold;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;';
+        li.appendChild(posicion);
+
+        const nombre = document.createElement('span');
+        nombre.textContent = `${barrio.emblema || '🏰'} ${barrio.nombre}`;
+        nombre.style.flex = '1';
+        li.appendChild(nombre);
+
+        detalle.appendChild(li);
+    });
+}
+
+function abrirResultadoSorteo() {
+    const modal = document.getElementById('modal-resultado-sorteo');
+    if (!modal) return;
+    if (!ordenSorteoBarrios.length) cargarOrdenSorteoBarrios();
+    renderResultadoSorteoModal();
+    modal.style.display = 'flex';
+}
+
+function cerrarResultadoSorteo() {
+    const modal = document.getElementById('modal-resultado-sorteo');
+    if (modal) modal.style.display = 'none';
+}
+
+async function realizarSorteoDesdeVentana() {
+    await generarSorteoBarrios();
+    renderResultadoSorteoModal();
+}
+
 
 async function cargarOrdenSorteoBarrios() {
     const estado = document.getElementById('estado-sorteo-barrios');
@@ -4685,9 +4788,587 @@ async function guardarOrdenSorteoBarrios() {
     }
 }
 
+async function restaurarCompeticion() {
+    const usuario = getCurrentUser();
+    const estado = document.getElementById('estado-restaurar-competicion');
+    const boton = document.getElementById('btn-restaurar-competicion');
+    const client = getSupabaseBarriosClient();
+
+    if (!usuario || !puedeAdministrar(usuario.role)) {
+        alert('Solo un superadministrador puede restaurar la competición.');
+        return;
+    }
+
+    if (!client) {
+        if (estado) estado.textContent = 'Error: no se ha podido inicializar Supabase.';
+        return;
+    }
+
+    if (!window.confirm('⚠️ Se borrarán votos, eventos, códigos diarios, barrios (excepto Forastero) y todas las cuentas salvo master/superadmin. Esta acción NO se puede deshacer. ¿Continuar?')) {
+        return;
+    }
+
+    const pin = window.prompt('Introduce tu PIN de superadministrador para restaurar la competición:');
+    if (pin === null) return;
+    if (!/^\d{6}$/.test(pin.trim())) {
+        alert('El PIN debe contener exactamente seis dígitos.');
+        return;
+    }
+
+    if (!window.confirm('Última confirmación: ¿restaurar la competición a su estado inicial?')) return;
+
+    if (boton) boton.disabled = true;
+    if (estado) estado.textContent = 'Restaurando la competición…';
+
+    try {
+        const { data, error } = await client.rpc('restaurar_competicion_superadmin', {
+            p_phone: String(usuario.phone || ''),
+            p_pin: pin.trim()
+        });
+        if (error) throw error;
+
+        const r = data || {};
+        if (estado) {
+            estado.textContent = `Competición restaurada. Barrios eliminados: ${r.casas_eliminadas || 0}, `
+                + `usuarios eliminados: ${r.usuarios_eliminados || 0}, votos: ${r.votos_evento || 0}, `
+                + `juicios: ${r.juicios || 0}, eventos: ${r.eventos || 0}, códigos: ${r.codigos_diarios || 0}.`;
+        }
+
+        if (typeof cargarBarriosDesdeSupabase === 'function') await cargarBarriosDesdeSupabase();
+        if (typeof cargarEventosDesdeSupabase === 'function') await cargarEventosDesdeSupabase();
+        if (typeof cargarVotosDesdeSupabase === 'function') await cargarVotosDesdeSupabase();
+        if (typeof cargarOrdenSorteoBarrios === 'function') await cargarOrdenSorteoBarrios();
+    } catch (error) {
+        console.error('Error al restaurar la competición:', error);
+        if (estado) estado.textContent = `No se pudo restaurar la competición: ${error.message || 'error desconocido'}`;
+    } finally {
+        if (boton) boton.disabled = false;
+    }
+}
+
 
 window.cargarDatosSemilla = cargarDatosSemilla;
 
 window.generarSorteoBarrios = generarSorteoBarrios;
 window.guardarOrdenSorteoBarrios = guardarOrdenSorteoBarrios;
 window.cargarOrdenSorteoBarrios = cargarOrdenSorteoBarrios;
+window.abrirResultadoSorteo = abrirResultadoSorteo;
+window.cerrarResultadoSorteo = cerrarResultadoSorteo;
+window.realizarSorteoDesdeVentana = realizarSorteoDesdeVentana;
+window.restaurarCompeticion = restaurarCompeticion;
+
+
+/* ============================================================================
+ * LOKITRONO — GEOGRAFÍA: mapa interactivo y selección en cascada
+ * Ciudades (todos los municipios) → distritos → barrios → códigos postales.
+ * Los mapas se cargan a demanda (lazy) desde data/ciudades/<ine>.*.
+ * ========================================================================== */
+const GEO_PALETA = [
+    '#e11d48', '#f97316', '#eab308', '#22c55e', '#14b8a6',
+    '#3b82f6', '#8b5cf6', '#ec4899', '#84cc16', '#06b6d4'
+];
+
+const geoEstado = {
+    catalogo: [],
+    porIne: new Map(),
+    cargadas: new Map(),
+    activa: null,
+    mapa: null,
+    seleccion: new Map()
+};
+
+function geoHexAHsl(hex) {
+    let h = String(hex || '').replace('#', '').trim();
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    if (!/^[0-9a-fA-F]{6}$/.test(h)) return { h: 210, s: 0.6, l: 0.5 };
+    const r = parseInt(h.slice(0, 2), 16) / 255;
+    const g = parseInt(h.slice(2, 4), 16) / 255;
+    const b = parseInt(h.slice(4, 6), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    let hue = 0, sat = 0;
+    if (max !== min) {
+        const d = max - min;
+        sat = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (max === r) hue = (g - b) / d + (g < b ? 6 : 0);
+        else if (max === g) hue = (b - r) / d + 2;
+        else hue = (r - g) / d + 4;
+        hue /= 6;
+    }
+    return { h: hue, s: sat, l };
+}
+
+function geoHslAHex(h, s, l) {
+    const a = s * Math.min(l, 1 - l);
+    const f = n => {
+        const k = (n + h * 12) % 12;
+        const c = l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+        return Math.round(255 * c).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function geoColorDistrito(indice, colorExistente) {
+    return colorExistente || GEO_PALETA[indice % GEO_PALETA.length];
+}
+
+function geoVariante(hexBase, indice, total) {
+    const { h, s, l } = geoHexAHsl(hexBase);
+    const factor = total <= 1 ? 0.5 : indice / (total - 1);
+    const nuevaL = 0.30 + factor * 0.42;
+    const nuevaS = Math.max(0.35, Math.min(1, s + 0.08));
+    return geoHslAHex(h, nuevaS, Math.max(0.22, Math.min(0.78, nuevaL)));
+}
+
+async function geoCargarCatalogo() {
+    try {
+        const res = await fetch('data/ciudades/index.json', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        geoEstado.catalogo = json.ciudades || [];
+    } catch (error) {
+        console.warn('No se pudo cargar el catálogo geográfico:', error);
+    }
+    geoEstado.porIne = new Map(geoEstado.catalogo.map(c => [c.ine, c]));
+
+    // Complementar con el catálogo completo de municipios desde Supabase (si existe).
+    const client = (typeof getSupabaseBarriosClient === 'function') ? getSupabaseBarriosClient() : null;
+    if (client) {
+        try {
+            const { data, error } = await client.from('ciudades')
+                .select('id, nombre, provincia_id, tiene_distritos, tiene_barrios')
+                .order('nombre', { ascending: true })
+                .limit(9000);
+            if (!error && Array.isArray(data) && data.length) {
+                for (const c of data) {
+                    if (!geoEstado.porIne.has(c.id)) {
+                        geoEstado.porIne.set(c.id, {
+                            ine: c.id, nombre: c.nombre, provincia: c.provincia_id,
+                            geom: null, distritos: null, barrios: null, entidades: null,
+                            centro: [null, null], tiene_distritos: c.tiene_distritos,
+                            tiene_barrios: c.tiene_barrios
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Catálogo Supabase no disponible:', error);
+        }
+    }
+    geoRenderDatalist();
+}
+
+function geoRenderDatalist() {
+    const lista = document.getElementById('geo-lista-ciudades');
+    if (!lista) return;
+    const ciudades = [...geoEstado.porIne.values()]
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    lista.innerHTML = ciudades.map(c =>
+        `<option value="${geoEsc(c.nombre)}" data-ine="${geoEsc(c.ine)}">${geoEsc(c.ine)}${c.provincia ? ' · ' + geoEsc(c.provincia) : ''}</option>`
+    ).join('');
+}
+
+function geoEsc(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function geoActivarMapa() {
+    if (geoEstado.mapa) return geoEstado.mapa;
+    const cont = document.getElementById('geo-mapa');
+    if (!cont || !window.L) return null;
+    geoEstado.mapa = L.map(cont, { scrollWheelZoom: true }).setView([40.4168, -3.7038], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(geoEstado.mapa);
+    return geoEstado.mapa;
+}
+
+function geoBuscarPorNombre(termino) {
+    const t = String(termino || '').trim().toLowerCase();
+    if (!t) return null;
+    const ciudades = [...geoEstado.porIne.values()];
+    return ciudades.find(c => String(c.ine) === t)
+        || ciudades.find(c => c.nombre.toLowerCase() === t)
+        || ciudades.find(c => c.nombre.toLowerCase().startsWith(t))
+        || null;
+}
+
+async function geoCargarCiudad(ine) {
+    ine = String(ine);
+    const estado = document.getElementById('geo-estado');
+    const mapa = geoActivarMapa();
+
+    if (!geoEstado.porIne.has(ine)) {
+        if (estado) estado.textContent = 'Municipio no encontrado en el catálogo.';
+        return;
+    }
+    if (geoEstado.cargadas.has(ine)) {
+        geoEstado.activa = ine;
+        geoRefrescarSegunActiva();
+        if (estado) estado.textContent = `${geoEstado.porIne.get(ine).nombre}: ya estaba cargado.`;
+        return;
+    }
+
+    const info = geoEstado.porIne.get(ine);
+    if (estado) estado.textContent = `Cargando ${info.nombre}…`;
+
+    const registro = { info, distritos: [], barrios: [], cps: [], capa: null, distColor: new Map() };
+
+    // Entidades (distritos/barrios/CP) — asset local o Supabase.
+    let entidades = null;
+    if (info.entidades) {
+        try { entidades = await (await fetch(info.entidades, { cache: 'force-cache' })).json(); } catch (e) { /* ignore */ }
+    }
+    if (!entidades) entidades = await geoCargarEntidadesSupabase(ine);
+    if (entidades) {
+        registro.distritos = entidades.distritos || [];
+        registro.barrios = entidades.barrios || [];
+        registro.cps = (entidades.codigos_postales || []).map(cp => (typeof cp === 'string' ? { codigo: cp } : cp));
+        registro.info = { ...registro.info, ...{ nombre: entidades.nombre || info.nombre, provincia: entidades.provincia || info.provincia } };
+    }
+
+    // Asignar colores a los distritos.
+    registro.distritos.forEach((d, i) => {
+        registro.distColor.set(String(d.codigo), geoColorDistrito(i, d.color));
+    });
+    // Asignar color (variante) a los barrios dentro de su distrito.
+    const porDistrito = new Map();
+    registro.barrios.forEach(b => {
+        const k = String(b.distrito_codigo);
+        if (!porDistrito.has(k)) porDistrito.set(k, []);
+        porDistrito.get(k).push(b);
+    });
+    for (const [k, lista] of porDistrito) {
+        const base = registro.distColor.get(k) || geoColorDistrito(registro.distColor.size, null);
+        if (!registro.distColor.has(k)) registro.distColor.set(k, base);
+        lista.forEach((b, i) => {
+            b._color = b.color || geoVariante(base, i, lista.length);
+        });
+    }
+    registro.distritos.forEach(d => { d._color = registro.distColor.get(String(d.codigo)); });
+
+    geoEstado.cargadas.set(ine, registro);
+    geoEstado.activa = ine;
+
+    // Geometría en el mapa (lazy).
+    if (mapa) {
+        const grupo = L.layerGroup().addTo(mapa);
+        registro.capa = grupo;
+        const capasCiudad = [];
+
+        const cargarCapa = async (ruta, { tipo, colorPorFeature, relleno, peso, opacidad }) => {
+            if (!ruta) return null;
+            try {
+                const gj = await (await fetch(ruta, { cache: 'force-cache' })).json();
+                const capa = L.geoJSON(gj, {
+                    style: (f) => {
+                        const color = colorPorFeature ? colorPorFeature(f) : '#d4af37';
+                        return { color: '#fde68a', weight: peso, fillColor: color, fillOpacity: opacidad };
+                    },
+                    onEachFeature: (f, layer) => {
+                        const cod = f.properties && (f.properties.codigo || f.properties.DISTRICTE || f.properties.distrito || '');
+                        layer.on('click', () => geoAlternarDesdeMapa(tipo, cod, ine));
+                    }
+                }).addTo(grupo);
+                capasCiudad.push(capa);
+                return capa;
+            } catch (error) {
+                console.warn('No se pudo cargar la capa', ruta, error);
+                return null;
+            }
+        };
+
+        await cargarCapa(info.geom, {
+            tipo: 'ciudad', relleno: '#1f2937', peso: 2, opacidad: 0.05
+        });
+        if (info.barrios) {
+            await cargarCapa(info.barrios, {
+                tipo: 'barrio', peso: 1, opacidad: 0.55,
+                colorPorFeature: (f) => {
+                    const cod = f.properties && (f.properties.codigo || f.properties.BARRI);
+                    const dist = f.properties && (f.properties.DISTRICTE);
+                    const b = registro.barrios.find(x => String(x.codigo) === String(cod) &&
+                        (dist == null || String(x.distrito_codigo) === String(dist)));
+                    return (b && b._color) || '#3b82f6';
+                }
+            });
+        }
+        if (info.distritos) {
+            await cargarCapa(info.distritos, {
+                tipo: 'distrito', peso: 2, opacidad: 0.18,
+                colorPorFeature: (f) => registro.distColor.get(String(f.properties && f.properties.DISTRICTE)) || '#22c55e'
+            });
+        }
+        if (capasCiudad.length) {
+            const bounds = L.featureGroup(capasCiudad).getBounds();
+            if (bounds.isValid()) mapa.fitBounds(bounds, { padding: [20, 20] });
+        }
+    }
+
+    geoRefrescarSegunActiva();
+    if (estado) estado.textContent = `${registro.info.nombre} cargado (${registro.distritos.length} distritos, ${registro.barrios.length} barrios, ${registro.cps.length} CP).`;
+    geoActualizarAtribucion();
+}
+
+async function geoCargarEntidadesSupabase(ine) {
+    const client = (typeof getSupabaseBarriosClient === 'function') ? getSupabaseBarriosClient() : null;
+    if (!client) return null;
+    try {
+        const [dist, barr, cpMap] = await Promise.all([
+            client.from('distritos').select('codigo, nombre, color, orden').eq('ciudad_id', ine).order('orden'),
+            client.from('barrios').select('distrito_id, codigo, nombre, color, orden').eq('ciudad_id', ine).order('orden'),
+            client.from('codigo_postal_ciudad').select('codigo_postal').eq('ciudad_id', ine)
+        ]);
+        if (dist.error || barr.error) return null;
+        return {
+            distritos: (dist.data || []).map(d => ({ codigo: d.codigo, nombre: d.nombre, color: d.color })),
+            barrios: (barr.data || []).map(b => ({
+                distrito_codigo: String(b.distrito_id).split('-').pop(),
+                codigo: b.codigo, nombre: b.nombre, color: b.color
+            })),
+            codigos_postales: (cpMap.data || []).map(r => ({ codigo: r.codigo_postal }))
+        };
+    } catch (error) {
+        return null;
+    }
+}
+
+function geoRefrescarSegunActiva() {
+    geoRenderCiudadesCargadas();
+    geoRenderDistritos();
+    geoRenderBarrios();
+    geoRenderCps();
+    geoRenderSeleccion();
+}
+
+function geoRenderCiudadesCargadas() {
+    const cont = document.getElementById('geo-lista-ciudades-cargadas');
+    if (!cont) return;
+    cont.innerHTML = [...geoEstado.cargadas.values()].map(reg => {
+        const activa = reg.info.ine === geoEstado.activa ? ' (activa)' : '';
+        const marcada = geoEstado.seleccion.has(`ciudad:${reg.info.ine}`) ? ' checked' : '';
+        return `<li><label><input type="checkbox" data-geo-ciudad="${geoEsc(reg.info.ine)}"${marcada}> ${geoEsc(reg.info.nombre)}${activa}</label></li>`;
+    }).join('');
+    cont.onclick = (ev) => {
+        const input = ev.target.closest('input[data-geo-ciudad]');
+        if (!input) return;
+        const ine = input.dataset.geoCiudad;
+        if (input.checked) {
+            geoSeleccionar('ciudad', ine, geoReg(ine) && geoReg(ine).info.nombre, geoReg(ine));
+        } else {
+            geoQuitarSeleccion(`ciudad:${ine}`);
+        }
+    };
+}
+
+function geoReg(ine) { return geoEstado.cargadas.get(String(ine)); }
+
+function geoRenderDistritos() {
+    const cont = document.getElementById('geo-lista-distritos');
+    if (!cont) return;
+    const r = geoEstado.activa ? geoReg(geoEstado.activa) : null;
+    if (!r || !r.distritos.length) { cont.innerHTML = '<li style="color:#a1a1aa;">—</li>'; return; }
+    cont.innerHTML = r.distritos.map(d => {
+        const id = `${r.info.ine}-${d.codigo}`;
+        const on = geoEstado.seleccion.has(`distrito:${id}`) ? ' checked' : '';
+        return `<li><label><input type="checkbox" data-geo-dist="${geoEsc(d.codigo)}"${on}>
+            <span class="geo-barra-color" style="background:${geoEsc(d._color)}"></span> ${geoEsc(d.nombre)}</label></li>`;
+    }).join('');
+    cont.onclick = (ev) => {
+        const input = ev.target.closest('input[data-geo-dist]');
+        if (!input) return;
+        const d = r.distritos.find(x => String(x.codigo) === String(input.dataset.geoDist));
+        const id = `${r.info.ine}-${d.codigo}`;
+        if (input.checked) geoSeleccionar('distrito', id, d.nombre, r, d);
+        else geoQuitarSeleccion(`distrito:${id}`);
+    };
+}
+
+function geoRenderBarrios() {
+    const cont = document.getElementById('geo-lista-barrios');
+    if (!cont) return;
+    const r = geoEstado.activa ? geoReg(geoEstado.activa) : null;
+    if (!r || !r.barrios.length) { cont.innerHTML = '<li style="color:#a1a1aa;">—</li>'; return; }
+    const porDistrito = new Map();
+    r.barrios.forEach(b => {
+        const k = String(b.distrito_codigo);
+        if (!porDistrito.has(k)) porDistrito.set(k, []);
+        porDistrito.get(k).push(b);
+    });
+    let html = '';
+    for (const [k, lista] of porDistrito) {
+        const nombreDist = (r.distritos.find(d => String(d.codigo) === k) || {}).nombre || k;
+        html += `<li style="margin-top:6px;color:#fde68a;font-size:.8rem;">${geoEsc(nombreDist)}</li>`;
+        html += lista.map(b => {
+            const id = `${r.info.ine}-${b.distrito_codigo}-${b.codigo}`;
+            const on = geoEstado.seleccion.has(`barrio:${id}`) ? ' checked' : '';
+            return `<li><label><input type="checkbox" data-geo-barr="${geoEsc(b.codigo)}" data-geo-dist="${geoEsc(b.distrito_codigo)}"${on}>
+                <span class="geo-barra-color" style="background:${geoEsc(b._color)}"></span> ${geoEsc(b.nombre)}</label></li>`;
+        }).join('');
+    }
+    cont.innerHTML = html;
+    cont.onclick = (ev) => {
+        const input = ev.target.closest('input[data-geo-barr]');
+        if (!input) return;
+        const b = r.barrios.find(x => String(x.codigo) === String(input.dataset.geoBarr) &&
+            String(x.distrito_codigo) === String(input.dataset.geoDist));
+        const id = `${r.info.ine}-${b.distrito_codigo}-${b.codigo}`;
+        if (input.checked) geoSeleccionar('barrio', id, b.nombre, r, b);
+        else geoQuitarSeleccion(`barrio:${id}`);
+    };
+}
+
+function geoRenderCps() {
+    const cont = document.getElementById('geo-lista-cp');
+    if (!cont) return;
+    const r = geoEstado.activa ? geoReg(geoEstado.activa) : null;
+    if (!r || !r.cps.length) { cont.innerHTML = '<li style="color:#a1a1aa;">—</li>'; return; }
+    cont.innerHTML = r.cps.map(c => {
+        const cp = c.codigo || c;
+        const id = `${r.info.ine}-${cp}`;
+        const on = geoEstado.seleccion.has(`cp:${id}`) ? ' checked' : '';
+        return `<li><label><input type="checkbox" data-geo-cp="${geoEsc(cp)}"${on}> 📮 ${geoEsc(cp)}</label></li>`;
+    }).join('');
+    cont.onclick = (ev) => {
+        const input = ev.target.closest('input[data-geo-cp]');
+        if (!input) return;
+        const cp = input.dataset.geoCp;
+        const id = `${r.info.ine}-${cp}`;
+        if (input.checked) geoSeleccionar('cp', id, cp, r);
+        else geoQuitarSeleccion(`cp:${id}`);
+    };
+}
+
+function geoSeleccionar(tipo, id, nombre, r, entidad) {
+    let color = '#d4af37';
+    if (tipo === 'distrito' && entidad) color = entidad._color;
+    if (tipo === 'barrio' && entidad) color = entidad._color;
+    geoEstado.seleccion.set(`${tipo}:${id}`, {
+        tipo, id, nombre, color,
+        ciudad: r ? r.info.ine : null,
+        ciudadNombre: r ? r.info.nombre : null
+    });
+    geoRenderSeleccion();
+}
+
+function geoQuitarSeleccion(key) {
+    geoEstado.seleccion.delete(key);
+    geoRefrescarCheckboxes();
+    geoRenderSeleccion();
+}
+
+function geoAlternarDesdeMapa(tipo, codigo, ine) {
+    const r = (ine && geoReg(ine)) || (geoEstado.activa ? geoReg(geoEstado.activa) : null);
+    if (!r || codigo === '' || codigo == null) return;
+    if (tipo === 'barrio') {
+        const b = r.barrios.find(x => String(x.codigo) === String(codigo));
+        if (!b) return;
+        const id = `${r.info.ine}-${b.distrito_codigo}-${b.codigo}`;
+        geoAlternar('barrio', id, b.nombre, r, b);
+    } else if (tipo === 'distrito') {
+        const d = r.distritos.find(x => String(x.codigo) === String(codigo));
+        if (!d) return;
+        const id = `${r.info.ine}-${d.codigo}`;
+        geoAlternar('distrito', id, d.nombre, r, d);
+    }
+}
+
+function geoAlternar(tipo, id, nombre, r, entidad) {
+    const key = `${tipo}:${id}`;
+    if (geoEstado.seleccion.has(key)) geoEstado.seleccion.delete(key);
+    else geoSeleccionar(tipo, id, nombre, r, entidad);
+    geoRefrescarCheckboxes();
+    geoRenderSeleccion();
+}
+
+function geoRefrescarCheckboxes() {
+    geoRenderDistritos();
+    geoRenderBarrios();
+    geoRenderCps();
+}
+
+function geoRenderSeleccion() {
+    const cont = document.getElementById('geo-seleccion');
+    if (!cont) return;
+    if (!geoEstado.seleccion.size) {
+        cont.innerHTML = '<span style="color:#a1a1aa;">Sin selección. Marca distritos, barrios o códigos postales.</span>';
+        return;
+    }
+    cont.innerHTML = [...geoEstado.seleccion.values()].map(s => {
+        const etiqueta = s.tipo === 'cp' ? `📮 ${geoEsc(s.nombre)}` :
+            `${geoEsc(s.nombre)} <em style="opacity:.7;">(${geoEsc(s.ciudadNombre || '')})</em>`;
+        return `<span class="geo-ficha">
+            <span class="geo-barra-color" style="background:${geoEsc(s.color)}"></span>
+            ${etiqueta} <button type="button" data-geo-quitar="${geoEsc(s.tipo + ':' + s.id)}" aria-label="Quitar">×</button>
+        </span>`;
+    }).join('');
+    cont.onclick = (ev) => {
+        const btn = ev.target.closest('button[data-geo-quitar]');
+        if (btn) geoQuitarSeleccion(btn.dataset.geoQuitar);
+    };
+}
+
+function geoActualizarAtribucion() {
+    const cont = document.getElementById('geo-atribucion');
+    if (!cont) return;
+    const partes = ['Municipios y CP: INE', 'Límites: IGN/CNIG (CC-BY 4.0)'];
+    if (geoReg('08019')) partes.push('Barcelona: Open Data BCN (CC-BY 4.0)');
+    if (geoReg('48020')) partes.push('Bilbao: Ayto. de Bilbao (CC-BY 3.0)');
+    cont.textContent = 'Fuentes: ' + partes.join(' · ');
+}
+
+function geoLimpiar() {
+    geoEstado.seleccion.clear();
+    geoEstado.cargadas.clear();
+    if (geoEstado.mapa) geoEstado.mapa.eachLayer(layer => {
+        if (layer instanceof L.TileLayer) return;
+        geoEstado.mapa.removeLayer(layer);
+    });
+    geoEstado.activa = null;
+    geoRefrescarSegunActiva();
+    const estado = document.getElementById('geo-estado');
+    if (estado) estado.textContent = 'Selección limpiada.';
+}
+
+function geoInicializar() {
+    const panel = document.getElementById('panel-geografia');
+    if (!panel || panel.dataset.geoInit === '1') return;
+    panel.dataset.geoInit = '1';
+
+    const buscador = document.getElementById('geo-buscador-ciudad');
+    const btnCargar = document.getElementById('geo-btn-cargar-ciudad');
+    const btnLimpiar = document.getElementById('geo-btn-limpiar');
+
+    const cargarDesdeBuscador = () => {
+        const val = buscador ? buscador.value : '';
+        const c = geoBuscarPorNombre(val);
+        if (!c) {
+            const estado = document.getElementById('geo-estado');
+            if (estado) estado.textContent = 'No se encontró ese municipio. Escribe su nombre o código INE.';
+            return;
+        }
+        if (buscador) buscador.value = c.nombre;
+        geoCargarCiudad(c.ine);
+    };
+
+    if (btnCargar) btnCargar.addEventListener('click', cargarDesdeBuscador);
+    if (buscador) buscador.addEventListener('change', cargarDesdeBuscador);
+    if (btnLimpiar) btnLimpiar.addEventListener('click', geoLimpiar);
+
+    geoCargarCatalogo();
+    geoRefrescarSegunActiva();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', geoInicializar);
+} else {
+    geoInicializar();
+}
+
+window.geoInicializar = geoInicializar;
+window.geoCargarCiudad = geoCargarCiudad;
+window.geoLimpiar = geoLimpiar;
+window.geoEstado = geoEstado;

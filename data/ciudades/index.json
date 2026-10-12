@@ -1,0 +1,37 @@
+{
+  "generado_por": "scripts/ingestar_geografia.mjs",
+  "fuentes": {
+    "municipios_cp": "INE (www.ine.es)",
+    "limites": "IGN/CNIG — api-features.ign.es (CC-BY 4.0)",
+    "distritos_barrios": "Open data municipal (Barcelona CC-BY 4.0; Bilbao, Ayto. de Bilbao CC-BY 3.0)"
+  },
+  "total": 2,
+  "ciudades": [
+    {
+      "ine": "08019",
+      "nombre": "Barcelona",
+      "provincia": "Barcelona",
+      "geom": "data/ciudades/08019.geojson",
+      "distritos": "data/ciudades/08019.distritos.geojson",
+      "barrios": "data/ciudades/08019.barrios.geojson",
+      "entidades": "data/ciudades/08019.entidades.json",
+      "centro": [
+        41.39270879,
+        2.1409485125
+      ]
+    },
+    {
+      "ine": "48020",
+      "nombre": "Bilbao",
+      "provincia": "Bizkaia",
+      "geom": "data/ciudades/48020.geojson",
+      "distritos": null,
+      "barrios": null,
+      "entidades": "data/ciudades/48020.entidades.json",
+      "centro": [
+        43.25431774250001,
+        -2.93311957
+      ]
+    }
+  ]
+}

@@ -1,0 +1,625 @@
+{
+  "ine": "08019",
+  "nombre": "Barcelona",
+  "provincia": "Barcelona",
+  "fuente": "Open data municipal + INE (www.ine.es)",
+  "distritos": [
+    {
+      "codigo": "01",
+      "nombre": "Ciutat Vella",
+      "color": "#000000",
+      "orden": 1
+    },
+    {
+      "codigo": "02",
+      "nombre": "Eixample",
+      "color": "#000000",
+      "orden": 2
+    },
+    {
+      "codigo": "03",
+      "nombre": "Sants-Montjuïc",
+      "color": "#000000",
+      "orden": 3
+    },
+    {
+      "codigo": "04",
+      "nombre": "Les Corts",
+      "color": "#000000",
+      "orden": 4
+    },
+    {
+      "codigo": "05",
+      "nombre": "Sarrià-Sant Gervasi",
+      "color": "#000000",
+      "orden": 5
+    },
+    {
+      "codigo": "06",
+      "nombre": "Gràcia",
+      "color": "#000000",
+      "orden": 6
+    },
+    {
+      "codigo": "07",
+      "nombre": "Horta-Guinardó",
+      "color": "#000000",
+      "orden": 7
+    },
+    {
+      "codigo": "08",
+      "nombre": "Nou Barris",
+      "color": "#000000",
+      "orden": 8
+    },
+    {
+      "codigo": "09",
+      "nombre": "Sant Andreu",
+      "color": "#000000",
+      "orden": 9
+    },
+    {
+      "codigo": "10",
+      "nombre": "Sant Martí",
+      "color": "#000000",
+      "orden": 10
+    }
+  ],
+  "barrios": [
+    {
+      "distrito_codigo": "01",
+      "codigo": "01",
+      "nombre": "el Raval",
+      "color": "#E66900",
+      "orden": 1
+    },
+    {
+      "distrito_codigo": "01",
+      "codigo": "02",
+      "nombre": "el Barri Gòtic",
+      "color": "#E66900",
+      "orden": 2
+    },
+    {
+      "distrito_codigo": "01",
+      "codigo": "03",
+      "nombre": "la Barceloneta",
+      "color": "#E66900",
+      "orden": 3
+    },
+    {
+      "distrito_codigo": "01",
+      "codigo": "04",
+      "nombre": "Sant Pere, Santa Caterina i la Ribera",
+      "color": "#E66900",
+      "orden": 4
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "05",
+      "nombre": "el Fort Pienc",
+      "color": "#E66900",
+      "orden": 5
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "06",
+      "nombre": "la Sagrada Família",
+      "color": "#E66900",
+      "orden": 6
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "07",
+      "nombre": "la Dreta de l'Eixample",
+      "color": "#E66900",
+      "orden": 7
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "08",
+      "nombre": "l'Antiga Esquerra de l'Eixample",
+      "color": "#E66900",
+      "orden": 8
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "09",
+      "nombre": "la Nova Esquerra de l'Eixample",
+      "color": "#E66900",
+      "orden": 9
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "10",
+      "nombre": "Sant Antoni",
+      "color": "#E66900",
+      "orden": 10
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "11",
+      "nombre": "el Poble-sec",
+      "color": "#E66900",
+      "orden": 11
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "12",
+      "nombre": "la Marina del Prat Vermell",
+      "color": "#E66900",
+      "orden": 12
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "13",
+      "nombre": "la Marina de Port",
+      "color": "#E66900",
+      "orden": 13
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "14",
+      "nombre": "la Font de la Guatlla",
+      "color": "#E66900",
+      "orden": 14
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "15",
+      "nombre": "Hostafrancs",
+      "color": "#E66900",
+      "orden": 15
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "16",
+      "nombre": "la Bordeta",
+      "color": "#E66900",
+      "orden": 16
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "17",
+      "nombre": "Sants - Badal",
+      "color": "#E66900",
+      "orden": 17
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "18",
+      "nombre": "Sants",
+      "color": "#E66900",
+      "orden": 18
+    },
+    {
+      "distrito_codigo": "04",
+      "codigo": "19",
+      "nombre": "les Corts",
+      "color": "#E66900",
+      "orden": 19
+    },
+    {
+      "distrito_codigo": "04",
+      "codigo": "20",
+      "nombre": "la Maternitat i Sant Ramon",
+      "color": "#E66900",
+      "orden": 20
+    },
+    {
+      "distrito_codigo": "04",
+      "codigo": "21",
+      "nombre": "Pedralbes",
+      "color": "#E66900",
+      "orden": 21
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "22",
+      "nombre": "Vallvidrera, el Tibidabo i les Planes",
+      "color": "#E66900",
+      "orden": 22
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "23",
+      "nombre": "Sarrià",
+      "color": "#E66900",
+      "orden": 23
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "24",
+      "nombre": "les Tres Torres",
+      "color": "#E66900",
+      "orden": 24
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "25",
+      "nombre": "Sant Gervasi - la Bonanova",
+      "color": "#E66900",
+      "orden": 25
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "26",
+      "nombre": "Sant Gervasi - Galvany",
+      "color": "#E66900",
+      "orden": 26
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "27",
+      "nombre": "el Putxet i el Farró",
+      "color": "#E66900",
+      "orden": 27
+    },
+    {
+      "distrito_codigo": "06",
+      "codigo": "28",
+      "nombre": "Vallcarca i els Penitents",
+      "color": "#E66900",
+      "orden": 28
+    },
+    {
+      "distrito_codigo": "06",
+      "codigo": "29",
+      "nombre": "el Coll",
+      "color": "#E66900",
+      "orden": 29
+    },
+    {
+      "distrito_codigo": "06",
+      "codigo": "30",
+      "nombre": "la Salut",
+      "color": "#E66900",
+      "orden": 30
+    },
+    {
+      "distrito_codigo": "06",
+      "codigo": "31",
+      "nombre": "la Vila de Gràcia",
+      "color": "#E66900",
+      "orden": 31
+    },
+    {
+      "distrito_codigo": "06",
+      "codigo": "32",
+      "nombre": "el Camp d'en Grassot i Gràcia Nova",
+      "color": "#E66900",
+      "orden": 32
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "33",
+      "nombre": "el Baix Guinardó",
+      "color": "#E66900",
+      "orden": 33
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "34",
+      "nombre": "Can Baró",
+      "color": "#E66900",
+      "orden": 34
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "35",
+      "nombre": "el Guinardó",
+      "color": "#E66900",
+      "orden": 35
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "36",
+      "nombre": "la Font d'en Fargues",
+      "color": "#E66900",
+      "orden": 36
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "37",
+      "nombre": "el Carmel",
+      "color": "#E66900",
+      "orden": 37
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "38",
+      "nombre": "la Teixonera",
+      "color": "#E66900",
+      "orden": 38
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "39",
+      "nombre": "Sant Genís dels Agudells",
+      "color": "#E66900",
+      "orden": 39
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "40",
+      "nombre": "Montbau",
+      "color": "#E66900",
+      "orden": 40
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "41",
+      "nombre": "la Vall d'Hebron",
+      "color": "#E66900",
+      "orden": 41
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "42",
+      "nombre": "la Clota",
+      "color": "#E66900",
+      "orden": 42
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "43",
+      "nombre": "Horta",
+      "color": "#E66900",
+      "orden": 43
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "44",
+      "nombre": "Vilapicina i la Torre Llobeta",
+      "color": "#E66900",
+      "orden": 44
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "45",
+      "nombre": "Porta",
+      "color": "#E66900",
+      "orden": 45
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "46",
+      "nombre": "el Turó de la Peira",
+      "color": "#E66900",
+      "orden": 46
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "47",
+      "nombre": "Can Peguera",
+      "color": "#E66900",
+      "orden": 47
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "48",
+      "nombre": "la Guineueta",
+      "color": "#E66900",
+      "orden": 48
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "49",
+      "nombre": "Canyelles",
+      "color": "#E66900",
+      "orden": 49
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "50",
+      "nombre": "les Roquetes",
+      "color": "#E66900",
+      "orden": 50
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "51",
+      "nombre": "Verdun",
+      "color": "#E66900",
+      "orden": 51
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "52",
+      "nombre": "la Prosperitat",
+      "color": "#E66900",
+      "orden": 52
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "53",
+      "nombre": "la Trinitat Nova",
+      "color": "#E66900",
+      "orden": 53
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "54",
+      "nombre": "Torre Baró",
+      "color": "#E66900",
+      "orden": 54
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "55",
+      "nombre": "Ciutat Meridiana",
+      "color": "#E66900",
+      "orden": 55
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "56",
+      "nombre": "Vallbona",
+      "color": "#E66900",
+      "orden": 56
+    },
+    {
+      "distrito_codigo": "09",
+      "codigo": "57",
+      "nombre": "la Trinitat Vella",
+      "color": "#E66900",
+      "orden": 57
+    },
+    {
+      "distrito_codigo": "09",
+      "codigo": "58",
+      "nombre": "Baró de Viver",
+      "color": "#E66900",
+      "orden": 58
+    },
+    {
+      "distrito_codigo": "09",
+      "codigo": "59",
+      "nombre": "el Bon Pastor",
+      "color": "#E66900",
+      "orden": 59
+    },
+    {
+      "distrito_codigo": "09",
+      "codigo": "60",
+      "nombre": "Sant Andreu",
+      "color": "#E66900",
+      "orden": 60
+    },
+    {
+      "distrito_codigo": "09",
+      "codigo": "61",
+      "nombre": "la Sagrera",
+      "color": "#E66900",
+      "orden": 61
+    },
+    {
+      "distrito_codigo": "09",
+      "codigo": "62",
+      "nombre": "el Congrés i els Indians",
+      "color": "#E66900",
+      "orden": 62
+    },
+    {
+      "distrito_codigo": "09",
+      "codigo": "63",
+      "nombre": "Navas",
+      "color": "#E66900",
+      "orden": 63
+    },
+    {
+      "distrito_codigo": "10",
+      "codigo": "64",
+      "nombre": "el Camp de l'Arpa del Clot",
+      "color": "#E66900",
+      "orden": 64
+    },
+    {
+      "distrito_codigo": "10",
+      "codigo": "65",
+      "nombre": "el Clot",
+      "color": "#E66900",
+      "orden": 65
+    },
+    {
+      "distrito_codigo": "10",
+      "codigo": "66",
+      "nombre": "el Parc i la Llacuna del Poblenou",
+      "color": "#E66900",
+      "orden": 66
+    },
+    {
+      "distrito_codigo": "10",
+      "codigo": "67",
+      "nombre": "la Vila Olímpica del Poblenou",
+      "color": "#E66900",
+      "orden": 67
+    },
+    {
+      "distrito_codigo": "10",
+      "codigo": "68",
+      "nombre": "el Poblenou",
+      "color": "#E66900",
+      "orden": 68
+    },
+    {
+      "distrito_codigo": "10",
+      "codigo": "69",
+      "nombre": "Diagonal Mar i el Front Marítim del Poblenou",
+      "color": "#E66900",
+      "orden": 69
+    },
+    {
+      "distrito_codigo": "10",
+      "codigo": "70",
+      "nombre": "el Besòs i el Maresme",
+      "color": "#E66900",
+      "orden": 70
+    },
+    {
+      "distrito_codigo": "10",
+      "codigo": "71",
+      "nombre": "Provençals del Poblenou",
+      "color": "#E66900",
+      "orden": 71
+    },
+    {
+      "distrito_codigo": "10",
+      "codigo": "72",
+      "nombre": "Sant Martí de Provençals",
+      "color": "#E66900",
+      "orden": 72
+    },
+    {
+      "distrito_codigo": "10",
+      "codigo": "73",
+      "nombre": "la Verneda i la Pau",
+      "color": "#E66900",
+      "orden": 73
+    }
+  ],
+  "codigos_postales": [
+    "08001",
+    "08002",
+    "08003",
+    "08004",
+    "08005",
+    "08006",
+    "08007",
+    "08008",
+    "08009",
+    "08010",
+    "08011",
+    "08012",
+    "08013",
+    "08014",
+    "08015",
+    "08016",
+    "08017",
+    "08018",
+    "08019",
+    "08020",
+    "08021",
+    "08022",
+    "08023",
+    "08024",
+    "08025",
+    "08026",
+    "08027",
+    "08028",
+    "08029",
+    "08030",
+    "08031",
+    "08032",
+    "08033",
+    "08034",
+    "08035",
+    "08036",
+    "08037",
+    "08038",
+    "08039",
+    "08040",
+    "08041",
+    "08042"
+  ]
+}

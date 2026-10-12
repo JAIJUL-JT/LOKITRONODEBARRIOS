@@ -1,0 +1,397 @@
+{
+  "ine": "48020",
+  "nombre": "Bilbao",
+  "provincia": "Bizkaia",
+  "fuente": "Open data municipal + INE (www.ine.es)",
+  "distritos": [
+    {
+      "codigo": "01",
+      "nombre": "Deusto",
+      "color": null,
+      "orden": 1
+    },
+    {
+      "codigo": "02",
+      "nombre": "Uribarri",
+      "color": null,
+      "orden": 2
+    },
+    {
+      "codigo": "03",
+      "nombre": "Otxarkoaga-Txurdinaga",
+      "color": null,
+      "orden": 3
+    },
+    {
+      "codigo": "04",
+      "nombre": "Begoña",
+      "color": null,
+      "orden": 4
+    },
+    {
+      "codigo": "05",
+      "nombre": "Ibaiondo",
+      "color": null,
+      "orden": 5
+    },
+    {
+      "codigo": "06",
+      "nombre": "Abando",
+      "color": null,
+      "orden": 6
+    },
+    {
+      "codigo": "07",
+      "nombre": "Errekalde",
+      "color": null,
+      "orden": 7
+    },
+    {
+      "codigo": "08",
+      "nombre": "Basurtu-Zorrotza",
+      "color": null,
+      "orden": 8
+    }
+  ],
+  "barrios": [
+    {
+      "distrito_codigo": "01",
+      "codigo": "101",
+      "nombre": "SAN IGNACIO",
+      "color": null,
+      "orden": 1
+    },
+    {
+      "distrito_codigo": "01",
+      "codigo": "102",
+      "nombre": "ELORRIETA",
+      "color": null,
+      "orden": 2
+    },
+    {
+      "distrito_codigo": "01",
+      "codigo": "103",
+      "nombre": "IBARREKOLANDA",
+      "color": null,
+      "orden": 3
+    },
+    {
+      "distrito_codigo": "01",
+      "codigo": "104",
+      "nombre": "SAN PEDRO DE DEUSTU",
+      "color": null,
+      "orden": 4
+    },
+    {
+      "distrito_codigo": "01",
+      "codigo": "105",
+      "nombre": "LA RIBERA",
+      "color": null,
+      "orden": 5
+    },
+    {
+      "distrito_codigo": "01",
+      "codigo": "106",
+      "nombre": "ARANGOITI",
+      "color": null,
+      "orden": 6
+    },
+    {
+      "distrito_codigo": "01",
+      "codigo": "107",
+      "nombre": "DISEMINADO",
+      "color": null,
+      "orden": 7
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "201",
+      "nombre": "CASTAÑOS",
+      "color": null,
+      "orden": 8
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "202",
+      "nombre": "MATIKO",
+      "color": null,
+      "orden": 9
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "203",
+      "nombre": "CIUDAD JARDIN",
+      "color": null,
+      "orden": 10
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "204",
+      "nombre": "URIBARRI",
+      "color": null,
+      "orden": 11
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "205",
+      "nombre": "ZURBARAN",
+      "color": null,
+      "orden": 12
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "206",
+      "nombre": "ARABELLA",
+      "color": null,
+      "orden": 13
+    },
+    {
+      "distrito_codigo": "02",
+      "codigo": "207",
+      "nombre": "DISEMINADO",
+      "color": null,
+      "orden": 14
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "301",
+      "nombre": "OTXARKOAGA",
+      "color": null,
+      "orden": 15
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "302",
+      "nombre": "TXURDINAGA",
+      "color": null,
+      "orden": 16
+    },
+    {
+      "distrito_codigo": "03",
+      "codigo": "303",
+      "nombre": "DISEMINADO",
+      "color": null,
+      "orden": 17
+    },
+    {
+      "distrito_codigo": "04",
+      "codigo": "401",
+      "nombre": "BEGOÑA",
+      "color": null,
+      "orden": 18
+    },
+    {
+      "distrito_codigo": "04",
+      "codigo": "402",
+      "nombre": "SANTUTXU",
+      "color": null,
+      "orden": 19
+    },
+    {
+      "distrito_codigo": "04",
+      "codigo": "403",
+      "nombre": "BOLUETA",
+      "color": null,
+      "orden": 20
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "501",
+      "nombre": "CASCO VIEJO",
+      "color": null,
+      "orden": 21
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "502",
+      "nombre": "ITURRALDE",
+      "color": null,
+      "orden": 22
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "503",
+      "nombre": "SOLOKOETXE",
+      "color": null,
+      "orden": 23
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "504",
+      "nombre": "ATXURI",
+      "color": null,
+      "orden": 24
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "505",
+      "nombre": "LA PEÑA",
+      "color": null,
+      "orden": 25
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "506",
+      "nombre": "BILBAO LA VIEJA",
+      "color": null,
+      "orden": 26
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "507",
+      "nombre": "SAN FRANCISCO",
+      "color": null,
+      "orden": 27
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "508",
+      "nombre": "ZABALA",
+      "color": null,
+      "orden": 28
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "509",
+      "nombre": "SAN ADRIAN",
+      "color": null,
+      "orden": 29
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "510",
+      "nombre": "DISEMINADO",
+      "color": null,
+      "orden": 30
+    },
+    {
+      "distrito_codigo": "05",
+      "codigo": "511",
+      "nombre": "MIRIBILLA",
+      "color": null,
+      "orden": 31
+    },
+    {
+      "distrito_codigo": "06",
+      "codigo": "601",
+      "nombre": "ABANDO",
+      "color": null,
+      "orden": 32
+    },
+    {
+      "distrito_codigo": "06",
+      "codigo": "602",
+      "nombre": "INDAUTXU",
+      "color": null,
+      "orden": 33
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "701",
+      "nombre": "AMETZOLA",
+      "color": null,
+      "orden": 34
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "702",
+      "nombre": "IRALABARRI",
+      "color": null,
+      "orden": 35
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "703",
+      "nombre": "ERREKALDEBERRI",
+      "color": null,
+      "orden": 36
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "704",
+      "nombre": "LARRASKITU",
+      "color": null,
+      "orden": 37
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "705",
+      "nombre": "URETAMENDI",
+      "color": null,
+      "orden": 38
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "706",
+      "nombre": "ITURRIGORRI-PEÑASCAL",
+      "color": null,
+      "orden": 39
+    },
+    {
+      "distrito_codigo": "07",
+      "codigo": "707",
+      "nombre": "DISEMINADO",
+      "color": null,
+      "orden": 40
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "801",
+      "nombre": "BASURTU",
+      "color": null,
+      "orden": 41
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "802",
+      "nombre": "OLABEAGA",
+      "color": null,
+      "orden": 42
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "803",
+      "nombre": "MASUSTEGI-MONTE CARAMELO",
+      "color": null,
+      "orden": 43
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "804",
+      "nombre": "ALTAMIRA",
+      "color": null,
+      "orden": 44
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "805",
+      "nombre": "ZORROTZA",
+      "color": null,
+      "orden": 45
+    },
+    {
+      "distrito_codigo": "08",
+      "codigo": "806",
+      "nombre": "DISEMINADO",
+      "color": null,
+      "orden": 46
+    }
+  ],
+  "codigos_postales": [
+    "48001",
+    "48002",
+    "48003",
+    "48004",
+    "48005",
+    "48006",
+    "48007",
+    "48008",
+    "48009",
+    "48010",
+    "48011",
+    "48012",
+    "48013",
+    "48014",
+    "48015"
+  ]
+}

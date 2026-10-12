@@ -44,9 +44,12 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/legal.css">
+    <!-- Leaflet: mapas interactivos de ciudades/distritos/barrios -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
     <!-- Carga del SDK oficial de Supabase y Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <!-- Datos estructurados (schema.org) -->
     <script type="application/ld+json">
@@ -852,9 +855,12 @@
                             </select>
                         </div>
 
-                        <div class="form-group" id="group-barrio-asignado" style="display: none;">
-                            <label>Barrio Asignado como Tronista:</label>
-                            <select id="usuario-barrio-asignado" class="input-medieval"></select>
+                        <div class="form-group" id="group-barrio-asignado">
+                            <label>Barrio asignado:</label>
+                            <select id="usuario-barrio-asignado" class="input-medieval">
+                                <option value="Forastero" selected>Forastero (por defecto si no se asigna barrio)</option>
+                            </select>
+                            <small style="display:block;color:#a1a1aa;font-size:0.75rem;margin-top:4px;">Barrio o feudo asignado al usuario (editable en cualquier momento).</small>
                         </div>
 
                         <button type="submit" class="btn-cuervo" id="btn-guardar-user">➕ Añadir Usuario
@@ -1005,6 +1011,8 @@
                                 onclick="guardarOrdenSorteoBarrios()" style="background:#166534;">💾 Guardar orden manual</button>
                             <button type="button" class="btn-cuervo" id="btn-recargar-orden-sorteo"
                                 onclick="cargarOrdenSorteoBarrios()">🔄 Recargar orden</button>
+                            <button type="button" class="btn-cuervo" id="btn-ver-resultado-sorteo"
+                                onclick="abrirResultadoSorteo()" style="background:#713f12;">📜 Ver resultado del sorteo</button>
                         </div>
                         <p id="estado-sorteo-barrios" role="status" aria-live="polite"
                             style="color:#d6d3d1;"></p>
@@ -1015,6 +1023,69 @@
                             Usa las flechas para cambiar posiciones. Los cambios manuales solo se
                             aplican en Supabase al pulsar «Guardar orden manual».
                         </p>
+                    </section>
+
+                    <!-- LOKITRONO: RESTAURAR COMPETICIÓN (ZONA DE PELIGRO) -->
+                    <section id="panel-restaurar" class="panel-card" style="margin-top:30px;border:2px solid #7f1d1d;">
+                        <h3 style="color:#fca5a5;">☠️ Restaurar competición</h3>
+                        <p style="color:#d6d3d1;">
+                            Devuelve el juego a su estado inicial: elimina <strong>votos, eventos,
+                            códigos diarios y barrios</strong> (excepto Forastero), y borra todas las
+                            cuentas salvo <strong>master</strong> y <strong>superadmin</strong>, que quedan
+                            con barrio Forastero. También retira el barrio <strong>Altamira</strong>.
+                            Esta acción es irreversible.
+                        </p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin:15px 0;">
+                            <button type="button" class="btn-cuervo" id="btn-restaurar-competicion"
+                                onclick="restaurarCompeticion()" style="background:#7f1d1d;">☠️ Restaurar competición</button>
+                        </div>
+                        <p id="estado-restaurar-competicion" role="status" aria-live="polite"
+                            style="color:#d6d3d1;"></p>
+                    </section>
+
+                    <!-- LOKITRONO: GEOGRAFÍA (CIUDADES / DISTRITOS / BARRIOS / CÓDIGOS POSTALES) -->
+                    <section id="panel-geografia" class="panel-card" style="margin-top:30px;">
+                        <h3 style="color:var(--oro-brillante);">🌍 Ciudades, distritos, barrios y códigos postales</h3>
+                        <p style="color:#d6d3d1;">
+                            Busca cualquier municipio de España y prepara enfrentamientos eligiendo
+                            distritos, barrios o códigos postales. Puedes combinar varias ciudades y
+                            marcar múltiples opciones con las casillas. Los mapas se cargan a demanda.
+                        </p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:15px 0;">
+                            <div class="form-group" style="flex:1 1 320px;min-width:260px;">
+                                <label for="geo-buscador-ciudad">Buscar municipio:</label>
+                                <input type="text" id="geo-buscador-ciudad" class="input-medieval"
+                                    list="geo-lista-ciudades" placeholder="Escribe para buscar (p. ej. Bilbao)"
+                                    autocomplete="off">
+                                <datalist id="geo-lista-ciudades"></datalist>
+                            </div>
+                            <button type="button" class="btn-cuervo" id="geo-btn-cargar-ciudad">🗺️ Cargar en el mapa</button>
+                            <button type="button" class="btn-cuervo" id="geo-btn-limpiar" style="background:#7f1d1d;">🧹 Limpiar selección</button>
+                        </div>
+                        <p id="geo-estado" role="status" aria-live="polite" style="color:#d6d3d1;"></p>
+                        <div id="geo-mapa" class="geo-mapa" role="img"
+                            aria-label="Mapa interactivo de la ciudad seleccionada"></div>
+                        <p id="geo-atribucion" class="geo-atribucion"></p>
+                        <div class="geo-columnas">
+                            <div class="geo-columna">
+                                <h4 class="geo-titulo-columna">Municipios cargados</h4>
+                                <ul id="geo-lista-ciudades-cargadas" class="geo-lista-check"></ul>
+                            </div>
+                            <div class="geo-columna">
+                                <h4 class="geo-titulo-columna">Distritos</h4>
+                                <ul id="geo-lista-distritos" class="geo-lista-check"></ul>
+                            </div>
+                            <div class="geo-columna">
+                                <h4 class="geo-titulo-columna">Barrios</h4>
+                                <ul id="geo-lista-barrios" class="geo-lista-check"></ul>
+                            </div>
+                            <div class="geo-columna">
+                                <h4 class="geo-titulo-columna">Códigos postales</h4>
+                                <ul id="geo-lista-cp" class="geo-lista-check"></ul>
+                            </div>
+                        </div>
+                        <h4 class="geo-titulo-columna" style="margin-top:20px;">Selección para enfrentamientos</h4>
+                        <div id="geo-seleccion" class="geo-seleccion" aria-live="polite"></div>
                     </section>
 
                     <h3 style="margin-top: 30px; color: var(--oro-brillante);">Reinos Actuales</h3>
@@ -1211,6 +1282,24 @@
         </main>
     </div> <!-- /contenido-reino-protegido -->
 
+
+    <!-- LOKITRONO: VENTANA RESULTADO DEL SORTEO DE BARRIOS -->
+    <div id="modal-resultado-sorteo" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="cerrarResultadoSorteo()">&times;</span>
+            <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">🎲 RESULTADO DEL SORTEO</h3>
+            <p style="font-size: 0.85rem; color: #d6d3d1;">Orden oficial de los barrios participantes según el
+                último sorteo guardado.</p>
+            <ol id="detalle-resultado-sorteo" aria-label="Resultado del sorteo de barrios"
+                style="padding-left:28px;"></ol>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:18px;">
+                <button type="button" class="btn-cuervo" id="btn-nuevo-sorteo-modal"
+                    onclick="realizarSorteoDesdeVentana()">🔄 Realizar Nuevo Sorteo</button>
+                <button type="button" class="btn-cuervo" style="background:#44403c;"
+                    onclick="cerrarResultadoSorteo()">Cerrar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal de Autenticación por WhatsApp -->
     <div id="modal-auth" class="modal-overlay" style="display: none;">

@@ -855,3 +855,189 @@ body {
         animation: none !important;
     }
 }
+
+/* ==============================================================================
+   MODO EDICIÓN: color distintivo cuando se modifica un registro existente
+   (usuarios, barrios, roles, eventos…). Se aplica mediante la clase
+   `.modo-edicion` y el atributo `data-modo-edicion` con el texto de aviso.
+   ============================================================================== */
+.modo-edicion {
+    position: relative;
+    border: 2px solid #22d3ee !important;
+    border-radius: 10px;
+    padding: 20px !important;
+    background:
+        linear-gradient(180deg, rgba(8, 47, 73, 0.5), rgba(10, 10, 10, 0.96)) !important;
+    box-shadow:
+        0 0 26px rgba(34, 211, 238, 0.4),
+        inset 0 0 30px rgba(34, 211, 238, 0.08),
+        0 15px 35px rgba(0, 0, 0, 0.9) !important;
+    animation: pulsoModoEdicion 2.6s ease-in-out infinite;
+}
+
+.modo-edicion::before {
+    content: attr(data-modo-edicion);
+    display: block;
+    margin: 0 0 16px;
+    padding: 7px 14px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-align: center;
+    text-transform: uppercase;
+    color: #001018;
+    background: linear-gradient(135deg, #67e8f9 0%, #22d3ee 60%, #06b6d4 100%);
+    border-radius: 6px;
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.55);
+}
+
+.modo-edicion .input-medieval {
+    border-color: rgba(34, 211, 238, 0.6);
+}
+
+.modo-edicion .input-medieval:focus {
+    border-color: #22d3ee;
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
+}
+
+@keyframes pulsoModoEdicion {
+    0%, 100% {
+        box-shadow: 0 0 26px rgba(34, 211, 238, 0.32), inset 0 0 30px rgba(34, 211, 238, 0.06);
+    }
+    50% {
+        box-shadow: 0 0 42px rgba(34, 211, 238, 0.6), inset 0 0 38px rgba(34, 211, 238, 0.12);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modo-edicion,
+    .modo-edicion::before {
+        animation: none !important;
+    }
+}
+/* ===== Geografía: mapa y selección de ciudades/distritos/barrios/CP ===== */
+.geo-mapa {
+    width: 100%;
+    height: 420px;
+    margin: 15px 0;
+    border: 2px solid var(--oro-brillante, #d4af37);
+    border-radius: 8px;
+    background: #0b0b0d;
+    overflow: hidden;
+}
+
+.geo-mapa .leaflet-container {
+    background: #0b0b0d;
+}
+
+.geo-atribucion {
+    font-size: .75rem;
+    color: #a1a1aa;
+    margin: 0 0 15px;
+}
+
+.geo-columnas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.geo-titulo-columna {
+    color: var(--oro-brillante, #d4af37);
+    font-size: .95rem;
+    margin: 0 0 8px;
+    border-bottom: 1px solid rgba(212, 175, 55, .3);
+    padding-bottom: 4px;
+}
+
+.geo-lista-check {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.geo-lista-check li {
+    margin: 0 0 4px;
+    color: #e7e5e4;
+    font-size: .9rem;
+}
+
+.geo-lista-check li label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 5px;
+}
+
+.geo-lista-check li label:hover {
+    background: rgba(212, 175, 55, .12);
+}
+
+.geo-lista-check input[type="checkbox"] {
+    accent-color: #d4af37;
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+}
+
+.geo-cp-badge {
+    display: inline-block;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.geo-seleccion {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 30px;
+    padding: 10px;
+    border: 1px dashed rgba(212, 175, 55, .4);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, .25);
+}
+
+.geo-ficha {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #1c1917;
+    border: 1px solid #d4af37;
+    color: #fde68a;
+    font-size: .85rem;
+}
+
+.geo-ficha button {
+    background: none;
+    border: none;
+    color: #fca5a5;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+}
+
+.geo-barra-color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, .4);
+}
+
+@media (max-width: 640px) {
+    .geo-mapa {
+        height: 300px;
+    }
+}

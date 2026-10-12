@@ -150,7 +150,7 @@
                 <optgroup label="📜 Menú de Maestres">
                     <option value="pestana-clasificacion" data-tab="tab-clasificacion">🏆 Clasificación Real</option>
                     <option value="pestana-votacion-barrio" data-tab="tab-votacion-barrio">🗳️ Votación de Barrio</option>
-                    <option value="pestana-tronistas" data-tab="tab-tronistas">👑 Tronistas de Barrios</option>
+                    <option value="pestana-tronistas" data-tab="tab-tronistas">👑 Lokitronistas de Barrios</option>
                     <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario Eventos</option>
                     <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
                 </optgroup>
@@ -342,18 +342,20 @@
                 </div>
             </section>
 
-            <!-- PESTAÑA 1: Tronistas de Barrios (Solo lectura general, lista de Tronistas Barriales y asignación) -->
+            <!-- PESTAÑA 1: Lokitronistas de Barrios (Solo lectura general, lista de Lokitronistas Barriales y asignación) -->
             <section id="pestana-tronistas" class="tab-content tema-corte" style="display: none;">
                 <div class="panel-card">
-                    <h2>👑 Tronistas de Barrios y Feudos</h2>
-                    <p>Representantes oficiales del Lokitrono por cada reino barrial (Máximo 2 Tronistas por barrio).
+                    <h2>👑 Lokitronistas de los Barrios y Veladores del LokiTrono</h2>
+                    <p>Representantes oficiales del Lokitrono por cada reino barrial, agrupados por barrio
+                        (Máximo 2 Lokitronistas por barrio). En esta corte figuran también los
+                        <strong>Veladores del LokiTrono</strong>.
                     </p>
 
                     <div id="panel-superadmin-tronistas"
                         style="display: none; background: rgba(41, 37, 36, 0.8); border: 1px solid var(--oro-real); padding: 15px; border-radius: 8px; margin-bottom: 25px;">
-                        <h3 style="color: var(--oro-brillante); margin-top: 0;">⚔️ Asignación del Título de Tronista
+                        <h3 style="color: var(--oro-brillante); margin-top: 0;">⚔️ Asignación del Título de Lokitronista
                             (Superadmin)</h3>
-                        <p style="font-size: 0.9rem; color: #d6d3d1;">Asigna el título honorífico de Tronista a un Maestre previamente registrado para representar a un barrio.
+                        <p style="font-size: 0.9rem; color: #d6d3d1;">Asigna el título honorífico de Lokitronista a un Maestre previamente registrado para representar a un barrio (máximo 2 por barrio).
                         </p>
                         <form id="form-tronista-admin" onsubmit="asignarTronistaAdmin(event)">
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -366,7 +368,7 @@
                                     <select id="select-barrio-tronista" class="input-medieval" required></select>
                                 </div>
                             </div>
-                            <button type="submit" class="btn-cuervo" style="margin-top: 10px;">👑 Asignar Título de Tronista</button>
+                            <button type="submit" class="btn-cuervo" style="margin-top: 10px;">👑 Asignar Título de Lokitronista</button>
                         </form>
                     </div>
 
@@ -821,7 +823,7 @@
 
                         <div class="form-group">
                             <label>Título personalizado (opcional, deja vacío para usar predeterminado):</label>
-                            <input type="text" id="usuario-titulo-custom" class="input-medieval" placeholder="Ej: Consejero (deja vacío para usar el predeterminado)">
+                            <input type="text" id="usuario-titulo-custom" class="input-medieval" placeholder="Ej: Velador del LokiTrono (deja vacío para usar el predeterminado)">
                         </div>
 
                         <div class="form-group">
@@ -836,7 +838,7 @@
                             <label>Rol de Acceso:</label>
                             <select id="usuario-role" class="input-medieval">
                                 <option value="jugador">Jugador / Maestre</option>
-                                <option value="tronista">👑 Tronista de Barrio</option>
+                                <option value="tronista">👑 Lokitronista de Barrio</option>
                                 <option value="superadmin">Superadmin (Administrador del Sistema)</option>
                             </select>
                         </div>
@@ -883,11 +885,11 @@
                                 <input type="text" id="titulo-config-jugador_femenino" class="input-medieval" placeholder="Lady">
                             </div>
                             <div class="form-group">
-                                <label style="font-size:0.82rem;">👑 Tronista (masculino):</label>
+                                <label style="font-size:0.82rem;">👑 Lokitronista (masculino):</label>
                                 <input type="text" id="titulo-config-tronista_masculino" class="input-medieval" placeholder="Lokitronista Lord">
                             </div>
                             <div class="form-group">
-                                <label style="font-size:0.82rem;">👑 Tronista (femenino):</label>
+                                <label style="font-size:0.82rem;">👑 Lokitronista (femenino):</label>
                                 <input type="text" id="titulo-config-tronista_femenino" class="input-medieval" placeholder="Lokitronista Lady">
                             </div>
                             <div class="form-group">
@@ -899,7 +901,7 @@
                                 <input type="text" id="titulo-config-superadmin_femenino" class="input-medieval" placeholder="Gran Maestra">
                             </div>
                         </div>
-                        <p style="font-size:0.78rem;color:#a1a1aa;margin-bottom:10px;">🔱 Consejeros especiales (605676002, 663366786) siempre tendrán título Consejero/a, independientemente de la configuración.</p>
+                        <p style="font-size:0.78rem;color:#a1a1aa;margin-bottom:10px;">💎 Veladores del LokiTrono (605676002, 663366786) siempre tendrán título Velador/a del LokiTrono, independientemente de la configuración.</p>
                         <div style="display:flex;gap:10px;flex-wrap:wrap;">
                             <button type="button" class="btn-cuervo" onclick="guardarTitulosConfig()">💾 Guardar Títulos</button>
                             <button type="button" class="btn-cuervo" style="background:#44403c;" onclick="guardarTitulosConfig({});renderTablaUsuarios();renderListaTronistas();alert('✅ Títulos restablecidos a valores por defecto.');">↺ Restablecer Predeterminados</button>

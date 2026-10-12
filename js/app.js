@@ -284,8 +284,8 @@ const TITULOS_CONFIG_DEFAULT = {
     superadmin_femenino: 'Gran Maestra',
     master_masculino: 'Lokitrono Mayor',
     master_femenino: 'Lokitrona Mayor',
-    consejero_masculino: 'Consejero',
-    consejero_femenino: 'Consejera'
+    consejero_masculino: 'Velador del LokiTrono',
+    consejero_femenino: 'Veladora del LokiTrono'
 };
 
 const CONSEJEROS_ESPECIALES = ['605676002', '+34605676002', '663366786'];
@@ -321,7 +321,7 @@ function guardarTitulosConfig(config) {
 }
 
 function getIconoRango(rol, phone) {
-    if (phone && CONSEJEROS_ESPECIALES.includes(String(phone))) return '🔱';
+    if (phone && CONSEJEROS_ESPECIALES.includes(String(phone))) return '💎';
     if (rol === 'master') return '🌟';
     if (rol === 'superadmin') return '🏰';
     if (rol === 'tronista') return '👑';
@@ -343,11 +343,11 @@ function getTituloCompleto(usuario) {
 
     const icon = getIconoRango(rol, phone);
 
-    // Consejeros especiales
+    // Veladores del LokiTrono (usuarios especiales de la corte)
     if (CONSEJEROS_ESPECIALES.includes(phone)) {
-        // Ainhoa → Consejera (663366786)
-        const esConsejera = phone === '663366786';
-        const titulo = esConsejera ? config.consejero_femenino : config.consejero_masculino;
+        // Ainhoa → Veladora del LokiTrono (663366786)
+        const esVeladora = phone === '663366786';
+        const titulo = esVeladora ? config.consejero_femenino : config.consejero_masculino;
         return `${icon} ${titulo} ${nombre}`;
     }
 
@@ -2662,7 +2662,7 @@ function renderTablaUsuarios() {
         } else if (rolVisible === 'superadmin') {
             rolBadge = `<span class="pill-user" style="background:rgba(22,101,52,0.8);color:#86efac;border:1px solid #4ade80;padding:2px 8px;border-radius:12px;font-size:0.78rem;">🏰 Superadmin</span>`;
         } else if (rolVisible === 'tronista') {
-            rolBadge = `<span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 8px;border-radius:12px;font-size:0.78rem;">👑 Tronista</span>`;
+            rolBadge = `<span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 8px;border-radius:12px;font-size:0.78rem;">👑 Lokitronista</span>`;
         } else {
             rolBadge = `<span class="pill-user" style="background:rgba(63,63,70,0.8);color:#d4d4d8;border:1px solid #52525b;padding:2px 8px;border-radius:12px;font-size:0.78rem;">⚔️ Jugador</span>`;
         }
@@ -2788,6 +2788,17 @@ async function guardarUsuario(event) {
     if (!puedeAsignarRol(currentUser.role, role)) {
         alert('No tienes permiso para asignar ese rol.');
         return;
+    }
+
+    // Límite feudal: máximo 2 Lokitronistas por barrio representado/asignado.
+    if (role === 'tronista') {
+        const barrioObjetivo = (barrioRep && barrioRep !== 'Forastero') ? barrioRep : barrioAsig;
+        const ocupados = getUsuariosAutorizadosLocal().filter(u =>
+            u.id !== editId && u.role === 'tronista' && barrioEfectivoDe(u) === barrioObjetivo).length;
+        if (ocupados >= 2) {
+            alert(`El barrio ${barrioObjetivo} ya tiene sus 2 Lokitronistas (máximo permitido por barrio).`);
+            return;
+        }
     }
 
     const usuariosExistentes = getUsuariosAutorizadosLocal();
@@ -3041,7 +3052,7 @@ async function asignarTronistaAdmin(event) {
     if (event) event.preventDefault();
     const currentUser = getCurrentUser();
     if (!currentUser || !puedeAdministrar(currentUser.role)) {
-        alert('Solo Superadmin puede asignar títulos de Tronista.');
+        alert('Solo Superadmin puede asignar títulos de Lokitronista.');
         return;
     }
 
@@ -3059,6 +3070,14 @@ async function asignarTronistaAdmin(event) {
         return;
     }
 
+    // Límite feudal: máximo 2 Lokitronistas por barrio.
+    const tronistasDelBarrio = getUsuariosAutorizadosLocal().filter(u =>
+        u.id !== userId && u.role === 'tronista' && barrioEfectivoDe(u) === barrio);
+    if (tronistasDelBarrio.length >= 2) {
+        alert(`El barrio ${barrio} ya tiene sus 2 Lokitronistas (máximo permitido por barrio).`);
+        return;
+    }
+
     if (esUUID(userId)) {
         try {
             const credenciales = await pedirCredencialesSuperadmin();
@@ -3071,10 +3090,10 @@ async function asignarTronistaAdmin(event) {
             });
             if (error) throw error;
             await recargarUsuariosSupabase(credenciales);
-            alert(`👑 ¡Título de Tronista de ${barrio} asignado!`);
+            alert(`👑 ¡Título de Lokitronista de ${barrio} asignado!`);
             return;
         } catch (error) {
-            console.warn('Asignación de Tronista en Supabase no disponible; se usa el respaldo local:', error?.message || error);
+            console.warn('Asignación de Lokitronista en Supabase no disponible; se usa el respaldo local:', error?.message || error);
         }
     }
 
@@ -3084,69 +3103,126 @@ async function asignarTronistaAdmin(event) {
 
     usuarios[idx].role = 'tronista';
     usuarios[idx].barrio_asignado = barrio;
+    usuarios[idx].barrio_representado = barrio;
     usuarios[idx].fecha_designacion = new Date().toISOString();
 
     localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(usuarios));
     renderTablaUsuarios();
     renderListaTronistas();
-    alert(`👑 ¡${usuarios[idx].name} ha sido designado/a Tronista de ${barrio}!`);
+    alert(`👑 ¡${usuarios[idx].name} ha sido designado/a Lokitronista de ${barrio}!`);
 }
 
 /* ==========================================
-   HALL OF FAME — TRONISTAS
+   HALL OF FAME — LOKITRONISTAS Y VELADORES
    ========================================== */
+
+const VELADORES_LOKITRONO_PHONES = ['605676002', '663366786'];
+
+// ¿El teléfono corresponde a uno de los Veladores del LokiTrono?
+function esVeladorDelLokitrono(phone) {
+    const p = String(phone || '').replace(/\D/g, '').slice(-9);
+    return VELADORES_LOKITRONO_PHONES.some(v => String(v).replace(/\D/g, '').slice(-9) === p);
+}
+
+// Barrio efectivo que representa un usuario (el representado si existe; si no, el asignado).
+function barrioEfectivoDe(user) {
+    const rep = String(user.barrio_representado || '').trim();
+    const asig = String(user.barrio_asignado || '').trim();
+    return (rep && rep !== 'Forastero') ? rep : (asig || 'Forastero');
+}
 
 function renderListaTronistas() {
     const container = document.getElementById('lista-tronistas');
     if (!container) return;
+    container.style.display = 'block';
 
     const usuarios = getUsuariosAutorizadosLocal();
     const tronistas = usuarios.filter(u => u.role === 'tronista');
+    // Veladores del LokiTrono (usuarios especiales): 605676002 y 663366786.
+    const veladores = [];
+    const vistoVelador = new Set();
+    usuarios.forEach(u => {
+        if (esVeladorDelLokitrono(u.phone)) {
+            const norm = String(u.phone || '').replace(/\D/g, '').slice(-9);
+            if (!vistoVelador.has(norm)) { vistoVelador.add(norm); veladores.push(u); }
+        }
+    });
 
-    if (!tronistas || tronistas.length === 0) {
-        container.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:30px;font-style:italic;">Ningún Maestre ha recibido aún el título de Tronista de Barrio.</div>`;
+    if ((!tronistas || tronistas.length === 0) && veladores.length === 0) {
+        container.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:30px;font-style:italic;">Ningún Maestre ha recibido aún el título de Lokitronista de Barrio.</div>`;
         return;
     }
 
     const repositorioVotos = getRepositorioVotos ? getRepositorioVotos() : (JSON.parse(localStorage.getItem(STORAGE_KEYS.repositorioVotos) || '[]'));
 
-    container.innerHTML = tronistas.map(user => {
-        const phone = String(user.phone || '');
-        const tituloCompleto = getTituloCompleto(user);
-        const barrio = user.barrio_representado || user.barrio_asignado || 'Sin barrio';
-
-        // Privacy-masked phone: first 3 + ** + last 2
-        let phoneMask = phone;
-        if (phone.length >= 5) {
-            phoneMask = phone.slice(0, 3) + '**' + phone.slice(-2);
-        }
-
-        // Count votes emitted
-        const votosEmitidos = repositorioVotos.filter(v => String(v.maestre_id || '') === phone).length;
-
+    function phoneMask(phone) {
+        const p = String(phone || '');
+        return p.length >= 5 ? p.slice(0, 3) + '**' + p.slice(-2) : p;
+    }
+    function votosDe(phone) {
+        return repositorioVotos.filter(v => String(v.maestre_id || '') === String(phone || '')).length;
+    }
+    function tarjetaLokitronista(user) {
+        const telefono = String(user.phone || '');
         const fechaDesig = user.fecha_designacion
-            ? `📅 Designado/a: ${new Date(user.fecha_designacion).toLocaleDateString('es-ES')}`
+            ? `<div style="text-align:center;font-size:0.78rem;color:#a1a1aa;">📅 Designado/a: ${new Date(user.fecha_designacion).toLocaleDateString('es-ES')}</div>`
             : '';
-
-        return `<div class="card-item" style="background:rgba(30,24,8,0.95);border:2px solid var(--oro-real);margin-bottom:18px;padding:20px;border-radius:10px;">
-            <div style="text-align:center;margin-bottom:10px;">
-                <span style="font-size:2.5rem;">👑</span>
-            </div>
-            <div style="text-align:center;margin-bottom:8px;">
-                <strong style="color:var(--oro-brillante);font-family:'Cinzel',serif;font-size:1.1rem;">${tituloCompleto}</strong>
-            </div>
-            <div style="text-align:center;margin-bottom:8px;">
-                <span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:3px 10px;border-radius:12px;font-size:0.82rem;">🏰 ${barrio}</span>
-            </div>
-            <div style="text-align:center;font-size:0.82rem;color:#a1a1aa;margin-bottom:6px;">📱 ${phoneMask}</div>
-            <div style="text-align:center;margin-bottom:6px;">
-                <span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 8px;border-radius:12px;font-size:0.78rem;">👑 Tronista de Barrio</span>
-            </div>
-            <div style="text-align:center;font-size:0.82rem;color:#d6d3d1;margin-bottom:6px;">⚔️ Votos emitidos: <strong>${votosEmitidos}</strong></div>
-            ${fechaDesig ? `<div style="text-align:center;font-size:0.78rem;color:#a1a1aa;">${fechaDesig}</div>` : ''}
+        return `<div class="card-item" style="background:rgba(30,24,8,0.95);border:2px solid var(--oro-real);padding:18px;border-radius:10px;">
+            <div style="text-align:center;margin-bottom:10px;"><span style="font-size:2.5rem;">👑</span></div>
+            <div style="text-align:center;margin-bottom:8px;"><strong style="color:var(--oro-brillante);font-family:'Cinzel',serif;font-size:1.05rem;">${getTituloCompleto(user)}</strong></div>
+            <div style="text-align:center;font-size:0.82rem;color:#a1a1aa;margin-bottom:6px;">📱 ${phoneMask(telefono)}</div>
+            <div style="text-align:center;margin-bottom:6px;"><span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 8px;border-radius:12px;font-size:0.78rem;">👑 Lokitronista de Barrio</span></div>
+            <div style="text-align:center;font-size:0.82rem;color:#d6d3d1;margin-bottom:6px;">⚔️ Votos emitidos: <strong>${votosDe(telefono)}</strong></div>
+            ${fechaDesig}
             <hr style="border-color:var(--oro-real);opacity:0.3;margin:12px 0 0 0;">
         </div>`;
-    }).join('');
+    }
+    function tarjetaVelador(user) {
+        return `<div class="card-item" style="background:rgba(20,16,5,0.95);border:2px solid #a78bfa;padding:18px;border-radius:10px;">
+            <div style="text-align:center;margin-bottom:10px;"><span style="font-size:2.5rem;">💎</span></div>
+            <div style="text-align:center;margin-bottom:8px;"><strong style="color:#c4b5fd;font-family:'Cinzel',serif;font-size:1.05rem;">${getTituloCompleto(user)}</strong></div>
+            <div style="text-align:center;font-size:0.82rem;color:#a1a1aa;margin-bottom:6px;">📱 ${phoneMask(user.phone)}</div>
+            <div style="text-align:center;margin-bottom:6px;"><span class="pill-user" style="background:rgba(76,29,149,0.7);color:#d8b4fe;border:1px solid #a78bfa;padding:2px 8px;border-radius:12px;font-size:0.78rem;">💎 Velador/a del LokiTrono</span></div>
+            <div style="text-align:center;font-size:0.82rem;color:#d6d3d1;margin-bottom:6px;">⚔️ Votos emitidos: <strong>${votosDe(user.phone)}</strong></div>
+            <hr style="border-color:#a78bfa;opacity:0.3;margin:12px 0 0 0;">
+        </div>`;
+    }
+
+    const GRID = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;';
+    let html = '';
+
+    // Agrupado por cada barrio representado (máximo 2 Lokitronistas por barrio).
+    const porBarrio = new Map();
+    tronistas.forEach(u => {
+        const barrio = barrioEfectivoDe(u);
+        if (!porBarrio.has(barrio)) porBarrio.set(barrio, []);
+        if (porBarrio.get(barrio).length < 2) porBarrio.get(barrio).push(u);
+    });
+
+    porBarrio.forEach((lista, barrio) => {
+        html += `<div style="margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:18px 0 12px;flex-wrap:wrap;">
+                <span style="font-size:1.5rem;">🏰</span>
+                <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:0;font-size:1.15rem;">${barrio}</h4>
+                <span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 10px;border-radius:12px;font-size:0.78rem;">${lista.length}/2 Lokitronistas</span>
+            </div>
+            <div style="${GRID}">${lista.map(tarjetaLokitronista).join('')}</div>
+        </div>`;
+    });
+
+    // Veladores del LokiTrono (grupo propio junto a los barrios).
+    if (veladores.length > 0) {
+        html += `<div style="margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:22px 0 12px;flex-wrap:wrap;">
+                <span style="font-size:1.5rem;">💎</span>
+                <h4 style="color:#c4b5fd;font-family:'Cinzel',serif;margin:0;font-size:1.15rem;">💎 Veladores del LokiTrono</h4>
+                <span class="pill-user" style="background:rgba(76,29,149,0.7);color:#d8b4fe;border:1px solid #a78bfa;padding:2px 10px;border-radius:12px;font-size:0.78rem;">${veladores.length}/2</span>
+            </div>
+            <div style="${GRID}">${veladores.map(tarjetaVelador).join('')}</div>
+        </div>`;
+    }
+
+    container.innerHTML = html;
 }
 
 

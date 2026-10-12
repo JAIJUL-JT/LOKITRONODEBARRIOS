@@ -1,10 +1,36 @@
+# Nada de esto debe servirse públicamente en Vercel.
 node_modules/
 .git/
+.vercel/
+.github/
+tests/
+
+# Secretos y entornos (nunca desplegar)
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Ruido del repositorio: copias, respaldos y duplicados
 *.zip
 *.pptx
-*.backup*
+*.backup
+*.backup-*
 *.bak
-**/parche_eventos_supabase.py
-**/parche_votacion_barrio.py
+*.bundle
+index.html.backup*
+move_block.py
 lokitrono-barrio-management-update/
 lokitrono-login-superadmin-fix/
+
+# Scripts de parcheo y utilidades (no forman parte del sitio)
+*.py
+scripts/
+sql/
+supabase/
+
+# Recursos y logos antiguos ya no referenciados
+logo-lokitrono.png
+logo.jpg
+LoKiLogo.jpg
+Lokijuegopresent

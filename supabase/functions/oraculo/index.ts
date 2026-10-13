@@ -10,11 +10,11 @@
 // Invocación (desde el navegador):
 //   POST {SUPABASE_URL}/functions/v1/oraculo
 //   headers: apikey: <anon key>, Authorization: Bearer <anon key>
-//   body:    { "prompt": "...", "model": "llama-3.3-70b-versatile" }
+//   body:    { "prompt": "...", "model": "openai/gpt-oss-120b" }
 //   resp:    { "text": "...", "model": "...", "fuente": "Groq (proxy)" }
 
 const DEFAULT_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+const DEFAULT_MODEL = "openai/gpt-oss-120b";
 const DEFAULT_PROVIDER = "Groq";
 
 const CORS_HEADERS: Record<string, string> = {

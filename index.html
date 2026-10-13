@@ -259,6 +259,9 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- GANADORES: CAMPEÓN GLOBAL + POR CATEGORÍA Y SUBCATEGORÍA -->
+                    <div id="ganadores-reino" style="margin-top: 30px;"></div>
                 </div>
             </section>
 
@@ -297,46 +300,76 @@
                         </ul>
                     </div>
 
+                    <!-- BLOQUE 1: ACCIÓN DE VOTO (se activa solo en la ventana del evento activo) -->
+                    <div id="voto-bloque-accion"
+                        style="margin-top: 20px; background: rgba(28, 25, 23, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px;">
+                        <h3 style="color: var(--oro-brillante); margin: 0 0 12px; font-family: 'Cinzel', serif;">🗳️
+                            Votar en la Justa Activa</h3>
+
+                        <div id="voto-sin-actividad" role="status">
+                            <p style="margin: 0; color: #d6d3d1;">⏳ No hay ninguna votación abierta en estos momentos.</p>
+                            <p style="margin: 8px 0 0; color: #a8a29e; font-size: 0.9rem;">Cuando se active la ventana de
+                                votación de un evento, aparecerá aquí el botón <strong>VOTAR</strong> indicando el barrio a
+                                puntuar. Se actualiza en tiempo real para todos los maestres.</p>
+                        </div>
+
+                        <div id="voto-actividad" style="display: none;">
+                            <p style="margin: 0 0 2px; color: #e5c36a;">Estás puntuando al barrio:</p>
+                            <p id="voto-barrio-objetivo"
+                                style="margin: 0 0 6px; font-size: 1.6rem; font-family: 'Cinzel', serif; color: var(--oro-brillante);">
+                                —</p>
+                            <p id="voto-evento-objetivo" style="margin: 0 0 4px; color: #d6d3d1;">—</p>
+                            <p id="voto-ventana-objetivo" style="margin: 0 0 14px; color: #a8a29e;">—</p>
+                            <div id="voto-aviso" role="alert"
+                                style="display:none; margin: 0 0 12px; color: #fca5a5; font-weight: bold;"></div>
+                            <button type="button" id="btn-votar-principal" onclick="abrirPanelPuntuacion()"
+                                class="btn-cuervo" style="font-size: 1.15rem; padding: 14px 34px; background: #b45309;">🗳️
+                                VOTAR</button>
+                        </div>
+
+                        <div id="voto-mensaje-resultado" role="status" aria-live="polite"
+                            style="display: none; margin-top: 16px; padding: 12px 16px; border-radius: 8px; font-weight: bold;"></div>
+                    </div>
+
+                    <!-- BLOQUE 2: PANEL DE PUNTUACIÓN CON SLIDERS -->
+                    <div id="formulario-emitir-voto-div"
+                        style="display: none; margin-top: 20px; background: rgba(41, 37, 36, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px;">
+                        <h4 style="color: var(--oro-brillante); margin-top: 0; font-family: 'Cinzel', serif;">🗳️
+                            Calificación Barrial — 10 subcategorías</h4>
+                        <form id="form-votar-barrio" onsubmit="guardarVotoBarrioUsuario(event)">
+                            <div id="alerta-voto-repetido"
+                                style="display: none; margin-bottom: 12px; color: #fca5a5; font-weight: bold;">⚠️ Voto
+                                duplicado detectado en la Mesa del Rey.</div>
+
+                            <div style="display:none;">
+                                <select id="voto-select-evento"></select>
+                                <input id="voto-barrio-evento">
+                                <div id="voto-opciones-box">
+                                    <select id="voto-select-barrio"></select>
+                                </div>
+                            </div>
+
+                            <div id="estado-votacion-formulario" role="status" style="margin:10px 0;color:#fbbf24;">
+                            </div>
+
+                            <div id="contenedor-inputs-criterios-voto"></div>
+
+                            <div id="voto-resumen-final"></div>
+
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
+                                <button type="button" onclick="cerrarPanelPuntuacion()" class="btn-cuervo"
+                                    style="background:#57534e;">🔙 Cancelar</button>
+                                <button type="submit" class="btn-cuervo"
+                                    style="flex: 1; min-width: 180px;">✅ Emitir Voto</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- BLOQUE 3: HISTORIAL DE VOTOS DEL USUARIO -->
                     <div id="seccion-mis-votos-personales"
                         style="margin-top: 20px; background: rgba(28, 25, 23, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                            <h3 style="color: var(--oro-brillante); margin: 0; font-family: 'Cinzel', serif;">📜 Mis
-                                votos emitidos</h3>
-                            <button onclick="toggleFormularioEmitirVoto()" class="btn-cuervo"
-                                style="padding: 6px 12px; font-size: 0.85rem; background: #2563eb;">🗳️ Emitir Nuevo
-                                Voto en Barrio</button>
-                        </div>
-
-                        <div id="formulario-emitir-voto-div"
-                            style="display: none; background: rgba(41, 37, 36, 0.85); border: 1px solid var(--oro-real); padding: 15px; border-radius: 6px; margin-top: 15px; margin-bottom: 20px;">
-                            <h4 style="color: var(--oro-brillante); margin-top: 0;">🗳️ Formulario de Calificación
-                                Barrial</h4>
-                            <form id="form-votar-barrio" onsubmit="guardarVotoBarrioUsuario(event)">
-                                <div id="alerta-voto-repetido"
-                                    style="display: none; margin-bottom: 12px; color: #fca5a5; font-weight: bold;">⚠️ Voto duplicado
-                                    detectado en la Mesa del Rey.</div>
-                                <div class="form-group">
-                                    <label>Selecciona el evento:</label>
-                                    <select id="voto-select-evento" class="input-medieval" required></select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Barrio del evento:</label>
-                                    <input id="voto-barrio-evento" class="input-medieval" readonly>
-                                </div>
-                                <div id="estado-votacion-formulario" role="status" style="margin:10px 0;color:#fbbf24;"></div>
-                                <div id="voto-opciones-box">
-                                    <div class="form-group">
-                                        <label>Selecciona el Barrio A Evaluar:</label>
-                                        <select id="voto-select-barrio" class="input-medieval" required></select>
-                                    </div>
-                                    <div id="contenedor-inputs-criterios-voto"></div>
-                                    <button type="submit" class="btn-cuervo" style="margin-top: 10px; width: 100%;">⚔️
-                                        Enviar Calificación al Reino</button>
-                                </div>
-                            </form>
-                        </div>
-
+                        <h3 style="color: var(--oro-brillante); margin: 0 0 12px; font-family: 'Cinzel', serif;">📜 Mis
+                            votos emitidos</h3>
                         <div id="contenedor-mis-votos-body"></div>
                     </div>
                 </div>
@@ -351,26 +384,7 @@
                         <strong>Veladores del LokiTrono</strong>.
                     </p>
 
-                    <div id="panel-superadmin-tronistas"
-                        style="display: none; background: rgba(41, 37, 36, 0.8); border: 1px solid var(--oro-real); padding: 15px; border-radius: 8px; margin-bottom: 25px;">
-                        <h3 style="color: var(--oro-brillante); margin-top: 0;">⚔️ Asignación del Título de Lokitronista
-                            (Superadmin)</h3>
-                        <p style="font-size: 0.9rem; color: #d6d3d1;">Asigna el título honorífico de Lokitronista a un Maestre previamente registrado para representar a un barrio (máximo 2 por barrio).
-                        </p>
-                        <form id="form-tronista-admin" onsubmit="asignarTronistaAdmin(event)">
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <div style="flex: 1; min-width: 200px;">
-                                    <label style="font-size: 0.85rem;">Maestre Registrado:</label>
-                                    <select id="select-usuario-tronista" class="input-medieval" required></select>
-                                </div>
-                                <div style="flex: 1; min-width: 200px;">
-                                    <label style="font-size: 0.85rem;">Barrio / Reino A Representar:</label>
-                                    <select id="select-barrio-tronista" class="input-medieval" required></select>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn-cuervo" style="margin-top: 10px;">👑 Asignar Título de Lokitronista</button>
-                        </form>
-                    </div>
+                    <div id="panel-superadmin-tronistas" style="display: none;"></div>
 
                     <h3 style="color: var(--oro-brillante);">Representación Oficial de los Barrios</h3>
                     <div id="lista-tronistas" class="grid-cards"></div>
@@ -436,75 +450,6 @@
                         <div id="lista-eventos" class="grid-cards"></div>
                     </div>
 
-                    <!-- FORMULARIO DE PROGRAMACIÓN (EXCLUSIVO PARA SUPERADMINISTRADORES) -->
-                    <div id="contenedor-gestion-eventos-admin" style="display: none; margin-top: 35px; border-top: 2px dashed rgba(212, 175, 55, 0.4); padding-top: 25px;">
-                        <h3 style="color: var(--oro-real); font-family: 'Cinzel', serif;">👑 Programación y Gestión de Eventos (Reservado al Superadmin)</h3>
-                        <form id="form-evento" onsubmit="guardarEventoBarrio(event)">
-                            <input type="hidden" id="evento-id-edit">
-                            <div class="form-group">
-                                <label>Barrio / Reino:</label>
-                                <select id="evento-barrio" class="input-medieval" required></select>
-                            </div>
-                            <div class="form-group">
-                                <label>Nombre del Evento:</label>
-                                <input type="text" id="evento-nombre" class="input-medieval"
-                                    placeholder="Ej: Gran Ruta del Pintxo de Deusto" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Fecha del Evento:</label>
-                                <input type="date" id="evento-fecha" class="input-medieval" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Lugar del Evento:</label>
-                                <input type="text" id="evento-lugar" class="input-medieval"
-                                    placeholder="Ej: Plaza del barrio" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Hora de Inicio del Evento:</label>
-                                <input type="time" id="evento-hora" class="input-medieval" required>
-                            </div>
-
-                            <!-- FINALIZACIÓN DEL EVENTO (OPCIONAL) -->
-                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                <div class="form-group" style="flex: 1; min-width: 160px;">
-                                    <label>📆 Fecha de Finalización del Evento (opcional):</label>
-                                    <input type="date" id="evento-fecha-fin" class="input-medieval">
-                                </div>
-                                <div class="form-group" style="flex: 1; min-width: 160px;">
-                                    <label>🌙 Hora de Finalización del Evento (opcional):</label>
-                                    <input type="time" id="evento-hora-fin" class="input-medieval">
-                                </div>
-                            </div>
-
-                            <!-- HORAS INDEPENDIENTES DE VOTACIÓN -->
-                            <div style="display: flex; gap: 15px; flex-wrap: wrap; background: rgba(30, 24, 16, 0.8); padding: 12px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.3); margin-bottom: 18px;">
-                                <div class="form-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
-                                    <label style="color: var(--oro-brillante); font-weight: bold;">🟢 Inicio de Votaciones:</label>
-                                    <input type="time" id="evento-votacion-inicio" class="input-medieval" value="20:30" required>
-                                </div>
-                                <div class="form-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
-                                    <label style="color: #ef4444; font-weight: bold;">🔴 Cierre de Votaciones:</label>
-                                    <input type="time" id="evento-votacion-fin" class="input-medieval" value="23:30" required>
-                                </div>
-                                <div class="form-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
-                                    <label style="color: #ef4444; font-weight: bold;">📆 Fecha de Cierre de Votaciones (opcional):</label>
-                                    <input type="date" id="evento-votacion-fecha-fin" class="input-medieval">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Detalles / Descripción:</label>
-                                <textarea id="evento-desc" class="input-medieval"
-                                    placeholder="Escribe los detalles de la justa..." rows="3"></textarea>
-                            </div>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button type="submit" class="btn-cuervo" id="btn-guardar-evento" style="flex: 1;">📅 Guardar / Editar Evento</button>
-                                <button type="button" class="btn-cuervo" id="btn-cancelar-evento"
-                                    style="display: none; background: #44403c;" onclick="resetFormEvento()">Cancelar Edición</button>
-                            </div>
-                        </form>
-                    </div>
-
                 </div>
             </section>
 
@@ -537,11 +482,11 @@
                                 </div>
                                 <div class="form-group" style="flex: 1; min-width: 200px;">
                                     <label style="font-weight: bold; color: var(--oro-real);">Lugar / Ubicación:</label>
-                                    <input type="text" id="evento-dedicated-lugar" class="input-medieval" placeholder="Ej: Plaza Nueva / Tabernas del Casco" required>
+                                    <input type="text" id="evento-lugar" class="input-medieval" placeholder="Ej: Plaza Nueva / Tabernas del Casco" required>
                                 </div>
                                 <div class="form-group" style="flex: 1; min-width: 150px;">
                                     <label style="font-weight: bold; color: var(--oro-real);">Hora de Inicio Evento:</label>
-                                    <input type="time" id="evento-dedicated-hora" class="input-medieval" value="20:00" required>
+                                    <input type="time" id="evento-hora" class="input-medieval" value="20:00" required>
                                 </div>
                             </div>
 
@@ -1195,9 +1140,9 @@
                             <div style="flex: 1; min-width: 220px;">
                                 <label style="display: block; font-size: 0.9rem; color: #d6d3d1; margin-bottom: 5px;">Modelo IA Seleccionado:</label>
                                 <select id="select-modelo-oraculo" class="input-medieval" style="width: 100%; margin: 0; background: #000;">
-                                    <option value="llama-3.3-70b-versatile" selected>🦙 Llama 3.3 70B Versatile (Equilibrado)</option>
-                                    <option value="llama-3.1-8b-instant">⚡ Llama 3.1 8B Instant (Crónicas Rápidas)</option>
-                                    <option value="qwen/qwen3-32b">🧠 Qwen 3 32B Instruct (Razonamiento)</option>
+                                    <option value="openai/gpt-oss-120b" selected>🦙 GPT-OSS 120B (Equilibrado)</option>
+                                    <option value="openai/gpt-oss-20b">⚡ GPT-OSS 20B (Crónicas Rápidas)</option>
+                                    <option value="qwen/qwen3.8-27b">🧠 Qwen 3.8 27B (Razonamiento)</option>
                                 </select>
                             </div>
                             <div style="flex: 1; min-width: 260px;">
@@ -1260,7 +1205,7 @@
                     <div id="contenedor-resultado-oraculo" style="display: none; margin-top: 25px; background: rgba(5, 5, 10, 0.95); border: 2px solid var(--oro-real); border-radius: 8px; padding: 20px;">
                         <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
                             <span>📜 Dictamen del Oráculo Imperial</span>
-                            <span id="badge-modelo-usado" style="font-size: 0.75rem; background: var(--oro-real); color: #000; padding: 3px 8px; border-radius: 12px; font-weight: bold;">Llama 3.1 8B</span>
+                            <span id="badge-modelo-usado" style="font-size: 0.75rem; background: var(--oro-real); color: #000; padding: 3px 8px; border-radius: 12px; font-weight: bold;">GPT-OSS 120B</span>
                         </h3>
                         <div id="salida-oraculo" style="color: #f1f5f9; font-size: 0.98rem; line-height: 1.6; white-space: pre-wrap; font-family: Georgia, serif; background: rgba(15,23,42,0.5); padding: 15px; border-radius: 6px; border-left: 4px solid var(--oro-real);">
                         </div>

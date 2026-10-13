@@ -445,6 +445,103 @@ function toggleFormularioEmitirVoto() {
     panel.style.display = isVisible ? 'none' : 'block';
 }
 
+// Devuelve el primer evento cuya ventana de votación está abierta ahora mismo.
+function getEventoVotacionActivo() {
+    return getTodosLosEventos().find(evento => {
+        try {
+            return obtenerEstadoVotacionEvento(evento).estado === 'ABIERTA';
+        } catch (error) {
+            return false;
+        }
+    }) || null;
+}
+
+function abrirPanelPuntuacion() {
+    const panel = document.getElementById('formulario-emitir-voto-div');
+    if (!panel) return;
+    const evento = getEventoVotacionActivo();
+    if (!evento) {
+        actualizarBloqueVotacion();
+        return;
+    }
+    const selectEvento = document.getElementById('voto-select-evento');
+    if (selectEvento) selectEvento.value = String(evento.id);
+    const campoBarrio = document.getElementById('voto-barrio-evento');
+    if (campoBarrio) campoBarrio.value = evento.barrio || '';
+    const selectBarrio = document.getElementById('voto-select-barrio');
+    if (selectBarrio && evento.barrio) selectBarrio.value = evento.barrio;
+    panel.style.display = 'block';
+    actualizarEstadoFormularioVoto();
+    actualizarResumenesVoto();
+    try {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (error) { /* navegadores antiguos */ }
+}
+
+function cerrarPanelPuntuacion() {
+    const panel = document.getElementById('formulario-emitir-voto-div');
+    if (panel) panel.style.display = 'none';
+}
+
+// Bloque 1 en tiempo real: muestra el barrio a puntuar y habilita/deshabilita el
+// botón VOTAR según la ventana del evento activo, el voto único y la neutralidad.
+function actualizarBloqueVotacion() {
+    const sinActividad = document.getElementById('voto-sin-actividad');
+    const actividad = document.getElementById('voto-actividad');
+    if (!sinActividad || !actividad) return;
+
+    const evento = getEventoVotacionActivo();
+    const panel = document.getElementById('formulario-emitir-voto-div');
+
+    if (!evento) {
+        sinActividad.style.display = 'block';
+        actividad.style.display = 'none';
+        if (panel && panel.style.display !== 'none') panel.style.display = 'none';
+        return;
+    }
+
+    sinActividad.style.display = 'none';
+    actividad.style.display = 'block';
+
+    const user = getCurrentUser();
+    const estado = obtenerEstadoVotacionEvento(evento);
+
+    const barrioEl = document.getElementById('voto-barrio-objetivo');
+    const eventoEl = document.getElementById('voto-evento-objetivo');
+    const ventanaEl = document.getElementById('voto-ventana-objetivo');
+    if (barrioEl) barrioEl.textContent = evento.barrio || 'Reino sin nombre';
+    if (eventoEl) {
+        eventoEl.textContent = `Evento: ${evento.nombre || evento.barrio || 'Justa'}${evento.fecha ? ` · ${evento.fecha}` : ''}`;
+    }
+    if (ventanaEl) ventanaEl.textContent = `⏰ Ventana abierta: ${estado.horaInicio}–${estado.horaFin}`;
+
+    const userId = user && String(user.phone || user.id || '');
+    const duplicado = !!userId && getRepositorioVotos().some(v =>
+        String(v.maestre_id || '') === userId &&
+        String(v.evento_id || '') === String(evento.id)
+    );
+    const bloqueadoPorBarrio = lokitronistaNoPuedeVotarEn(evento, user);
+    const puedeVotar = !!user && !duplicado && !bloqueadoPorBarrio;
+
+    const boton = document.getElementById('btn-votar-principal');
+    if (boton) boton.disabled = !puedeVotar;
+
+    const aviso = document.getElementById('voto-aviso');
+    if (aviso) {
+        let mensaje = '';
+        if (!user) {
+            mensaje = 'Inicia sesión para emitir tu voto.';
+        } else if (bloqueadoPorBarrio) {
+            mensaje = `Como Lokitronista de ${evento.barrio || 'tu barrio'}, no puedes puntuar el evento de tu propio barrio.`;
+        } else if (duplicado) {
+            mensaje = 'Ya has emitido tu voto para esta justa.';
+        }
+        aviso.textContent = mensaje;
+        aviso.style.display = mensaje ? 'block' : 'none';
+    }
+    if (duplicado && panel && panel.style.display !== 'none') panel.style.display = 'none';
+}
+
 function renderOpcionesVoto() {
     const selectBarrio = document.getElementById('voto-select-barrio');
     if (selectBarrio) {
@@ -476,6 +573,8 @@ function renderOpcionesVoto() {
     }
 
     renderMisVotosPersonales();
+    actualizarResumenesVoto();
+    actualizarBloqueVotacion();
 }
 
 function actualizarEstadoFormularioVoto() {
@@ -534,7 +633,7 @@ function renderMisVotosPersonales() {
         .sort((a, b) => String(b.fecha_juicio || '').localeCompare(String(a.fecha_juicio || '')));
 
     if (!votos.length) {
-        contenedor.innerHTML = '<p style="color:#d6d3d1;">Todavía no has emitido votos.</p>';
+        contenedor.innerHTML = '<p style="color:#d6d3d1;">No ha emitido ninguna votación.</p>';
         return;
     }
 
@@ -543,17 +642,19 @@ function renderMisVotosPersonales() {
         <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;">
                 <thead><tr>
-                    <th>Evento</th><th>Barrio</th><th>Ocio Hostelero</th><th>Accesibilidad</th><th>Ambiente</th><th>Fecha del voto</th><th>Estado</th>
+                    <th>Evento</th><th>Barrio</th><th>🍽️ Ocio Hostelero</th><th>🚌 Accesibilidad</th><th>🎉 Ambiente</th><th>🏆 Nota Final</th><th>Fecha del voto</th><th>Estado</th>
                 </tr></thead>
                 <tbody>${votos.map(v => {
                     const evt = eventos.find(e => String(e.id) === String(v.evento_id));
                     const estado = evt ? obtenerEstadoVotacionEvento(evt).estado : 'Histórico';
+                    const final = (Number(v.nota_festin || 0) * 0.50) + (Number(v.nota_caminos || 0) * 0.20) + (Number(v.nota_espiritu || 0) * 0.30);
                     return `<tr>
                         <td>${escaparHTML(v.evento_nombre || (evt && evt.nombre) || 'Evento anterior')}</td>
                         <td>${escaparHTML(v.barrio || v.casa_visitada || '')}</td>
                         <td>${Number(v.nota_festin || 0)}</td>
                         <td>${Number(v.nota_caminos || 0)}</td>
                         <td>${Number(v.nota_espiritu || 0)}</td>
+                        <td><strong>${final.toFixed(2)}</strong></td>
                         <td>${escaparHTML(v.fecha_juicio ? new Date(v.fecha_juicio).toLocaleString() : '')}</td>
                         <td>${escaparHTML(estado)}</td>
                     </tr>`;
@@ -569,12 +670,31 @@ function validarNotas(notas) {
     return true;
 }
 
+function mostrarMensajeVoto(tipo, texto) {
+    const el = document.getElementById('voto-mensaje-resultado');
+    if (!el) {
+        alert(texto);
+        return;
+    }
+    const estilos = {
+        exito: { fondo: 'rgba(20, 83, 45, 0.85)', borde: '#22c55e', color: '#bbf7d0', icono: '✅' },
+        aviso: { fondo: 'rgba(120, 53, 15, 0.85)', borde: '#f59e0b', color: '#fde68a', icono: '⚠️' },
+        error: { fondo: 'rgba(127, 29, 29, 0.85)', borde: '#ef4444', color: '#fecaca', icono: '⛔' }
+    };
+    const estilo = estilos[tipo] || estilos.aviso;
+    el.style.display = 'block';
+    el.style.background = estilo.fondo;
+    el.style.border = `1px solid ${estilo.borde}`;
+    el.style.color = estilo.color;
+    el.textContent = `${estilo.icono} ${texto}`;
+}
+
 async function guardarVotoBarrioUsuario(event) {
     if (event) event.preventDefault();
 
     const user = getCurrentUser();
     if (!user) {
-        alert('Debe iniciar sesión antes de emitir un voto.');
+        mostrarMensajeVoto('error', 'Debe iniciar sesión antes de emitir un voto.');
         return;
     }
 
@@ -584,19 +704,19 @@ async function guardarVotoBarrioUsuario(event) {
         : null;
 
     if (!evento) {
-        alert('Selecciona un evento válido antes de votar.');
+        mostrarMensajeVoto('error', 'Selecciona un evento válido antes de votar.');
         return;
     }
 
     if (lokitronistaNoPuedeVotarEn(evento, user)) {
-        alert(`Como Lokitronista de ${evento.barrio || 'tu barrio'}, no puedes votar en el evento de tu propio barrio (se evita el conflicto de interés). Puedes votar en los eventos de otros barrios.`);
+        mostrarMensajeVoto('error', 'No puedes puntuar el evento celebrado en tu propio barrio (neutralidad del Tronista).');
         actualizarEstadoFormularioVoto();
         return;
     }
 
     const estado = obtenerEstadoVotacionEvento(evento);
     if (estado.estado !== 'ABIERTA') {
-        alert('La votación de este evento no está abierta. Puedes consultar tus votos anteriores.');
+        mostrarMensajeVoto('error', 'La votación de este evento no está abierta en estos momentos. No se ha recibido tu voto.');
         actualizarEstadoFormularioVoto();
         return;
     }
@@ -607,7 +727,7 @@ async function guardarVotoBarrioUsuario(event) {
         String(v.maestre_id || '') === maestreId &&
         String(v.evento_id || '') === String(evento.id)
     )) {
-        alert('Ya has emitido un voto para este evento.');
+        mostrarMensajeVoto('error', 'Ya has emitido un voto para este evento. No se ha recibido un nuevo voto.');
         actualizarEstadoFormularioVoto();
         return;
     }
@@ -675,13 +795,16 @@ async function guardarVotoBarrioUsuario(event) {
     if (typeof renderRepositorioVotos === 'function') renderRepositorioVotos();
     if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
     renderMisVotosPersonales();
-    actualizarEstadoFormularioVoto();
+    actualizarBloqueVotacion();
 
     const formulario = document.getElementById('form-votar-barrio');
     if (formulario) formulario.reset();
-    alert(sincronizado
-        ? 'Voto registrado correctamente.'
-        : 'Voto guardado en este dispositivo. Se sincronizará con el Reino cuando la votación esté disponible en el servidor.');
+    cerrarPanelPuntuacion();
+    if (sincronizado) {
+        mostrarMensajeVoto('exito', `¡Voto recibido y registrado! Tu puntuación para ${barrio} ya cuenta en el Códice de la Villa.`);
+    } else {
+        mostrarMensajeVoto('aviso', 'El voto se ha guardado en este dispositivo, pero el Reino no ha confirmado su recepción. Se sincronizará cuando el servidor esté disponible.');
+    }
 }
 
 const CRITERIOS_VERSION = 2;
@@ -864,14 +987,88 @@ function renderCriteriosJerarquicos() {
 
 function buildCriteriosVotoMarkup() {
     const criterios = getCriteriosJerarquicos();
-    const hojas = criterios.filter(c => !criterios.some(child => child.parentId === c.id));
+    const raices = criterios.filter(c => !c.parentId);
 
-    return hojas.map(criterio => `
-        <div class="form-group">
-            <label for="voto-${criterio.id}">${'— '.repeat(criterio.nivel - 1)} ${criterio.nombre} (Nivel ${criterio.nivel})</label>
-            <input id="voto-${criterio.id}" data-criterio="${criterio.id}" type="number" min="1" max="10" value="8" required>
-        </div>
-    `).join('');
+    return raices.map(raiz => {
+        const hijos = criterios.filter(c => c.parentId === raiz.id);
+        const filas = hijos.map(hijo => `
+            <div class="voto-slider-fila">
+                <div class="voto-slider-cabecera">
+                    <span class="voto-slider-nombre">${escaparHTML(hijo.nombre)}</span>
+                    <span class="voto-slider-valor" id="valor-${hijo.id}">8</span>
+                </div>
+                <input type="range" min="1" max="10" step="1" value="8"
+                    id="voto-${hijo.id}" data-criterio="${hijo.id}" data-raiz="${raiz.id}"
+                    oninput="actualizarResumenesVoto()" aria-label="${escaparHTML(hijo.nombre)}">
+            </div>
+        `).join('');
+
+        return `
+            <section class="voto-disciplina" data-raiz="${raiz.id}">
+                <header class="voto-disciplina-cabecera">
+                    <h4>${escaparHTML(raiz.nombre)}</h4>
+                    <span class="voto-disciplina-peso">Peso ${Number(raiz.peso) || 0}%</span>
+                    <span class="voto-disciplina-nota" id="nota-raiz-${raiz.id}">8.0</span>
+                </header>
+                ${filas}
+            </section>
+        `;
+    }).join('');
+}
+
+// Recalcula en vivo la nota de cada disciplina y el resultado final ponderado.
+function actualizarResumenesVoto() {
+    const inputs = document.querySelectorAll('#contenedor-inputs-criterios-voto [data-criterio]');
+    const notas = {};
+    inputs.forEach(input => {
+        const val = Number(input.value || 0);
+        notas[input.dataset.criterio] = val;
+        const indicador = document.getElementById(`valor-${input.dataset.criterio}`);
+        if (indicador) indicador.textContent = val;
+        if (input.type === 'range') {
+            const min = Number(input.min || 1);
+            const max = Number(input.max || 10);
+            const pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
+            input.style.setProperty('--voto-rango-pct', `${pct}%`);
+        }
+    });
+
+    const criterios = getCriteriosJerarquicos();
+    const raices = criterios.filter(c => !c.parentId);
+    const notasRaiz = {};
+    let suma = 0;
+    let pesoTotal = 0;
+
+    raices.forEach(raiz => {
+        const nota = obtenerNotaCriterio(raiz.id, notas);
+        notasRaiz[raiz.id] = nota;
+        const el = document.getElementById(`nota-raiz-${raiz.id}`);
+        if (el) el.textContent = nota === null ? '—' : Number(nota).toFixed(1);
+        const peso = Number(raiz.peso) || 0;
+        if (nota !== null) {
+            suma += nota * peso;
+            pesoTotal += peso;
+        }
+    });
+
+    const final = pesoTotal > 0 ? suma / pesoTotal : 0;
+    const resumen = document.getElementById('voto-resumen-final');
+    if (resumen) {
+        resumen.innerHTML = `
+            <h4 class="voto-resumen-titulo">📊 Resultado de tu voto</h4>
+            ${raices.map(raiz => {
+                const nota = notasRaiz[raiz.id];
+                return `<div class="voto-resumen-fila">
+                    <span>${escaparHTML(raiz.nombre)} <em>(${Number(raiz.peso) || 0}%)</em></span>
+                    <strong>${nota === null || nota === undefined ? '—' : Number(nota).toFixed(1)}</strong>
+                </div>`;
+            }).join('')}
+            <div class="voto-resumen-final">
+                <span>🏆 Nota Final Ponderada</span>
+                <strong>${final.toFixed(2)}</strong>
+            </div>
+        `;
+    }
 }
 
 
@@ -1094,6 +1291,104 @@ function renderClasificacionReal() {
             </tr>
         `;
     }).join('');
+
+    renderGanadoresPorCategoria(estadisticas);
+}
+
+// Ganadores del Códice: campeón global, uno por categoría (nivel 1) y uno por
+// subcategoría (hoja). Se calculan sobre los votos del repositorio activo.
+function renderGanadoresPorCategoria(estadisticas) {
+    const contenedor = document.getElementById('ganadores-reino');
+    if (!contenedor) return;
+
+    const votos = getRepositorioVotos();
+    const conVotos = estadisticas.filter(e => e.totalVotos > 0);
+    const criterios = getCriteriosJerarquicos();
+    const raices = criterios.filter(c => !c.parentId);
+    const hojas = criterios.filter(c => !criterios.some(hijo => hijo.parentId === c.id));
+
+    const esc = typeof escaparHTML === 'function' ? escaparHTML : (v => String(v ?? ''));
+
+    if (conVotos.length === 0) {
+        contenedor.innerHTML = '<p style="text-align:center;color:#a1a1aa;font-style:italic;">Aún no hay votos registrados para proclamar ganadores.</p>';
+        return;
+    }
+
+    const votosDeBarrio = barrio => votos.filter(v => (v.barrio || v.casa_visitada) === barrio);
+
+    const mediaRaiz = (barrio, raizId) => {
+        let suma = 0;
+        let n = 0;
+        votosDeBarrio(barrio).forEach(v => {
+            let nota = null;
+            if (v.detalles_notas && typeof obtenerNotaCriterio === 'function') {
+                nota = obtenerNotaCriterio(raizId, v.detalles_notas);
+            }
+            if (nota === null || nota === undefined) {
+                if (raizId === 'crit-ocio') nota = Number(v.nota_festin);
+                else if (raizId === 'crit-acceso') nota = Number(v.nota_caminos);
+                else if (raizId === 'crit-ambiente') nota = Number(v.nota_espiritu);
+            }
+            if (Number.isFinite(nota)) { suma += nota; n += 1; }
+        });
+        return n > 0 ? suma / n : null;
+    };
+
+    const mediaHoja = (barrio, hojaId) => {
+        let suma = 0;
+        let n = 0;
+        votosDeBarrio(barrio).forEach(v => {
+            const det = v.detalles_notas;
+            if (!det) return;
+            const val = Number(det[hojaId]);
+            if (Number.isFinite(val)) { suma += val; n += 1; }
+        });
+        return n > 0 ? suma / n : null;
+    };
+
+    const tarjetaGanador = (icono, etiqueta, barrio, valor, color) => `
+        <div class="card-item" style="background:rgba(15,12,6,0.95);border:1px solid ${color};border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:1.6rem;margin-bottom:4px;">${icono}</div>
+            <div style="font-size:0.78rem;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.5px;">${esc(etiqueta)}</div>
+            <div style="font-family:'Cinzel',serif;color:${color};font-size:1.05rem;margin:6px 0;">${esc(barrio || '—')}</div>
+            <div style="font-weight:bold;color:#e7e5e4;">${valor === null ? '—' : Number(valor).toFixed(2)} pts</div>
+        </div>`;
+
+    const campeon = conVotos[0];
+    let html = `
+        <h3 style="color:var(--oro-brillante);font-family:'Cinzel',serif;text-align:center;margin-bottom:6px;">🏆 Salón de la Fama del Códice</h3>
+        <p style="text-align:center;color:#d6d3d1;font-size:0.9rem;margin-bottom:18px;">Campeón global, vencedores por cada categoría y por cada subcategoría.</p>
+        <div style="${'display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;'}">
+            ${tarjetaGanador('👑', 'Lokibarrio Txapeldun (Global)', campeon.barrio, campeon.notaFinal, 'var(--oro-brillante)')}
+            ${raices.map((raiz, i) => {
+                let mejor = null;
+                conVotos.forEach(e => {
+                    const val = mediaRaiz(e.barrio, raiz.id);
+                    if (val !== null && (mejor === null || val > mejor.valor)) mejor = { barrio: e.barrio, valor: val };
+                });
+                const icono = ['🥇', '🚌', '🎉', '⭐'][i % 4];
+                return tarjetaGanador(icono, `Categoría · ${raiz.nombre}`, mejor && mejor.barrio, mejor && mejor.valor, '#facc15');
+            }).join('')}
+        </div>
+    `;
+
+    if (hojas.length > 0) {
+        html += `
+            <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;text-align:center;margin:26px 0 14px;">🎯 Vencedores por Subcategoría</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
+                ${hojas.map(hoja => {
+                    let mejor = null;
+                    conVotos.forEach(e => {
+                        const val = mediaHoja(e.barrio, hoja.id);
+                        if (val !== null && (mejor === null || val > mejor.valor)) mejor = { barrio: e.barrio, valor: val };
+                    });
+                    return tarjetaGanador('🎖️', hoja.nombre, mejor && mejor.barrio, mejor && mejor.valor, '#93c5fd');
+                }).join('')}
+            </div>
+        `;
+    }
+
+    contenedor.innerHTML = html;
 }
 
 function getEstadisticasAdmin() {
@@ -1497,14 +1792,6 @@ function renderEventos() {
     const lista = document.getElementById('lista-eventos');
     const tituloCronica = document.getElementById('titulo-cronica-eventos');
     const btnResetFiltro = document.getElementById('btn-reset-filtro-fecha');
-    const panelAdmin = document.getElementById('contenedor-gestion-eventos-admin');
-
-    const currentUser = getCurrentUser();
-    const esAdmin = currentUser && puedeAdministrar(currentUser.role);
-
-    if (panelAdmin) {
-        panelAdmin.style.display = esAdmin ? 'block' : 'none';
-    }
 
     if (!lista) return;
 
@@ -1573,20 +1860,6 @@ function renderEventos() {
             `;
         }
 
-        let adminControlsHTML = '';
-        if (esAdmin) {
-            const isManualClosed = evt.cerrado_manualmente;
-            adminControlsHTML = `
-                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
-                    <button onclick="editarEventoBarrio('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: #2563eb; flex: 1;">✏️ Editar</button>
-                    <button onclick="toggleCerrarVotacionEvento('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: ${isManualClosed ? '#166534' : '#d97706'}; flex: 1.2;">
-                        ${isManualClosed ? '🟢 Abrir Votación' : '🔒 Cerrar Votación'}
-                    </button>
-                    <button onclick="eliminarEventoBarrio('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: #7f1d1d; flex: 0.8;">🗑️ Eliminar</button>
-                </div>
-            `;
-        }
-
         const relojHTML = construirHTMLRelojCuentaAtras(evt);
 
         return `
@@ -1620,8 +1893,6 @@ function renderEventos() {
                 <button onclick='descargarICSEvento(${JSON.stringify(evt)})' class="btn-cuervo" style="padding: 6px 12px; font-size: 0.85rem; background: #15803d; width: 100%; margin-top: 4px;">
                     📅 Añadir a Google Calendar (.ics)
                 </button>
-
-                ${adminControlsHTML}
             </div>
         `;
     }).join('');
@@ -1705,7 +1976,11 @@ function construirHTMLRelojCuentaAtras(evt) {
 function iniciarTimerRelojCuentaAtras() {
     if (timerRelojCuentaAtrasId) clearInterval(timerRelojCuentaAtrasId);
 
+    let tickBloqueVotacion = 0;
     timerRelojCuentaAtrasId = setInterval(() => {
+        if (++tickBloqueVotacion % 5 === 0 && typeof actualizarBloqueVotacion === 'function') {
+            actualizarBloqueVotacion();
+        }
         const boxes = document.querySelectorAll('[data-countdown-evt-id]');
         if (boxes.length === 0) return;
 
@@ -2056,8 +2331,8 @@ async function guardarEventoBarrioDesdePestana(event) {
     const nombre = document.getElementById('evento-dedicated-nombre')?.value?.trim();
     const fecha = document.getElementById('evento-dedicated-fecha')?.value;
     const fechaFin = document.getElementById('evento-dedicated-fecha-fin')?.value || '';
-    const lugar = document.getElementById('evento-dedicated-lugar')?.value?.trim();
-    const hora = document.getElementById('evento-dedicated-hora')?.value || '20:00';
+    const lugar = document.getElementById('evento-lugar')?.value?.trim();
+    const hora = document.getElementById('evento-hora')?.value || '20:00';
     const horaFin = document.getElementById('evento-dedicated-hora-fin')?.value || '';
     const horaInicioVotacion =
         document.getElementById('evento-dedicated-votacion-inicio')?.value || '20:30';
@@ -2136,8 +2411,8 @@ function editarEventoBarrioDesdePestana(eventoId) {
     document.getElementById('evento-dedicated-nombre').value = evt.nombre || '';
     document.getElementById('evento-dedicated-fecha').value = evt.fecha || '';
     document.getElementById('evento-dedicated-fecha-fin').value = evt.fecha_fin || '';
-    document.getElementById('evento-dedicated-lugar').value = evt.lugar || '';
-    document.getElementById('evento-dedicated-hora').value = evt.hora || '20:00';
+    document.getElementById('evento-lugar').value = evt.lugar || '';
+    document.getElementById('evento-hora').value = evt.hora || '20:00';
     document.getElementById('evento-dedicated-hora-fin').value = evt.hora_fin || '';
     document.getElementById('evento-dedicated-votacion-inicio').value = evt.hora_inicio_votacion || '20:30';
     document.getElementById('evento-dedicated-votacion-fin').value = evt.hora_fin_votacion || '23:30';
@@ -3203,6 +3478,18 @@ function renderListaTronistas() {
     const GRID = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;';
     let html = '';
 
+    // Los Veladores del LokiTrono se muestran antes que los Lokitronistas.
+    if (veladores.length > 0) {
+        html += `<div style="margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:18px 0 12px;flex-wrap:wrap;">
+                <span style="font-size:1.5rem;">💎</span>
+                <h4 style="color:#c4b5fd;font-family:'Cinzel',serif;margin:0;font-size:1.15rem;">💎 Veladores del LokiTrono</h4>
+                <span class="pill-user" style="background:rgba(76,29,149,0.7);color:#d8b4fe;border:1px solid #a78bfa;padding:2px 10px;border-radius:12px;font-size:0.78rem;">${veladores.length}/2</span>
+            </div>
+            <div style="${GRID}">${veladores.map(tarjetaVelador).join('')}</div>
+        </div>`;
+    }
+
     // Agrupado por cada barrio representado (máximo 2 Lokitronistas por barrio).
     const porBarrio = new Map();
     tronistas.forEach(u => {
@@ -3221,18 +3508,6 @@ function renderListaTronistas() {
             <div style="${GRID}">${lista.map(tarjetaLokitronista).join('')}</div>
         </div>`;
     });
-
-    // Veladores del LokiTrono (grupo propio junto a los barrios).
-    if (veladores.length > 0) {
-        html += `<div style="margin-bottom:8px;">
-            <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:22px 0 12px;flex-wrap:wrap;">
-                <span style="font-size:1.5rem;">💎</span>
-                <h4 style="color:#c4b5fd;font-family:'Cinzel',serif;margin:0;font-size:1.15rem;">💎 Veladores del LokiTrono</h4>
-                <span class="pill-user" style="background:rgba(76,29,149,0.7);color:#d8b4fe;border:1px solid #a78bfa;padding:2px 10px;border-radius:12px;font-size:0.78rem;">${veladores.length}/2</span>
-            </div>
-            <div style="${GRID}">${veladores.map(tarjetaVelador).join('')}</div>
-        </div>`;
-    }
 
     container.innerHTML = html;
 }
@@ -3284,6 +3559,7 @@ async function cargarEventosDesdeSupabase() {
         console.error('Error al cargar los eventos de Supabase:', error);
     } finally {
         cargaEventosSupabaseEnCurso = false;
+        if (typeof actualizarBloqueVotacion === 'function') actualizarBloqueVotacion();
     }
 }
 
@@ -3329,7 +3605,10 @@ function iniciarRealtimeLokitrono() {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'casas' },
                 () => programarRefrescoRealtime('casas', () => cargarBarriosDesdeSupabase()))
             .on('postgres_changes', { event: '*', schema: 'public', table: 'eventos' },
-                () => programarRefrescoRealtime('eventos', () => cargarEventosDesdeSupabase()))
+                () => programarRefrescoRealtime('eventos', async () => {
+                    await cargarEventosDesdeSupabase();
+                    if (typeof actualizarBloqueVotacion === 'function') actualizarBloqueVotacion();
+                }))
             .on('postgres_changes', { event: '*', schema: 'public', table: 'votos_evento' },
                 () => programarRefrescoRealtime('votos', async () => {
                     await cargarVotosDesdeSupabase();
@@ -4401,7 +4680,7 @@ window.renderListaTronistas = renderListaTronistas;
 // Function `oraculo`, que guarda la clave GROQ_API_KEY como secreto del servidor.
 // El navegador nunca ve la clave. Ver scripts/configurar_oraculo.py.
 
-const ORACULO_MODELO_DEFECTO = 'llama-3.3-70b-versatile';
+const ORACULO_MODELO_DEFECTO = 'openai/gpt-oss-120b';
 
 function obtenerEndpointOraculo() {
     const config = window.__APP_CONFIG__ || {};
@@ -4969,8 +5248,8 @@ const LOKIBOT_FAQ = [
     {
         id: 'roles',
         categoria: 'Roles',
-        claves: ['roles', 'que es un rol', 'significan los roles', 'maestre', 'lokitronista', 'tronista', 'superadmin', 'master', 'lokitrono mayor', 'administrador', 'permisos', 'jerarquia'],
-        respuesta: 'Estos son los roles del reino:\n• 👑 Maestre (jugador): participa y vota en los eventos.\n• ⚔️ Lokitronista (tronista): representa a un barrio; hay un máximo de 2 por barrio.\n• 🏰 Superadmin: gestiona usuarios, roles, eventos y barrios.\n• 🔱 Lokitrono Mayor (master): rango superior; puede gestionar superadmins, ver los PIN y usar el Oráculo Imperial.'
+        claves: ['roles', 'que es un rol', 'significan los roles', 'maestre', 'lokitronista', 'tronista', 'superadmin', 'administrador', 'permisos'],
+        respuesta: 'Estos son los roles del reino:\n• 👑 Maestre (jugador): participa y vota en los eventos.\n• ⚔️ Lokitronista (tronista): representa a un barrio; hay un máximo de 2 por barrio.\n• 🏰 Superadmin: gestiona usuarios, roles, eventos y barrios.'
     },
     {
         id: 'lokitronista-que-hace',
@@ -5018,7 +5297,7 @@ const LOKIBOT_FAQ = [
         id: 'menus',
         categoria: 'Menú',
         claves: ['que vistas hay', 'vistas del menu', 'opciones del menu', 'pestanas', 'que puedo hacer en el menu', 'menu', 'secciones', 'navegacion'],
-        respuesta: 'El menú del reino incluye:\n• 🏆 Clasificación Real\n• 🗳️ Votación de Barrio\n• 👑 Lokitronistas de Barrios\n• 📅 Calendario de Eventos\n• 🎉 Gala Final\nSi eres administrador verás además: ⚙️ Generar y Gestionar Eventos, 📊 Auditoría de Votos, 👤 Usuarios y 🏰 Barrios. El 🔮 Oráculo Imperial es exclusivo del rango Lokitrono Mayor (master).'
+        respuesta: 'El menú del reino incluye:\n• 🏆 Clasificación Real\n• 🗳️ Votación de Barrio\n• 👑 Lokitronistas de Barrios\n• 📅 Calendario de Eventos\n• 🎉 Gala Final\nSi eres administrador verás además: ⚙️ Generar y Gestionar Eventos, 📊 Auditoría de Votos, 👤 Usuarios y 🏰 Barrios.'
     },
     {
         id: 'vista-votacion-barrio',
@@ -5054,7 +5333,7 @@ const LOKIBOT_FAQ = [
         id: 'oraculo',
         categoria: 'Conceptos',
         claves: ['oraculo', 'oraculo imperial', 'ia', 'inteligencia artificial', 'cronica', 'recomendacion del oraculo', 'groq'],
-        respuesta: 'El 🔮 Oráculo Imperial es un asistente con IA (Groq) que redacta crónicas y recomendaciones del reino. Es exclusivo del rango Lokitrono Mayor (master). Yo, Loki-Bot, no uso IA: respondo solo con la información de ayuda del reino.'
+        respuesta: 'El 🔮 Oráculo Imperial es un asistente con IA (Groq) que redacta crónicas y recomendaciones del reino. Yo, Loki-Bot, no uso IA: respondo solo con la información de ayuda del reino.'
     },
     {
         id: 'sellos-codigos',

@@ -103,7 +103,7 @@ function setCurrentUser(user) {
     localStorage.setItem(STORAGE_KEYS.usuarioActual, JSON.stringify(user || null));
 }
 
-const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-oraculo-ia'];
+const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-oraculo-ia', 'pestana-locales-promocion'];
 
 function cambiarPestana(valor) {
     const usuario = getCurrentUser();
@@ -114,8 +114,15 @@ function cambiarPestana(valor) {
     if (esOraculo && !esMaster) {
         valor = 'pestana-clasificacion';
     }
+    const esLocalesPromocion = valor === 'pestana-locales-promocion' || valor === 'tab-locales-promocion';
+    if (esLocalesPromocion && !esMaster) {
+        valor = 'pestana-clasificacion';
+    }
     if (!esSuperadmin && PESTANAS_ADMIN.includes(valor)) {
         valor = 'pestana-clasificacion';
+    }
+    if (esLocalesPromocion && esMaster && typeof cargarLocalesPromocion === 'function') {
+        cargarLocalesPromocion();
     }
     const sections = document.querySelectorAll('.tab-content');
     sections.forEach(section => {
@@ -162,6 +169,8 @@ function actualizarInterfazSesion(usuario) {
         const esMaster = esRolMaster(usuario.role);
         const optgroupMaster = document.getElementById('optgroup-oraculo-menu');
         if (optgroupMaster) optgroupMaster.style.display = esMaster ? '' : 'none';
+        const optgroupLocales = document.getElementById('optgroup-locales-menu');
+        if (optgroupLocales) optgroupLocales.style.display = esMaster ? '' : 'none';
         const grupoPin = document.getElementById('group-usuario-pin');
         if (grupoPin) grupoPin.style.display = esMaster ? 'block' : 'none';
         const accionesCredenciales = document.getElementById('acciones-credenciales-pin');
@@ -5547,7 +5556,11 @@ const geoEstado = {
     cargadas: new Map(),
     activa: null,
     mapa: null,
-    seleccion: new Map()
+    seleccion: new Map(),
+    pendientes: new Map(),
+    comunidades: new Map(),
+    provincias: new Map(),
+    ciudadesPorProvincia: new Map()
 };
 
 function geoHexAHsl(hex) {
@@ -5596,39 +5609,168 @@ function geoVariante(hexBase, indice, total) {
 async function geoCargarCatalogo() {
     try {
         const res = await fetch('data/ciudades/index.json', { cache: 'no-store' });
-        if (!res.ok) return;
-        const json = await res.json();
-        geoEstado.catalogo = json.ciudades || [];
+        if (res.ok) {
+            const json = await res.json();
+            geoEstado.catalogo = json.ciudades || [];
+        }
     } catch (error) {
         console.warn('No se pudo cargar el catálogo geográfico:', error);
     }
-    geoEstado.porIne = new Map(geoEstado.catalogo.map(c => [c.ine, c]));
+    geoEstado.porIne = new Map(geoEstado.catalogo.map(c => [String(c.ine), c]));
 
-    // Complementar con el catálogo completo de municipios desde Supabase (si existe).
     const client = (typeof getSupabaseBarriosClient === 'function') ? getSupabaseBarriosClient() : null;
-    if (client) {
-        try {
-            const { data, error } = await client.from('ciudades')
-                .select('id, nombre, provincia_id, tiene_distritos, tiene_barrios')
-                .order('nombre', { ascending: true })
-                .limit(9000);
-            if (!error && Array.isArray(data) && data.length) {
-                for (const c of data) {
-                    if (!geoEstado.porIne.has(c.id)) {
-                        geoEstado.porIne.set(c.id, {
-                            ine: c.id, nombre: c.nombre, provincia: c.provincia_id,
-                            geom: null, distritos: null, barrios: null, entidades: null,
-                            centro: [null, null], tiene_distritos: c.tiene_distritos,
-                            tiene_barrios: c.tiene_barrios
-                        });
-                    }
+    if (!client) { geoRenderFiltros(); return; }
+
+    // Comunidades autónomas.
+    try {
+        const { data } = await client.from('comunidades').select('id, nombre').order('nombre');
+        if (Array.isArray(data)) geoEstado.comunidades = new Map(data.map(x => [String(x.id), x.nombre]));
+    } catch (error) { console.warn('Comunidades no disponibles:', error); }
+
+    // Provincias (con comunidad y capital; tolerante a migración pendiente).
+    geoEstado.provincias = new Map();
+    geoEstado.ciudadesPorProvincia = new Map();
+    try {
+        let provs = [];
+        let { data, error } = await client.from('provincias')
+            .select('id, nombre, ccaa, comunidad_id, capital_id').order('nombre');
+        if (error) {
+            ({ data } = await client.from('provincias').select('id, nombre, ccaa').order('nombre'));
+        }
+        provs = data || [];
+        for (const p of provs) {
+            geoEstado.provincias.set(String(p.id), {
+                id: String(p.id), nombre: p.nombre, ccaa: p.ccaa || '',
+                comunidad_id: p.comunidad_id ? String(p.comunidad_id) : null,
+                capital_id: p.capital_id ? String(p.capital_id) : null
+            });
+        }
+    } catch (error) { console.warn('Provincias no disponibles:', error); }
+
+    // Municipios de toda España, agrupados por provincia.
+    try {
+        const { data, error } = await client.from('ciudades')
+            .select('id, nombre, provincia_id, es_capital')
+            .order('nombre', { ascending: true })
+            .limit(9000);
+        if (!error && Array.isArray(data)) {
+            for (const c of data) {
+                const prov = c.provincia_id ? String(c.provincia_id) : null;
+                if (prov) {
+                    if (!geoEstado.ciudadesPorProvincia.has(prov)) geoEstado.ciudadesPorProvincia.set(prov, []);
+                    geoEstado.ciudadesPorProvincia.get(prov).push({
+                        id: String(c.id), nombre: c.nombre, es_capital: !!c.es_capital
+                    });
+                }
+                const ine = String(c.id);
+                if (!geoEstado.porIne.has(ine)) {
+                    geoEstado.porIne.set(ine, {
+                        ine, nombre: c.nombre, provincia: prov,
+                        geom: null, distritos: null, barrios: null, entidades: null,
+                        centro: [null, null], es_capital: !!c.es_capital
+                    });
                 }
             }
-        } catch (error) {
-            console.warn('Catálogo Supabase no disponible:', error);
         }
-    }
+    } catch (error) { console.warn('Catálogo Supabase no disponible:', error); }
+
+    geoRenderFiltros();
     geoRenderDatalist();
+}
+
+function geoNombreComunidad(id) {
+    return geoEstado.comunidades.get(String(id)) || '';
+}
+
+function geoNombreProvincia(id) {
+    const p = geoEstado.provincias.get(String(id));
+    return p ? p.nombre : '';
+}
+
+function geoCapitalDeProvincia(provinciaId) {
+    const p = geoEstado.provincias.get(String(provinciaId));
+    return p ? p.capital_id : null;
+}
+
+function geoRenderFiltros() {
+    const selCcaa = document.getElementById('geo-select-ccaa');
+    const selProv = document.getElementById('geo-select-provincia');
+    const selCiudad = document.getElementById('geo-select-ciudad');
+    const selCp = document.getElementById('geo-select-cp');
+    if (!selCcaa || !selProv) return;
+
+    const ccaa = [...geoEstado.comunidades.entries()]
+        .sort((a, b) => a[1].localeCompare(b[1], 'es'));
+    const valorCcaa = selCcaa.value;
+    selCcaa.innerHTML = '<option value="">Todas las comunidades</option>' +
+        ccaa.map(([id, nombre]) => `<option value="${geoEsc(id)}">${geoEsc(nombre)}</option>`).join('');
+    if (valorCcaa && geoEstado.comunidades.has(valorCcaa)) selCcaa.value = valorCcaa;
+
+    geoRenderSelectProvincias();
+    geoRenderSelectCiudades();
+    if (selCp) selCp.innerHTML = '<option value="">— Elige un municipio primero —</option>';
+}
+
+function geoRenderSelectProvincias() {
+    const selCcaa = document.getElementById('geo-select-ccaa');
+    const selProv = document.getElementById('geo-select-provincia');
+    if (!selProv) return;
+    const ccaaSel = selCcaa ? selCcaa.value : '';
+    const previo = selProv.value;
+
+    let provincias = [...geoEstado.provincias.values()];
+    if (ccaaSel) provincias = provincias.filter(p => String(p.comunidad_id || '') === ccaaSel);
+    provincias.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+
+    selProv.innerHTML = '<option value="">Todas las provincias</option>' +
+        provincias.map(p => {
+            const cap = p.capital_id ? geoEstado.porIne.get(String(p.capital_id)) : null;
+            const capNombre = cap ? ` — ${cap.nombre}` : '';
+            return `<option value="${geoEsc(p.id)}">${geoEsc(p.nombre)}${geoEsc(capNombre)}</option>`;
+        }).join('');
+    if (previo && geoEstado.provincias.has(previo)) selProv.value = previo;
+}
+
+function geoCiudadesVisibles() {
+    const selCcaa = document.getElementById('geo-select-ccaa');
+    const selProv = document.getElementById('geo-select-provincia');
+    const soloCap = document.getElementById('geo-solo-capitales');
+    const ccaaSel = selCcaa ? selCcaa.value : '';
+    const provSel = selProv ? selProv.value : '';
+    const soloCapitales = !!(soloCap && soloCap.checked);
+
+    let provincias = [...geoEstado.provincias.values()];
+    if (ccaaSel) provincias = provincias.filter(p => String(p.comunidad_id || '') === ccaaSel);
+    if (provSel) provincias = provincias.filter(p => String(p.id) === provSel);
+
+    const resultado = [];
+    for (const p of provincias) {
+        let lista = geoEstado.ciudadesPorProvincia.get(String(p.id)) || [];
+        if (soloCapitales) lista = lista.filter(c => c.es_capital);
+        resultado.push({ provincia: p, ciudades: lista });
+    }
+    return resultado;
+}
+
+function geoRenderSelectCiudades() {
+    const sel = document.getElementById('geo-select-ciudad');
+    if (!sel) return;
+    const grupos = geoCiudadesVisibles();
+    const hayProvincias = grupos.some(g => g.ciudades.length);
+    if (!hayProvincias) {
+        sel.innerHTML = '<option value="">— Sin municipios para este filtro —</option>';
+        return;
+    }
+    let html = '<option value="">Elige un municipio…</option>';
+    const unProvincia = grupos.length === 1;
+    for (const g of grupos) {
+        const opciones = g.ciudades.map(c =>
+            `<option value="${geoEsc(c.id)}">${c.es_capital ? '⭐ ' : ''}${geoEsc(c.nombre)}</option>`
+        ).join('');
+        if (unProvincia) html += opciones;
+        else html += `<optgroup label="${geoEsc(g.provincia.nombre)}">${opciones}</optgroup>`;
+    }
+    sel.innerHTML = html;
 }
 
 function geoRenderDatalist() {
@@ -5815,6 +5957,7 @@ function geoRefrescarSegunActiva() {
     geoRenderBarrios();
     geoRenderCps();
     geoRenderSeleccion();
+    geoActualizarEstadoPendientes();
 }
 
 function geoRenderCiudadesCargadas() {
@@ -5822,18 +5965,15 @@ function geoRenderCiudadesCargadas() {
     if (!cont) return;
     cont.innerHTML = [...geoEstado.cargadas.values()].map(reg => {
         const activa = reg.info.ine === geoEstado.activa ? ' (activa)' : '';
-        const marcada = geoEstado.seleccion.has(`ciudad:${reg.info.ine}`) ? ' checked' : '';
+        const marcada = geoEstado.pendientes.has(`ciudad:${reg.info.ine}`) ? ' checked' : '';
         return `<li><label><input type="checkbox" data-geo-ciudad="${geoEsc(reg.info.ine)}"${marcada}> ${geoEsc(reg.info.nombre)}${activa}</label></li>`;
     }).join('');
     cont.onclick = (ev) => {
         const input = ev.target.closest('input[data-geo-ciudad]');
         if (!input) return;
         const ine = input.dataset.geoCiudad;
-        if (input.checked) {
-            geoSeleccionar('ciudad', ine, geoReg(ine) && geoReg(ine).info.nombre, geoReg(ine));
-        } else {
-            geoQuitarSeleccion(`ciudad:${ine}`);
-        }
+        const reg = geoReg(ine);
+        geoAlternarPendiente('ciudad', ine, reg && reg.info.nombre, reg);
     };
 }
 
@@ -5846,7 +5986,7 @@ function geoRenderDistritos() {
     if (!r || !r.distritos.length) { cont.innerHTML = '<li style="color:#a1a1aa;">—</li>'; return; }
     cont.innerHTML = r.distritos.map(d => {
         const id = `${r.info.ine}-${d.codigo}`;
-        const on = geoEstado.seleccion.has(`distrito:${id}`) ? ' checked' : '';
+        const on = geoEstado.pendientes.has(`distrito:${id}`) ? ' checked' : '';
         return `<li><label><input type="checkbox" data-geo-dist="${geoEsc(d.codigo)}"${on}>
             <span class="geo-barra-color" style="background:${geoEsc(d._color)}"></span> ${geoEsc(d.nombre)}</label></li>`;
     }).join('');
@@ -5855,8 +5995,7 @@ function geoRenderDistritos() {
         if (!input) return;
         const d = r.distritos.find(x => String(x.codigo) === String(input.dataset.geoDist));
         const id = `${r.info.ine}-${d.codigo}`;
-        if (input.checked) geoSeleccionar('distrito', id, d.nombre, r, d);
-        else geoQuitarSeleccion(`distrito:${id}`);
+        geoAlternarPendiente('distrito', id, d.nombre, r, d);
     };
 }
 
@@ -5877,7 +6016,7 @@ function geoRenderBarrios() {
         html += `<li style="margin-top:6px;color:#fde68a;font-size:.8rem;">${geoEsc(nombreDist)}</li>`;
         html += lista.map(b => {
             const id = `${r.info.ine}-${b.distrito_codigo}-${b.codigo}`;
-            const on = geoEstado.seleccion.has(`barrio:${id}`) ? ' checked' : '';
+            const on = geoEstado.pendientes.has(`barrio:${id}`) ? ' checked' : '';
             return `<li><label><input type="checkbox" data-geo-barr="${geoEsc(b.codigo)}" data-geo-dist="${geoEsc(b.distrito_codigo)}"${on}>
                 <span class="geo-barra-color" style="background:${geoEsc(b._color)}"></span> ${geoEsc(b.nombre)}</label></li>`;
         }).join('');
@@ -5889,8 +6028,7 @@ function geoRenderBarrios() {
         const b = r.barrios.find(x => String(x.codigo) === String(input.dataset.geoBarr) &&
             String(x.distrito_codigo) === String(input.dataset.geoDist));
         const id = `${r.info.ine}-${b.distrito_codigo}-${b.codigo}`;
-        if (input.checked) geoSeleccionar('barrio', id, b.nombre, r, b);
-        else geoQuitarSeleccion(`barrio:${id}`);
+        geoAlternarPendiente('barrio', id, b.nombre, r, b);
     };
 }
 
@@ -5902,7 +6040,7 @@ function geoRenderCps() {
     cont.innerHTML = r.cps.map(c => {
         const cp = c.codigo || c;
         const id = `${r.info.ine}-${cp}`;
-        const on = geoEstado.seleccion.has(`cp:${id}`) ? ' checked' : '';
+        const on = geoEstado.pendientes.has(`cp:${id}`) ? ' checked' : '';
         return `<li><label><input type="checkbox" data-geo-cp="${geoEsc(cp)}"${on}> 📮 ${geoEsc(cp)}</label></li>`;
     }).join('');
     cont.onclick = (ev) => {
@@ -5910,27 +6048,61 @@ function geoRenderCps() {
         if (!input) return;
         const cp = input.dataset.geoCp;
         const id = `${r.info.ine}-${cp}`;
-        if (input.checked) geoSeleccionar('cp', id, cp, r);
-        else geoQuitarSeleccion(`cp:${id}`);
+        geoAlternarPendiente('cp', id, cp, r);
     };
 }
 
-function geoSeleccionar(tipo, id, nombre, r, entidad) {
-    let color = '#d4af37';
-    if (tipo === 'distrito' && entidad) color = entidad._color;
-    if (tipo === 'barrio' && entidad) color = entidad._color;
-    geoEstado.seleccion.set(`${tipo}:${id}`, {
-        tipo, id, nombre, color,
+function geoColorEntidad(tipo, entidad) {
+    if ((tipo === 'distrito' || tipo === 'barrio') && entidad) return entidad._color || '#d4af37';
+    return '#d4af37';
+}
+
+function geoMarcarPendiente(tipo, id, nombre, r, entidad) {
+    geoEstado.pendientes.set(`${tipo}:${id}`, {
+        tipo, id, nombre: nombre || id, color: geoColorEntidad(tipo, entidad),
         ciudad: r ? r.info.ine : null,
         ciudadNombre: r ? r.info.nombre : null
     });
-    geoRenderSeleccion();
 }
 
-function geoQuitarSeleccion(key) {
-    geoEstado.seleccion.delete(key);
+function geoAlternarPendiente(tipo, id, nombre, r, entidad) {
+    const key = `${tipo}:${id}`;
+    if (geoEstado.pendientes.has(key)) geoEstado.pendientes.delete(key);
+    else geoMarcarPendiente(tipo, id, nombre, r, entidad);
+    geoRefrescarCheckboxes();
+    geoActualizarEstadoPendientes();
+}
+
+function geoAnadirSeleccionados() {
+    if (!geoEstado.pendientes.size) {
+        geoAvisoGeo('No hay nada marcado. Marca municipios, distritos, barrios o códigos postales y vuelve a pulsar.');
+        return;
+    }
+    let nuevos = 0;
+    for (const [key, valor] of geoEstado.pendientes) {
+        if (!geoEstado.seleccion.has(key)) { geoEstado.seleccion.set(key, valor); nuevos += 1; }
+    }
+    geoEstado.pendientes.clear();
     geoRefrescarCheckboxes();
     geoRenderSeleccion();
+    geoActualizarEstadoPendientes();
+    geoAvisoGeo(`Añadidos ${nuevos} elemento(s) a la selección. Total: ${geoEstado.seleccion.size}.`);
+    if (typeof geoPuzzleSincronizarDesdeSeleccion === 'function') geoPuzzleSincronizarDesdeSeleccion();
+}
+
+function geoBorrarSeleccion() {
+    geoEstado.seleccion.clear();
+    geoEstado.pendientes.clear();
+    geoRefrescarCheckboxes();
+    geoRenderSeleccion();
+    geoActualizarEstadoPendientes();
+    geoAvisoGeo('Selección borrada.');
+    if (typeof geoPuzzleSincronizarDesdeSeleccion === 'function') geoPuzzleSincronizarDesdeSeleccion();
+}
+
+function geoAvisoGeo(texto) {
+    const estado = document.getElementById('geo-estado');
+    if (estado) estado.textContent = texto;
 }
 
 function geoAlternarDesdeMapa(tipo, codigo, ine) {
@@ -5939,40 +6111,51 @@ function geoAlternarDesdeMapa(tipo, codigo, ine) {
     if (tipo === 'barrio') {
         const b = r.barrios.find(x => String(x.codigo) === String(codigo));
         if (!b) return;
-        const id = `${r.info.ine}-${b.distrito_codigo}-${b.codigo}`;
-        geoAlternar('barrio', id, b.nombre, r, b);
+        geoAlternarPendiente('barrio', `${r.info.ine}-${b.distrito_codigo}-${b.codigo}`, b.nombre, r, b);
     } else if (tipo === 'distrito') {
         const d = r.distritos.find(x => String(x.codigo) === String(codigo));
         if (!d) return;
-        const id = `${r.info.ine}-${d.codigo}`;
-        geoAlternar('distrito', id, d.nombre, r, d);
+        geoAlternarPendiente('distrito', `${r.info.ine}-${d.codigo}`, d.nombre, r, d);
+    } else if (tipo === 'ciudad') {
+        geoAlternarPendiente('ciudad', r.info.ine, r.info.nombre, r);
     }
 }
 
-function geoAlternar(tipo, id, nombre, r, entidad) {
-    const key = `${tipo}:${id}`;
-    if (geoEstado.seleccion.has(key)) geoEstado.seleccion.delete(key);
-    else geoSeleccionar(tipo, id, nombre, r, entidad);
-    geoRefrescarCheckboxes();
-    geoRenderSeleccion();
-}
-
 function geoRefrescarCheckboxes() {
+    geoRenderCiudadesCargadas();
     geoRenderDistritos();
     geoRenderBarrios();
     geoRenderCps();
+}
+
+function geoQuitarSeleccion(key) {
+    geoEstado.seleccion.delete(key);
+    geoRefrescarCheckboxes();
+    geoRenderSeleccion();
+    geoActualizarEstadoPendientes();
+    if (typeof geoPuzzleSincronizarDesdeSeleccion === 'function') geoPuzzleSincronizarDesdeSeleccion();
+}
+
+function geoActualizarEstadoPendientes() {
+    const cont = document.getElementById('geo-pendientes-info');
+    if (!cont) return;
+    const marcados = geoEstado.pendientes.size;
+    const total = geoEstado.seleccion.size;
+    const partes = [`${total} en selección`];
+    if (marcados) partes.push(`${marcados} marcado(s) sin añadir`);
+    cont.textContent = partes.join(' · ');
 }
 
 function geoRenderSeleccion() {
     const cont = document.getElementById('geo-seleccion');
     if (!cont) return;
     if (!geoEstado.seleccion.size) {
-        cont.innerHTML = '<span style="color:#a1a1aa;">Sin selección. Marca distritos, barrios o códigos postales.</span>';
+        cont.innerHTML = '<span style="color:#a1a1aa;">Sin selección. Marca elementos y pulsa «Añadir seleccionados».</span>';
         return;
     }
     cont.innerHTML = [...geoEstado.seleccion.values()].map(s => {
         const etiqueta = s.tipo === 'cp' ? `📮 ${geoEsc(s.nombre)}` :
-            `${geoEsc(s.nombre)} <em style="opacity:.7;">(${geoEsc(s.ciudadNombre || '')})</em>`;
+            `${geoEsc(s.nombre)} <em style="opacity:.7;">(${geoEsc(s.ciudadNombre || geoNombreProvincia(s.ciudad) || '')})</em>`;
         return `<span class="geo-ficha">
             <span class="geo-barra-color" style="background:${geoEsc(s.color)}"></span>
             ${etiqueta} <button type="button" data-geo-quitar="${geoEsc(s.tipo + ':' + s.id)}" aria-label="Quitar">×</button>
@@ -5995,6 +6178,7 @@ function geoActualizarAtribucion() {
 
 function geoLimpiar() {
     geoEstado.seleccion.clear();
+    geoEstado.pendientes.clear();
     geoEstado.cargadas.clear();
     if (geoEstado.mapa) geoEstado.mapa.eachLayer(layer => {
         if (layer instanceof L.TileLayer) return;
@@ -6002,8 +6186,349 @@ function geoLimpiar() {
     });
     geoEstado.activa = null;
     geoRefrescarSegunActiva();
-    const estado = document.getElementById('geo-estado');
-    if (estado) estado.textContent = 'Selección limpiada.';
+    geoAvisoGeo('Selección limpiada.');
+}
+
+/* ============================================================================
+ * LOKITRONO — PUZZLE DE UBICACIONES PARTICIPANTES
+ * Cada pieza se recorta del mapa y se integra en un puzzle ligado a un evento.
+ * Al guardarlo se crean las ubicaciones (casas) y el sorteo reparte las piezas.
+ * ========================================================================== */
+const geoPuzzleEstado = { eventoId: '', piezas: [], cargado: false };
+let geoPuzzleMapa = null;
+let geoPuzzleCapa = null;
+
+function geoPuzzleClave(p) { return `${p.tipo}:${p.ref_id}`; }
+
+function geoSeleccionAPieza(s) {
+    const id = String(s.id || '');
+    const ine = (s.ciudad ? String(s.ciudad) : id.slice(0, 5));
+    const pieza = {
+        tipo: s.tipo, ref_id: id, nombre: s.nombre || id,
+        ciudad_id: ine || null, distrito_id: null, barrio_id: null, codigo_postal: null,
+        color: s.color || '#d4af37', posicion: null, casa_id: null
+    };
+    if (s.tipo === 'distrito') {
+        pieza.distrito_id = id;
+    } else if (s.tipo === 'barrio') {
+        pieza.distrito_id = id.split('-').slice(0, 2).join('-');
+        pieza.barrio_id = id;
+    } else if (s.tipo === 'cp') {
+        pieza.codigo_postal = id.split('-')[1] || '';
+    }
+    return pieza;
+}
+
+function geoPuzzleAnadirSeleccion() {
+    if (!geoEstado.seleccion.size) {
+        geoAvisoGeo('La selección está vacía. Marca elementos y pulsa «Añadir seleccionados» primero.');
+        return;
+    }
+    let nuevos = 0;
+    for (const s of geoEstado.seleccion.values()) {
+        const p = geoSeleccionAPieza(s);
+        if (!geoPuzzleEstado.piezas.some(x => geoPuzzleClave(x) === geoPuzzleClave(p))) {
+            geoPuzzleEstado.piezas.push(p);
+            nuevos += 1;
+        }
+    }
+    geoPuzzleRender();
+    geoPuzzleEstadoAviso(`Añadidas ${nuevos} pieza(s) al puzzle. Total: ${geoPuzzleEstado.piezas.length}.`);
+}
+
+function geoPuzzleQuitar(refKey) {
+    geoPuzzleEstado.piezas = geoPuzzleEstado.piezas.filter(x => geoPuzzleClave(x) !== refKey);
+    geoPuzzleRender();
+}
+
+function geoPuzzleLimpiar() {
+    geoPuzzleEstado.piezas = [];
+    geoPuzzleRender();
+    geoPuzzleEstadoAviso('Puzzle vaciado (recuerda guardarlo para aplicar los cambios).');
+}
+
+function geoPuzzleEstadoAviso(texto) {
+    const cont = document.getElementById('geo-puzzle-estado');
+    if (cont) cont.textContent = texto;
+}
+
+function geoPuzzleRender() {
+    geoPuzzleRenderOrden();
+    geoPuzzleRenderMapa();
+    const total = geoPuzzleEstado.piezas.length;
+    const conPos = geoPuzzleEstado.piezas.filter(p => p.posicion != null).length;
+    const info = document.getElementById('geo-puzzle-estado');
+    if (info && total) {
+        info.textContent = `${total} pieza(s) en el puzzle${conPos ? ` · ${conPos} con posición sorteada` : ''}.`;
+    }
+}
+
+function geoPuzzleRenderOrden() {
+    const cont = document.getElementById('geo-puzzle-orden');
+    if (!cont) return;
+    if (!geoPuzzleEstado.piezas.length) {
+        cont.innerHTML = '<li style="color:#a1a1aa;">El puzzle está vacío. Añade una selección y guárdala.</li>';
+        return;
+    }
+    const ordenadas = [...geoPuzzleEstado.piezas].sort((a, b) => {
+        const pa = a.posicion == null ? 1e9 : a.posicion;
+        const pb = b.posicion == null ? 1e9 : b.posicion;
+        return pa - pb;
+    });
+    cont.innerHTML = ordenadas.map((p, i) => {
+        const pos = p.posicion == null ? (i + 1) : p.posicion;
+        const tipo = p.tipo === 'cp' ? `📮 ${geoEsc(p.codigo_postal || '')}` : geoEsc(p.tipo);
+        const ubic = geoEsc(p.ciudad_id || '');
+        return `<li>
+            <span class="geo-pos">${pos}</span>
+            <span class="geo-barra-color" style="background:${geoEsc(p.color || '#d4af37')}"></span>
+            <strong>${geoEsc(p.nombre)}</strong>
+            <em style="opacity:.7;font-size:.8rem;">${tipo}${ubic ? ' · ' + ubic : ''}</em>
+            <button type="button" data-geo-puzzle-quitar="${geoEsc(geoPuzzleClave(p))}" aria-label="Quitar pieza"
+                style="background:none;border:none;color:#fca5a5;cursor:pointer;font-size:1rem;margin-left:auto;">×</button>
+        </li>`;
+    }).join('');
+    cont.onclick = (ev) => {
+        const btn = ev.target.closest('button[data-geo-puzzle-quitar]');
+        if (btn) geoPuzzleQuitar(btn.dataset.geoPuzzleQuitar);
+    };
+}
+
+function geoPuzzleActivarMapa() {
+    if (geoPuzzleMapa) return geoPuzzleMapa;
+    const cont = document.getElementById('geo-puzzle-mapa');
+    if (!cont || !window.L) return null;
+    geoPuzzleMapa = L.map(cont, { scrollWheelZoom: true }).setView([40.4168, -3.7038], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '&copy; OpenStreetMap'
+    }).addTo(geoPuzzleMapa);
+    geoPuzzleCapa = L.layerGroup().addTo(geoPuzzleMapa);
+    return geoPuzzleMapa;
+}
+
+async function geoPuzzleRenderMapa() {
+    if (geoPuzzleEstado.piezas.length) geoPuzzleActivarMapa();
+    if (!geoPuzzleMapa || !geoPuzzleCapa) return;
+    geoPuzzleCapa.clearLayers();
+    const capas = [];
+    for (const p of geoPuzzleEstado.piezas) {
+        await geoPuzzlePintarPieza(p, capas);
+    }
+    if (capas.length) {
+        try {
+            const bounds = L.featureGroup(capas).getBounds();
+            if (bounds.isValid()) geoPuzzleMapa.fitBounds(bounds, { padding: [24, 24] });
+        } catch (e) { /* ignore */ }
+    }
+}
+
+async function geoPuzzlePintarPieza(pieza, capas) {
+    const manifest = pieza.ciudad_id ? geoEstado.porIne.get(String(pieza.ciudad_id)) : null;
+    let ruta = null;
+    let filtro = null;
+
+    if (pieza.tipo === 'ciudad') {
+        ruta = manifest && manifest.geom;
+    } else if (pieza.tipo === 'distrito') {
+        ruta = manifest && manifest.distritos;
+        filtro = { campo: ['DISTRICTE', 'codigo'], valor: String(pieza.distrito_id || '').split('-')[1] };
+    } else if (pieza.tipo === 'barrio') {
+        ruta = manifest && manifest.barrios;
+        filtro = { campo: ['BARRI', 'codigo'], valor: String(pieza.barrio_id || '').split('-').slice(-1)[0] };
+    }
+
+    if (ruta) {
+        try {
+            const gj = await (await fetch(ruta, { cache: 'force-cache' })).json();
+            let features = gj.features || [];
+            if (filtro) {
+                features = features.filter(f => {
+                    const props = f.properties || {};
+                    return filtro.campo.some(campo => String(props[campo]) === String(filtro.valor));
+                });
+            }
+            if (features.length) {
+                const capa = L.geoJSON({ type: 'FeatureCollection', features }, {
+                    style: () => ({ color: '#fde68a', weight: 2, fillColor: pieza.color || '#d4af37', fillOpacity: 0.6 }),
+                    onEachFeature: (f, layer) => layer.bindTooltip(geoEsc(pieza.nombre), { sticky: true })
+                }).addTo(geoPuzzleCapa);
+                capas.push(capa);
+                return;
+            }
+        } catch (error) { /* sin geometría */ }
+    }
+
+    const centro = manifest && Array.isArray(manifest.centro) ? manifest.centro : null;
+    if (centro && centro[0] != null && centro[1] != null) {
+        const marcador = L.circleMarker([centro[0], centro[1]], {
+            radius: 9, color: '#fde68a', weight: 2,
+            fillColor: pieza.color || '#d4af37', fillOpacity: 0.85
+        }).addTo(geoPuzzleCapa);
+        marcador.bindTooltip(geoEsc(pieza.nombre), { sticky: true });
+        capas.push(marcador);
+    }
+}
+
+function geoPuzzleEventos() {
+    const cache = (typeof eventosSupabaseCache !== 'undefined' && Array.isArray(eventosSupabaseCache))
+        ? eventosSupabaseCache : [];
+    const fuente = cache.length
+        ? cache
+        : ((window.__APP_STATE__ && Array.isArray(window.__APP_STATE__.eventList)) ? window.__APP_STATE__.eventList : []);
+    return fuente.filter(e => e && !e.eliminado);
+}
+
+function geoPuzzleRenderEventos() {
+    const sel = document.getElementById('geo-puzzle-evento');
+    if (!sel) return;
+    const eventos = geoPuzzleEventos();
+    const previo = sel.value || geoPuzzleEstado.eventoId;
+    sel.innerHTML = '<option value="">— Elige un evento —</option>' +
+        eventos.map(e => {
+            const etiqueta = `${e.nombre || e.id}${e.barrio ? ' · ' + e.barrio : ''}${e.fecha ? ' · ' + e.fecha : ''}`;
+            return `<option value="${geoEsc(e.id)}">${geoEsc(etiqueta)}</option>`;
+        }).join('');
+    if (previo && eventos.some(e => String(e.id) === String(previo))) sel.value = previo;
+}
+
+async function geoPuzzleCargar(eventoId) {
+    geoPuzzleEstado.eventoId = eventoId || '';
+    if (!eventoId) { geoPuzzleEstado.piezas = []; geoPuzzleEstado.cargado = false; geoPuzzleRender(); return; }
+    const client = getSupabaseBarriosClient();
+    if (!client) { geoPuzzleEstadoAviso('Supabase no disponible.'); return; }
+    try {
+        const { data, error } = await client.from('piezas_puzzle')
+            .select('id, tipo, ref_id, nombre, ciudad_id, distrito_id, barrio_id, codigo_postal, color, posicion, casa_id')
+            .eq('evento_id', eventoId)
+            .order('posicion', { ascending: true, nullsFirst: false });
+        if (error) throw error;
+        geoPuzzleEstado.piezas = (data || []).map(p => ({ ...p, posicion: p.posicion == null ? null : Number(p.posicion) }));
+        geoPuzzleEstado.cargado = true;
+        geoPuzzleRender();
+        geoPuzzleEstadoAviso(geoPuzzleEstado.piezas.length
+            ? `Puzzle del evento cargado: ${geoPuzzleEstado.piezas.length} pieza(s).`
+            : 'Ese evento aún no tiene piezas guardadas.');
+    } catch (error) {
+        console.error('Error al cargar el puzzle:', error);
+        geoPuzzleEstadoAviso(`No se pudo cargar el puzzle: ${error.message || 'error desconocido'}`);
+    }
+}
+
+async function geoPuzzleGuardar() {
+    const usuario = getCurrentUser();
+    const client = getSupabaseBarriosClient();
+    if (!usuario || !puedeAdministrar(usuario.role)) { alert('Solo un superadministrador puede guardar el puzzle.'); return; }
+    if (!client) { geoPuzzleEstadoAviso('Supabase no disponible.'); return; }
+    const sel = document.getElementById('geo-puzzle-evento');
+    const eventoId = sel ? sel.value : geoPuzzleEstado.eventoId;
+    if (!eventoId) { alert('Elige el evento al que pertenece el puzzle.'); return; }
+    if (!geoPuzzleEstado.piezas.length) { alert('El puzzle está vacío. Añade una selección al puzzle.'); return; }
+
+    const pin = window.prompt('Introduce tu PIN de superadministrador para guardar el puzzle:');
+    if (pin === null) return;
+    if (!/^\d{6}$/.test(pin.trim())) { alert('El PIN debe contener exactamente seis dígitos.'); return; }
+    if (!window.confirm(`Se guardarán ${geoPuzzleEstado.piezas.length} pieza(s) y se crearán/reutilizarán sus ubicaciones participantes. ¿Continuar?`)) return;
+
+    geoPuzzleEstadoAviso('Guardando puzzle…');
+    try {
+        const piezas = geoPuzzleEstado.piezas.map(p => ({
+            tipo: p.tipo, ref_id: p.ref_id, nombre: p.nombre,
+            ciudad_id: p.ciudad_id, distrito_id: p.distrito_id,
+            barrio_id: p.barrio_id, codigo_postal: p.codigo_postal, color: p.color
+        }));
+        const { data, error } = await client.rpc('guardar_piezas_puzzle_superadmin', {
+            p_phone: String(usuario.phone || ''),
+            p_pin: pin.trim(),
+            p_evento_id: String(eventoId),
+            p_piezas: piezas
+        });
+        if (error) throw error;
+        await geoPuzzleCargar(eventoId);
+        geoPuzzleEstadoAviso(`Puzzle guardado: ${Number(data) || 0} pieza(s).`);
+    } catch (error) {
+        console.error('Error al guardar el puzzle:', error);
+        geoPuzzleEstadoAviso(`No se pudo guardar el puzzle: ${error.message || 'error desconocido'}`);
+    }
+}
+
+async function geoPuzzleSortear() {
+    const usuario = getCurrentUser();
+    const client = getSupabaseBarriosClient();
+    if (!usuario || !puedeAdministrar(usuario.role)) { alert('Solo un superadministrador puede sortear las piezas.'); return; }
+    if (!client) { geoPuzzleEstadoAviso('Supabase no disponible.'); return; }
+    const sel = document.getElementById('geo-puzzle-evento');
+    const eventoId = sel ? sel.value : geoPuzzleEstado.eventoId;
+    if (!eventoId) { alert('Elige el evento del puzzle.'); return; }
+
+    const pin = window.prompt('Introduce tu PIN de superadministrador para sortear las piezas:');
+    if (pin === null) return;
+    if (!/^\d{6}$/.test(pin.trim())) { alert('El PIN debe contener exactamente seis dígitos.'); return; }
+    if (!window.confirm('Se repartirán aleatoriamente las piezas del puzzle de este evento. ¿Continuar?')) return;
+
+    geoPuzzleEstadoAviso('Sorteando piezas…');
+    try {
+        const { data, error } = await client.rpc('sortear_piezas_puzzle_superadmin', {
+            p_phone: String(usuario.phone || ''),
+            p_pin: pin.trim(),
+            p_evento_id: String(eventoId)
+        });
+        if (error) throw error;
+        await geoPuzzleCargar(eventoId);
+        geoPuzzleEstadoAviso(`Sorteo guardado: ${Number(data) || 0} pieza(s) repartidas.`);
+    } catch (error) {
+        console.error('Error al sortear las piezas:', error);
+        geoPuzzleEstadoAviso(`No se pudo sortear: ${error.message || 'error desconocido'}`);
+    }
+}
+
+function geoPuzzleSincronizarDesdeSeleccion() {
+    // La selección se incorpora al puzzle de forma explícita con «Añadir selección al puzzle».
+}
+
+async function geoCargarCiudadSeleccionada() {
+    const sel = document.getElementById('geo-select-ciudad');
+    const ine = sel ? sel.value : '';
+    if (!ine) { geoAvisoGeo('Elige un municipio (ciudad o pueblo) para cargarlo en el mapa.'); return; }
+    await geoCargarCiudad(ine);
+}
+
+async function geoCargarCpsDeCiudad(ine) {
+    const sel = document.getElementById('geo-select-cp');
+    if (!sel) return;
+    if (!ine) { sel.innerHTML = '<option value="">— Elige un municipio primero —</option>'; return; }
+    sel.innerHTML = '<option value="">Cargando…</option>';
+    const client = getSupabaseBarriosClient();
+    if (!client) { sel.innerHTML = '<option value="">— Sin conexión —</option>'; return; }
+    try {
+        const { data, error } = await client.from('codigo_postal_ciudad')
+            .select('codigo_postal').eq('ciudad_id', ine).order('codigo_postal');
+        if (error) throw error;
+        const cps = [...new Set((data || []).map(r => r.codigo_postal))];
+        sel.innerHTML = '<option value="">Todos los códigos postales</option>' +
+            cps.map(cp => `<option value="${geoEsc(cp)}">${geoEsc(cp)}</option>`).join('');
+    } catch (error) {
+        sel.innerHTML = '<option value="">— Error al cargar CP —</option>';
+    }
+}
+
+async function geoSeleccionarCp(ine, cp) {
+    if (!ine || !cp) return;
+    await geoCargarCiudad(ine);
+    const r = geoReg(ine);
+    geoMarcarPendiente('cp', `${ine}-${cp}`, cp, r);
+    geoRefrescarCheckboxes();
+    geoActualizarEstadoPendientes();
+    geoAvisoGeo(`Código postal ${cp} marcado. Pulsa «Añadir seleccionados».`);
+}
+
+function geoAplicarPreset(ccaaId) {
+    const selCcaa = document.getElementById('geo-select-ccaa');
+    if (!selCcaa) return;
+    selCcaa.value = ccaaId;
+    geoRenderSelectProvincias();
+    geoRenderSelectCiudades();
+    geoCargarCpsDeCiudad('');
+    geoAvisoGeo(`Filtro aplicado: ${geoNombreComunidad(ccaaId) || ccaaId}.`);
 }
 
 function geoInicializar() {
@@ -6011,27 +6536,54 @@ function geoInicializar() {
     if (!panel || panel.dataset.geoInit === '1') return;
     panel.dataset.geoInit = '1';
 
-    const buscador = document.getElementById('geo-buscador-ciudad');
+    const selCcaa = document.getElementById('geo-select-ccaa');
+    const selProv = document.getElementById('geo-select-provincia');
+    const selCiudad = document.getElementById('geo-select-ciudad');
+    const selCp = document.getElementById('geo-select-cp');
+    const chkCap = document.getElementById('geo-solo-capitales');
     const btnCargar = document.getElementById('geo-btn-cargar-ciudad');
-    const btnLimpiar = document.getElementById('geo-btn-limpiar');
+    const btnAnadir = document.getElementById('geo-btn-anadir-seleccionados');
+    const btnBorrar = document.getElementById('geo-btn-borrar-seleccion');
+    const selEvento = document.getElementById('geo-puzzle-evento');
 
-    const cargarDesdeBuscador = () => {
-        const val = buscador ? buscador.value : '';
-        const c = geoBuscarPorNombre(val);
-        if (!c) {
-            const estado = document.getElementById('geo-estado');
-            if (estado) estado.textContent = 'No se encontró ese municipio. Escribe su nombre o código INE.';
-            return;
-        }
-        if (buscador) buscador.value = c.nombre;
-        geoCargarCiudad(c.ine);
-    };
+    if (selCcaa) selCcaa.addEventListener('change', () => {
+        geoRenderSelectProvincias();
+        geoRenderSelectCiudades();
+        geoCargarCpsDeCiudad('');
+    });
+    if (selProv) selProv.addEventListener('change', () => {
+        geoRenderSelectCiudades();
+        geoCargarCpsDeCiudad('');
+    });
+    if (chkCap) chkCap.addEventListener('change', geoRenderSelectCiudades);
+    if (selCiudad) selCiudad.addEventListener('change', () => geoCargarCpsDeCiudad(selCiudad.value));
+    if (selCp) selCp.addEventListener('change', () => {
+        const ine = selCiudad ? selCiudad.value : '';
+        geoSeleccionarCp(ine, selCp.value);
+    });
+    if (btnCargar) btnCargar.addEventListener('click', geoCargarCiudadSeleccionada);
+    if (btnAnadir) btnAnadir.addEventListener('click', geoAnadirSeleccionados);
+    if (btnBorrar) btnBorrar.addEventListener('click', geoBorrarSeleccion);
 
-    if (btnCargar) btnCargar.addEventListener('click', cargarDesdeBuscador);
-    if (buscador) buscador.addEventListener('change', cargarDesdeBuscador);
-    if (btnLimpiar) btnLimpiar.addEventListener('click', geoLimpiar);
+    panel.querySelectorAll('[data-geo-ccaa]').forEach(b =>
+        b.addEventListener('click', () => geoAplicarPreset(b.dataset.geoCcaa)));
+
+    const btnPzAnadir = document.getElementById('geo-btn-puzzle-anadir');
+    const btnPzGuardar = document.getElementById('geo-btn-puzzle-guardar');
+    const btnPzSortear = document.getElementById('geo-btn-puzzle-sortear');
+    const btnPzLimpiar = document.getElementById('geo-btn-puzzle-limpiar');
+    if (btnPzAnadir) btnPzAnadir.addEventListener('click', geoPuzzleAnadirSeleccion);
+    if (btnPzGuardar) btnPzGuardar.addEventListener('click', geoPuzzleGuardar);
+    if (btnPzSortear) btnPzSortear.addEventListener('click', geoPuzzleSortear);
+    if (btnPzLimpiar) btnPzLimpiar.addEventListener('click', geoPuzzleLimpiar);
+    if (selEvento) {
+        selEvento.addEventListener('focus', geoPuzzleRenderEventos);
+        selEvento.addEventListener('change', () => geoPuzzleCargar(selEvento.value));
+    }
 
     geoCargarCatalogo();
+    geoPuzzleRenderEventos();
+    geoPuzzleRender();
     geoRefrescarSegunActiva();
 }
 
@@ -6044,4 +6596,396 @@ if (document.readyState === 'loading') {
 window.geoInicializar = geoInicializar;
 window.geoCargarCiudad = geoCargarCiudad;
 window.geoLimpiar = geoLimpiar;
+window.geoAnadirSeleccionados = geoAnadirSeleccionados;
+window.geoBorrarSeleccion = geoBorrarSeleccion;
+window.geoPuzzleCargar = geoPuzzleCargar;
+window.geoPuzzleGuardar = geoPuzzleGuardar;
+window.geoPuzzleSortear = geoPuzzleSortear;
+window.geoPuzzleRenderEventos = geoPuzzleRenderEventos;
 window.geoEstado = geoEstado;
+window.geoPuzzleEstado = geoPuzzleEstado;
+
+/* ============================================================================
+ * LOKITRONO — LOCALES PROMOCIONADOS (sección privada del MASTER)
+ * Promoción de los locales donde se celebran los eventos: nombre, dirección,
+ * redes sociales, foto, cuenta atrás (fecha/hora propias del evento en el
+ * local) y sello de donación confirmada para el mantenimiento del portal.
+ * Solo el Trono Mayor (rol master) consulta y gestiona la sección.
+ * ========================================================================== */
+const localesPromocionEstado = { locales: [], tickActivo: false, cargando: false };
+
+async function cargarLocalesPromocion() {
+    const usuario = getCurrentUser();
+    const client = getSupabaseBarriosClient();
+    const estado = document.getElementById('locales-estado');
+    if (!usuario || !esRolMaster(usuario.role)) return;
+    if (!client) {
+        if (estado) estado.textContent = 'Supabase no disponible.';
+        return;
+    }
+    if (localesPromocionEstado.cargando) return;
+    localesPromocionEstado.cargando = true;
+    if (estado) estado.textContent = 'Cargando locales…';
+    try {
+        const { data, error } = await client.rpc('listar_locales_promocion_token', {
+            p_token: usuario.token
+        });
+        if (error) throw error;
+        localesPromocionEstado.locales = Array.isArray(data) ? data : [];
+        renderLocalesPromocion();
+        if (estado) estado.textContent = `${localesPromocionEstado.locales.length} local(es) registrado(s).`;
+    } catch (error) {
+        console.error('Error al listar los locales promocionados:', error);
+        if (estado) estado.textContent = `No se pudieron cargar los locales: ${error.message || 'error desconocido'}`;
+    } finally {
+        localesPromocionEstado.cargando = false;
+    }
+}
+
+function localTraducirRed(red) {
+    const url = red && red.url ? red.url : '';
+    const nombre = (red && red.nombre ? red.nombre : '') || String(url).replace(/^https?:\/\/(www\.)?/i, '');
+    return { nombre, url };
+}
+
+function localCuentaAtras(fecha, hora) {
+    if (!fecha) return null;
+    const objetivo = new Date(`${fecha}T${hora || '20:00'}:00`);
+    const ms = objetivo.getTime() - Date.now();
+    if (ms <= 0) return { celebrado: true, texto: '⚔️ Evento ya celebrado', ms: 0 };
+    const dias = Math.floor(ms / 86400000);
+    const horas = Math.floor((ms % 86400000) / 3600000);
+    const minutos = Math.floor((ms % 3600000) / 60000);
+    const segundos = Math.floor((ms % 60000) / 1000);
+    return {
+        celebrado: false, ms,
+        texto: `${String(dias).padStart(2, '0')} d : ${String(horas).padStart(2, '0')} h : ${String(minutos).padStart(2, '0')} m : ${String(segundos).padStart(2, '0')} s`
+    };
+}
+
+function renderLocalesPromocion() {
+    const cont = document.getElementById('grid-locales-promocion');
+    if (!cont) return;
+    if (!localesPromocionEstado.locales.length) {
+        cont.innerHTML = '<p class="local-preview-vacia">Aún no hay locales promocionados. Crea el primero con el formulario.</p>';
+        return;
+    }
+    const mapa = new Map(localesPromocionEstado.locales.map(l => [String(l.id), l]));
+    cont.innerHTML = localesPromocionEstado.locales.map(local => {
+        const redes = (Array.isArray(local.redes) ? local.redes : [])
+            .map(localTraducirRed)
+            .filter(r => r.url)
+            .map(r => `<a class="local-red-link" href="${geoEsc(r.url)}" target="_blank" rel="noopener">${geoEsc(r.nombre || r.url)}</a>`)
+            .join('');
+        const cd = localCuentaAtras(local.fecha_evento, local.hora_evento);
+        const cdHtml = cd
+            ? `<div class="local-cuenta-atras${cd.celebrado ? ' celebrado' : ''}" data-locales-cd="${geoEsc(String(local.id))}">${cd.celebrado ? cd.texto : '⏳ ' + cd.texto}</div>`
+            : '<div class="local-cuenta-atras celebrado">Sin evento programado</div>';
+        const foto = local.foto_url
+            ? `<img class="local-foto" src="${geoEsc(local.foto_url)}" alt="${geoEsc(local.nombre)}" loading="lazy">`
+            : '<div class="local-foto-placeholder">🍺</div>';
+        const badge = local.donacion_confirmada
+            ? '<span class="local-badge portada">💰 Donación OK</span>'
+            : '<span class="local-badge espera">⏳ Pendiente de donación</span>';
+        return `<article class="local-card${local.donacion_confirmada ? ' donado' : ''}${local.activo === false ? ' inactivo' : ''}" style="position:relative;">
+            ${foto}${badge}
+            <div class="local-cuerpo">
+                <h4>${geoEsc(local.nombre)}</h4>
+                ${local.direccion ? `<div class="local-direccion">📍 ${geoEsc(local.direccion)}</div>` : ''}
+                ${redes ? `<div class="local-redes">${redes}</div>` : ''}
+                ${cdHtml}
+                <div class="local-acciones">
+                    <button type="button" class="btn-cuervo" data-local-editar="${geoEsc(String(local.id))}">✏️ Editar</button>
+                    <button type="button" class="btn-cuervo" data-local-donacion="${geoEsc(String(local.id))}" style="background:#713f12;">${local.donacion_confirmada ? '🚫 Quitar donación' : '💰 Confirmar donación'}</button>
+                </div>
+            </div>
+        </article>`;
+    }).join('');
+
+    cont.onclick = (ev) => {
+        const btnEditar = ev.target.closest('button[data-local-editar]');
+        if (btnEditar) {
+            const loc = mapa.get(btnEditar.dataset.localEditar);
+            if (loc) cargarLocalEnFormulario(loc);
+            return;
+        }
+        const btnDon = ev.target.closest('button[data-local-donacion]');
+        if (btnDon) {
+            const loc = mapa.get(btnDon.dataset.localDonacion);
+            if (loc) marcarDonacionLocal(String(loc.id), !loc.donacion_confirmada);
+        }
+    };
+
+    iniciarTickLocales();
+}
+
+function lokitronoTickLocales() {
+    const mapa = new Map(localesPromocionEstado.locales.map(l => [String(l.id), l]));
+    document.querySelectorAll('[data-locales-cd]').forEach(nodo => {
+        const loc = mapa.get(nodo.dataset.localesCd);
+        if (!loc) return;
+        const cd = localCuentaAtras(loc.fecha_evento, loc.hora_evento);
+        if (cd) nodo.textContent = cd.celebrado ? cd.texto : '⏳ ' + cd.texto;
+    });
+}
+
+function iniciarTickLocales() {
+    if (localesPromocionEstado.tickActivo) return;
+    localesPromocionEstado.tickActivo = true;
+    setInterval(lokitronoTickLocales, 1000);
+}
+
+function anadirFilaRed(nombre, url) {
+    const cont = document.getElementById('local-redes-filas');
+    if (!cont) return;
+    const div = document.createElement('div');
+    div.className = 'fila-red';
+    div.innerHTML = `
+        <input type="text" class="input-medieval" placeholder="Nombre (Instagram, Facebook, web…)" value="${geoEsc(nombre || '')}">
+        <input type="text" class="input-medieval" placeholder="https://…" value="${geoEsc(url || '')}">
+        <button type="button" class="fila-red-eliminar" aria-label="Quitar enlace">×</button>`;
+    div.querySelector('.fila-red-eliminar').addEventListener('click', () => div.remove());
+    cont.appendChild(div);
+}
+
+function recogerRedes() {
+    const redes = [];
+    document.querySelectorAll('#local-redes-filas .fila-red').forEach(fila => {
+        const inputs = fila.querySelectorAll('input');
+        const url = inputs[1].value.trim();
+        if (url) redes.push({ nombre: inputs[0].value.trim(), url });
+    });
+    return redes;
+}
+
+function actualizarPreviewFoto() {
+    const url = document.getElementById('local-foto-url').value.trim();
+    const img = document.getElementById('local-foto-preview');
+    if (!img) return;
+    if (url) {
+        img.src = url;
+        img.style.display = 'block';
+    } else {
+        img.removeAttribute('src');
+        img.style.display = 'none';
+    }
+}
+
+function campoLocal(id) { return document.getElementById(id); }
+
+function cargarLocalEnFormulario(local) {
+    campoLocal('local-id').value = local.id || '';
+    campoLocal('local-nombre').value = local.nombre || '';
+    campoLocal('local-direccion').value = local.direccion || '';
+    campoLocal('local-fecha-evento').value = local.fecha_evento || '';
+    campoLocal('local-hora-evento').value = local.hora_evento || '';
+    campoLocal('local-orden').value = local.orden == null ? 0 : local.orden;
+    campoLocal('local-foto-url').value = local.foto_url || '';
+    campoLocal('local-foto-file').value = '';
+    campoLocal('local-donacion-confirmada').checked = !!local.donacion_confirmada;
+    campoLocal('local-activo').checked = local.activo !== false;
+    campoLocal('local-btn-eliminar').style.display = '';
+    campoLocal('local-redes-filas').innerHTML = '';
+    const redes = Array.isArray(local.redes) ? local.redes : [];
+    redes.forEach(r => anadirFilaRed(r.nombre, r.url));
+    if (!redes.length) anadirFilaRed('', '');
+    actualizarPreviewFoto();
+    const form = document.getElementById('form-local-promocion');
+    if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function limpiarFormularioLocal() {
+    campoLocal('local-id').value = '';
+    campoLocal('local-nombre').value = '';
+    campoLocal('local-direccion').value = '';
+    campoLocal('local-fecha-evento').value = '';
+    campoLocal('local-hora-evento').value = '';
+    campoLocal('local-orden').value = 0;
+    campoLocal('local-foto-url').value = '';
+    campoLocal('local-foto-file').value = '';
+    campoLocal('local-donacion-confirmada').checked = false;
+    campoLocal('local-activo').checked = true;
+    campoLocal('local-btn-eliminar').style.display = 'none';
+    campoLocal('local-redes-filas').innerHTML = '';
+    anadirFilaRed('', '');
+    actualizarPreviewFoto();
+}
+
+async function subirFotoLocal(file) {
+    const estado = document.getElementById('locales-estado');
+    const client = getSupabaseBarriosClient();
+    if (!client) {
+        if (estado) estado.textContent = 'Supabase no disponible para subir la foto.';
+        return;
+    }
+    if (!file) return;
+    const nombre = `locales/${Date.now()}_${String(file.name).replace(/[^a-z0-9._-]/gi, '_')}`;
+    try {
+        const { error } = await client.storage.from('locales-promocion').upload(nombre, file, {
+            upsert: true,
+            cacheControl: '3600'
+        });
+        if (error) throw error;
+        const { data } = client.storage.from('locales-promocion').getPublicUrl(nombre);
+        const url = data && data.publicUrl ? data.publicUrl : '';
+        campoLocal('local-foto-url').value = url;
+        actualizarPreviewFoto();
+        if (estado) estado.textContent = 'Foto subida. Revisa la vista previa y pulsa «Guardar local».';
+    } catch (error) {
+        console.error('Error al subir la foto del local:', error);
+        if (estado) estado.textContent = `No se pudo subir la foto: ${error.message || 'error desconocido'}`;
+    }
+}
+
+async function guardarLocalFormulario() {
+    const usuario = getCurrentUser();
+    const client = getSupabaseBarriosClient();
+    const estado = document.getElementById('locales-estado');
+    if (!usuario || !esRolMaster(usuario.role)) {
+        alert('Solo el Trono Mayor puede gestionar los locales promocionados.');
+        return;
+    }
+    if (!client) {
+        if (estado) estado.textContent = 'Supabase no disponible.';
+        return;
+    }
+
+    const nombre = campoLocal('local-nombre').value.trim();
+    const fecha = campoLocal('local-fecha-evento').value;
+    const hora = campoLocal('local-hora-evento').value;
+    if (!nombre) { alert('El nombre del local es obligatorio.'); return; }
+    if (!!fecha !== !!hora) {
+        alert('La fecha y la hora del evento deben indicarse juntas.');
+        return;
+    }
+
+    const pin = window.prompt('Introduce tu PIN de MASTER para guardar el local:');
+    if (pin === null) return;
+    if (!/^\d{6}$/.test(pin.trim())) { alert('El PIN debe contener exactamente seis dígitos.'); return; }
+
+    const local = {
+        nombre,
+        direccion: campoLocal('local-direccion').value.trim(),
+        redes: recogerRedes(),
+        foto_url: campoLocal('local-foto-url').value.trim(),
+        fecha_evento: fecha || null,
+        hora_evento: hora || null,
+        donacion_confirmada: campoLocal('local-donacion-confirmada').checked,
+        activo: campoLocal('local-activo').checked,
+        orden: Number(campoLocal('local-orden').value || 0) || 0
+    };
+    const id = campoLocal('local-id').value.trim();
+    if (id) local.id = id;
+
+    if (estado) estado.textContent = 'Guardando local…';
+    try {
+        const { error } = await client.rpc('guardar_local_promocion_master', {
+            p_phone: String(usuario.phone || ''),
+            p_pin: pin.trim(),
+            p_local: local
+        });
+        if (error) throw error;
+        await cargarLocalesPromocion();
+        if (estado) estado.textContent = 'Local guardado.';
+    } catch (error) {
+        console.error('Error al guardar el local:', error);
+        if (estado) estado.textContent = `No se pudo guardar el local: ${error.message || 'error desconocido'}`;
+    }
+}
+
+async function eliminarLocalFormulario() {
+    const id = campoLocal('local-id').value.trim();
+    if (!id) return;
+    if (!window.confirm('¿Eliminar este local promocionado definitivamente?')) return;
+
+    const usuario = getCurrentUser();
+    const client = getSupabaseBarriosClient();
+    const estado = document.getElementById('locales-estado');
+    if (!usuario || !esRolMaster(usuario.role) || !client) return;
+
+    const pin = window.prompt('Introduce tu PIN de MASTER para eliminar el local:');
+    if (pin === null) return;
+    if (!/^\d{6}$/.test(pin.trim())) { alert('El PIN debe contener exactamente seis dígitos.'); return; }
+
+    try {
+        const { error } = await client.rpc('eliminar_local_promocion_master', {
+            p_phone: String(usuario.phone || ''),
+            p_pin: pin.trim(),
+            p_local_id: id
+        });
+        if (error) throw error;
+        limpiarFormularioLocal();
+        await cargarLocalesPromocion();
+        if (estado) estado.textContent = 'Local eliminado.';
+    } catch (error) {
+        console.error('Error al eliminar el local:', error);
+        if (estado) estado.textContent = `No se pudo eliminar el local: ${error.message || 'error desconocido'}`;
+    }
+}
+
+async function marcarDonacionLocal(id, confirmada) {
+    const usuario = getCurrentUser();
+    const client = getSupabaseBarriosClient();
+    const estado = document.getElementById('locales-estado');
+    if (!usuario || !esRolMaster(usuario.role) || !client) return;
+
+    const mensaje = confirmada
+        ? 'Registra la donación del local introduciendo tu PIN de MASTER:'
+        : 'Retira la donación del local introduciendo tu PIN de MASTER:';
+    const pin = window.prompt(mensaje);
+    if (pin === null) return;
+    if (!/^\d{6}$/.test(pin.trim())) { alert('El PIN debe contener exactamente seis dígitos.'); return; }
+
+    try {
+        const { error } = await client.rpc('marcar_donacion_local_master', {
+            p_phone: String(usuario.phone || ''),
+            p_pin: pin.trim(),
+            p_local_id: id,
+            p_confirmada: confirmada
+        });
+        if (error) throw error;
+        await cargarLocalesPromocion();
+        if (estado) estado.textContent = confirmada ? 'Donación del local confirmada.' : 'Donación retirada.';
+    } catch (error) {
+        console.error('Error al marcar la donación del local:', error);
+        if (estado) estado.textContent = `No se pudo actualizar la donación: ${error.message || 'error desconocido'}`;
+    }
+}
+
+function inicializarLocalesPromocion() {
+    const form = document.getElementById('form-local-promocion');
+    if (!form || form.dataset.localesInit === '1') return;
+    form.dataset.localesInit = '1';
+
+    form.addEventListener('submit', ev => { ev.preventDefault(); guardarLocalFormulario(); });
+
+    const btnNuevo = document.getElementById('local-btn-nuevo');
+    if (btnNuevo) btnNuevo.addEventListener('click', limpiarFormularioLocal);
+
+    const btnEliminar = document.getElementById('local-btn-eliminar');
+    if (btnEliminar) btnEliminar.addEventListener('click', eliminarLocalFormulario);
+
+    const btnRed = document.getElementById('local-btn-anadir-red');
+    if (btnRed) btnRed.addEventListener('click', () => anadirFilaRed('', ''));
+
+    const inFoto = document.getElementById('local-foto-url');
+    if (inFoto) inFoto.addEventListener('input', actualizarPreviewFoto);
+
+    const fileFoto = document.getElementById('local-foto-file');
+    if (fileFoto) fileFoto.addEventListener('change', () => subirFotoLocal(fileFoto.files && fileFoto.files[0]));
+
+    limpiarFormularioLocal();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarLocalesPromocion);
+} else {
+    inicializarLocalesPromocion();
+}
+
+window.localesPromocionEstado = localesPromocionEstado;
+window.cargarLocalesPromocion = cargarLocalesPromocion;
+window.renderLocalesPromocion = renderLocalesPromocion;
+window.cargarLocalEnFormulario = cargarLocalEnFormulario;
+window.limpiarFormularioLocal = limpiarFormularioLocal;
+window.marcarDonacionLocal = marcarDonacionLocal;

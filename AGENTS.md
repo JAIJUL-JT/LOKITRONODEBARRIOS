@@ -1,63 +1,33 @@
-# AGENTS.md — LokiTrono de Barrios
+# AGENTS.md
 
-SPA estática **sin build, sin framework, sin bundler**. Se sirve tal cual desde Vercel. El código vivo está en la raíz: `index.html`, `css/style.css`, `js/app.js`, `js/supabase.js`, `sql/`, `scripts/`, `supabase/functions/`, `make/`. Todo el contenido y los commits están en español (identidad feudal/medieval).
+## Estructura
+
+SPA estática sin build/bundler/framework. Código vivo en raíz: `index.html`, `css/style.css`, `js/app.js`, `js/supabase.js`, `sql/`, `scripts/`, `supabase/functions/`, `make/`. Contenido en español.
 
 ## Comandos
 
-- `npm test` — ejecuta `tests/test_e2e_reino.js` (ver «Gotcha crítico» abajo). Es la verificación principal.
-- `npm run dev` — `python3 -m http.server 3000` (sirve la raíz; no hay dev server con HMR).
-- `npm run deploy` / `npm run preview` — `vercel` (requiere estar logueado). `npm run build` es un no-op deliberado.
-- Aplicar SQL: manualmente en el SQL Editor de Supabase, o `bash scripts/apply_schema.sh` con `DATABASE_URL`, o el workflow `apply_supabase_schema.yml` (solo `workflow_dispatch`; aplica únicamente `202610030001_secure_superadmin.sql`). Las migraciones nuevas se aplican con `psql "$POSTGRES_URL_NON_POOLING" -f sql/migrations/<fichero>.sql` (credenciales en `.env.to_push`).
-- `python3 scripts/configurar_oraculo.py` — registra el secreto `GROQ_API_KEY` en Supabase y despliega la Edge Function del Oráculo (requiere Supabase CLI y `SUPABASE_ACCESS_TOKEN`).
+- `npm test` — `node tests/test_e2e_reino.js` (ver gotcha). Verificación principal.
+- `npm run dev` — `python3 -m http.server 3000`.
+- `npm run preview` / `npm run deploy` — `vercel` (requiere login). `npm run build` es no-op.
+- SQL: editor Supabase, o `bash scripts/apply_schema.sh` con `DATABASE_URL`, o `apply_supabase_schema.yml` (solo `workflow_dispatch`, aplica `202610030001_secure_superadmin.sql`). Nuevas migraciones: `psql "$POSTGRES_URL_NON_POOLING" -f sql/migrations/<fichero>.sql` (credenciales `.env.to_push`).
+- Oráculo: `python3 scripts/configurar_oraculo.py` (requiere Supabase CLI + `SUPABASE_ACCESS_TOKEN`).
 
-## Gotcha crítico: el test es un grep de código fuente
+## Gotcha: test depende de cadenas exactas
 
-`tests/test_e2e_reino.js` NO ejecuta la app. Lee `index.html`, `js/app.js`, `js/supabase.js` y `sql/schema.sql` y comprueba que contengan cadenas exactas. Algunas incluyen **espacios y saltos de línea literales**, p. ej.:
+`tests/test_e2e_reino.js` lee `index.html`, `js/app.js`, `js/supabase.js`, `sql/schema.sql` y busca cadenas exactas (incluye espacios/saltos de línea). Tras cambiar esos 4 archivos, ejecuta `npm test` y respeta la indentación/texto que el test espera. No reformatees esas funciones. `tests/test_superadmin_voto_unico.js` está vacío.
 
-```js
-assert(appJsContent.includes("function puedeGestionarUsuarios(role) {\n    return role === 'superadmin';"), ...)
-```
+## Puntos clave
 
-Reformatear esas funciones rompe los tests aunque el código siga siendo correcto. Tras cualquier cambio en esos 4 archivos, corre `npm test` y respeta los textos/indentación que el test busca. `tests/test_superadmin_voto_unico.js` está vacío.
-
-## Configuración y entorno
-
-- No hay inyección de variables en build. Las `VITE_*` de `.env*` **no se leen** en runtime. La URL y `anon key` de Supabase están hardcodeadas en el `<script>` de `index.html` (líneas ~14-18, `window.__APP_CONFIG__`). Para cambiar de proyecto Supabase, edita `index.html`.
-- `js/supabase.js` **no** es el cliente de Supabase: es un helper de respaldo basado en `localStorage` (`emitirJuicio`, `getRepositorioVotos`, `verificarClaveSuperAdmin`…). El cliente real se crea en `js/app.js` (`getSupabaseBarriosClient`, `window.supabase.createClient`). No los confundas.
-- Autenticación actual: teléfono + PIN de 4 dígitos contra la tabla `authorized_users`, validado en cliente. No usa Supabase Auth. No lo presentes como seguro para producción.
-
-## Tiempo real y Oráculo Imperial
-
-- **Actualización en tiempo real (Supabase Realtime):** la publicación `supabase_realtime` incluye `casas`, `eventos` y `votos_evento` (migración `202610160001_realtime_y_usuarios_token.sql`). `js/app.js` (`iniciarRealtimeLokitrono`) se suscribe a `postgres_changes` y refresca con debounce (1,2 s) llamando a `cargarBarriosDesdeSupabase`, `cargarEventosDesdeSupabase` y `cargarVotosDesdeSupabase`.
-- `authorized_users` **no** se publica: contiene teléfonos/PIN. Tiene **RLS activado** (migración `202610170002_rls_seguridad.sql`): solo `is_superadmin()` puede leer/escribir directamente; el resto accede vía RPC `SECURITY DEFINER`. Los administradores refrescan el listado con `listar_usuarios_por_token(p_token)` (valida `lokitrono_usuario_de_token`, revela el PIN solo al rol `master`) cada 25 s, sin volver a pedir el PIN (`refrescarUsuariosPorToken`).
-- **Eventos con finalización:** la tabla `eventos` incluye `fecha_fin`, `hora_fin` y `fecha_fin_votacion` (migración `202610170001_eventos_fecha_fin.sql`, RPC `guardar_evento_superadmin` actualizada). La ventana de votación va de `fecha + hora_inicio_votacion` a `(fecha_fin_votacion || fecha) + hora_fin_votacion`; el fin del evento es `(fecha_fin || fecha) + (hora_fin || hora)`.
-- **Seguridad RLS:** `casas`, `maestres`, `juicios`, `codigos_diarios` y `authorized_users` tienen RLS activado tras `202610170002_rls_seguridad.sql`; `is_superadmin()` es `SECURITY DEFINER`. La app solo lee `eventos` y `casas` directamente; todas las escrituras pasan por RPC `SECURITY DEFINER`.
-- **Oráculo Imperial (IA):** usa Groq (endpoint OpenAI-compatible, `openai/gpt-oss-120b` por defecto) a través de la Edge Function `supabase/functions/oraculo`, que actúa de proxy. La clave `GROQ_API_KEY` es un secreto del servidor y **nunca** llega al navegador. Cliente: `obtenerOraculoConfig`, `llamarModeloOraculo`, `generarCronicaOraculo`, `generarRecomendacionOraculo`; endpoint `window.__APP_CONFIG__.ORACULO_ENDPOINT` o `${SUPABASE_URL}/functions/v1/oraculo`. Configuración/despliegue: `python3 scripts/configurar_oraculo.py`. El proxy admite otros proveedores OpenAI-compatible vía `ORACULO_API_URL`/`ORACULO_PROVIDER`. Si el proxy no responde, la app muestra una crónica de reserva (no falla).
-
-## Convenciones de dominio
-
-- Roles válidos: `jugador`, `tronista`, `superadmin`, `master` (CHECK en el esquema). El antiguo `organizador` se migró a `tronista`; `master` (Trono Mayor) es el rol superior que puede gestionar superadmins y ver PIN.
-- Solo `superadmin` gestiona usuarios/roles y eventos. Ver `js/app.js` (`puedeGestionarUsuarios`, `puedeEditarEventoTronista`).
-- Voto único por Maestre y Casa (`UNIQUE(maestre_id, casa_visitada)`).
-- Ranking «Códice de la Villa»: media ponderada `0.50 Ocio Hostelero + 0.20 Accesibilidad + 0.30 Ambiente`, regularizada con `K = 3.0`. Implementada en `calcular_ranking()` (`sql/schema.sql`) y replicada en JS/tests.
-- Barrio `Forastero` es un caso especial no competitivo.
-
-## SQL y despliegue
-
-- `sql/schema.sql` es el esquema base (lo valida el test); los cambios incrementales van en `sql/migrations/` con nombre `YYYYMMDDNNNN_descripcion.sql` y se aplican a mano en Supabase. No edites migraciones ya aplicadas: crea una nueva.
-- Push a `main` despliega en Vercel (`.github/workflows/`; hay dos workflows redundantes de Vercel). Ramas remotas relevantes: `main`.
-- `js/app.js` es un archivo enorme (~120KB) con toda la lógica de UI y estado; no hay módulos ni separación por componentes. `window.__APP_STATE__` expone `eventList`.
-
-## Ruido en el repo (no editar por error)
-
-Hay copias/backups que **no son** el código activo:
-- Directorios duplicados `lokitrono-barrio-management-update/` y `lokitrono-login-superadmin-fix/` (snapshots completos), y sus `.zip`.
-- `juego-de-barrios-bilbao.zip`.
-- `js/app.js.backup*` (muchos) y `js/parche_*.py`.
-- Scripts Python de parcheo en la raíz (`actualizar_*.py`, `aplicar_cambios_auth.py`).
-
-Edita solo los archivos vivos de la raíz, no estas copias. No borres cambios preexistentes ajenos a tu tarea.
-
-## Agente local
-
-`.github/agents/mantenimiento-web-bilbao.agent.md` define reglas específicas del repo (cambios mínimos, no migrar framework, no tocar RLS/auth sin revisar seguridad, no exponer secretos). Respétalas.
+- Config runtime: URL y anon key de Supabase hardcodeadas en `<script>` de `index.html` (`window.__APP_CONFIG__`). No usa `VITE_*`. Para cambiar de proyecto, edita `index.html`.
+- `js/supabase.js` = helpers `localStorage` (no cliente Supabase). Cliente real: `getSupabaseBarriosClient` en `js/app.js` (`window.supabase.createClient`).
+- Auth: teléfono + PIN 4 dígitos contra `authorized_users` (validación cliente). No Supabase Auth. No apto producción.
+- Realtime: publicación `supabase_realtime` cubre `casas`, `eventos`, `votos_evento` (`iniciarRealtimeLokitrono`, debounce ~1,2s). `authorized_users` NO publicado. Listado admin: `listar_usuarios_por_token(p_token)` cada ~25s (`refrescarUsuariosPorToken`), revela PIN solo a `master`.
+- Eventos: ventana votación `[fecha+hora_inicio_votacion, (fecha_fin_votacion||fecha)+hora_fin_votacion]`; fin evento `[(fecha_fin||fecha)+(hora_fin||hora)]` (migraciones `202610170001_*`). 
+- RLS: activo en varias tablas; `is_superadmin()` SECURITY DEFINER. App lee `eventos`, `casas` directamente; escrituras via RPC SECURITY DEFINER. No tocar RLS/auth sin revisar seguridad.
+- Oráculo: Edge Function `supabase/functions/oraculo` proxy Groq (`openai/gpt-oss-120b`) por defecto; clave `GROQ_API_KEY` nunca llega a navegador. Fallback a crónica si falla.
+- Roles: `jugador`, `tronista`, `superadmin`, `master`. Migrado `organizador->tronista`. `master` gestiona superadmins y ve PIN. Permisos: ver `puedeGestionarUsuarios`, `puedeEditarEventoTronista` en `js/app.js`.
+- Voto único: `UNIQUE(maestre_id, casa_visitada)`. Ranking Códice (0.50/0.20/0.30, K=3.0) en `calcular_ranking()` SQL y replicado en JS/tests. `Forastero` no competitivo.
+- SQL: `sql/schema.sql` base; cambios en `sql/migrations/YYYYMMDDNNNN_*.sql`. No editar migraciones aplicadas. Crear nueva.
+- Archivo gigante: `js/app.js` ~120KB (UI+estado), sin módulos. `window.__APP_STATE__` expone `eventList`.
+- Ignorar ruido: carpetas/zip/backup/parches (`lokitrono-*`, `*.backup*`, `js/parche_*.py`, `actualizar_*.py`, `aplicar_cambios_auth.py`). Editar solo archivos vivos en raíz.
+- Respeta `.github/agents/mantenimiento-web-bilbao.agent.md` (mínimos cambios, no migrar framework, no exponer secretos).

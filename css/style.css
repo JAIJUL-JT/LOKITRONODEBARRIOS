@@ -298,6 +298,172 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
 }
 
+/* El desplegable nativo hereda el fondo del sistema. Forzamos esquema oscuro y
+   coloreamos opciones/grupos para que el texto amarillo sea legible. */
+#select-seccion-corte,
+#select-seccion-corte optgroup,
+#select-seccion-corte option {
+    color-scheme: dark;
+    background-color: #141415;
+    color: #fef08a;
+}
+
+#select-seccion-corte optgroup {
+    color: #d4af37;
+    font-weight: 700;
+    font-style: normal;
+}
+
+#select-seccion-corte option {
+    color: #fef08a;
+    padding: 8px 10px;
+}
+
+#select-seccion-corte option:checked,
+#select-seccion-corte option:hover {
+    background-color: #78350f;
+    color: #fff7d6;
+}
+
+/* Panel/recorrido de configuración inicial y bienvenida */
+.modal-config {
+    max-width: 640px;
+    max-height: 88vh;
+    overflow-y: auto;
+}
+
+.tutorial-paso {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: rgba(20, 20, 21, 0.7);
+}
+
+.tutorial-paso.tutorial-hecho {
+    border-color: rgba(74, 222, 128, 0.5);
+    background: rgba(20, 40, 25, 0.55);
+}
+
+.tutorial-paso-icono {
+    font-size: 1.35rem;
+    line-height: 1.2;
+}
+
+.tutorial-paso-cuerpo {
+    flex: 1;
+    min-width: 0;
+}
+
+.tutorial-paso-titulo {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    color: #fef08a;
+    margin: 0 0 3px;
+    font-size: 0.98rem;
+}
+
+.tutorial-paso-desc {
+    margin: 0;
+    color: #d6d3d1;
+    font-size: 0.83rem;
+    line-height: 1.4;
+}
+
+.tutorial-progreso {
+    height: 10px;
+    border-radius: 6px;
+    background: rgba(120, 53, 15, 0.5);
+    overflow: hidden;
+    margin: 4px 0 16px;
+}
+
+.tutorial-progreso > span {
+    display: block;
+    height: 100%;
+    background: var(--oro-gradiente);
+    transition: width 0.3s ease;
+}
+
+@media (max-width: 720px) {
+    .nav-dropdown-container > div {
+        flex-wrap: wrap;
+    }
+
+    #select-seccion-corte {
+        width: 100%;
+        font-size: 0.95rem;
+    }
+
+    .modal-config {
+        max-height: 92vh;
+        padding: 18px;
+    }
+.tutorial-paso {
+    padding: 10px 12px;
+}
+
+}
+
+/* Superposiciones de las guías de primer uso */
+.overlay-reino {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.82);
+}
+
+.tutorial-config-burbuja {
+    position: fixed;
+    left: 18px;
+    bottom: 18px;
+    z-index: 8999;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid #d4af37;
+    background: radial-gradient(circle at 50% 35%, #2a2110, #0c0a06);
+    color: #fef08a;
+    font-size: 1.4rem;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 18px rgba(212, 175, 55, 0.25);
+    align-items: center;
+    justify-content: center;
+}
+
+.tutorial-config-burbuja:hover {
+    box-shadow: 0 0 26px rgba(212, 175, 55, 0.55);
+}
+
+.tutorial-modal-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+    padding-bottom: 10px;
+    margin-bottom: 8px;
+}
+
+.tutorial-cerrar {
+    background: transparent;
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    color: #fef08a;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+}
+
 .form-group {
     margin-bottom: 18px;
 }

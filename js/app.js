@@ -223,7 +223,6 @@ async function finalizarJuegoSupabase(finalizar) {
             );
         }
         aplicarFinDeJuegoUI();
-        if (typeof aplicarAmbitoVista === 'function') aplicarAmbitoVista();
     } catch (error) {
         alert('No se pudo actualizar el estado del juego: ' + (error.message || error));
     }
@@ -315,6 +314,11 @@ function cambiarPestana(valor) {
     if (!esSuperadmin && PESTANAS_ADMIN.includes(valor)) {
         valor = 'pestana-clasificacion';
     }
+    // La Gala Final permanece oculta a los no administradores hasta publicarse.
+    if ((valor === 'pestana-evento-final' || valor === 'tab-evento-final')
+        && !esSuperadmin && !galaFinalEstaPublicada()) {
+        valor = 'pestana-clasificacion';
+    }
     // Con el juego concluido, los roles no administradores solo ven Clasificación.
     if (!esSuperadmin && typeof restriccionFinDeJuegoActiva === 'function' && restriccionFinDeJuegoActiva() && valor !== 'pestana-clasificacion') {
         valor = 'pestana-clasificacion';
@@ -359,6 +363,9 @@ function actualizarInterfazSesion(usuario) {
         if (contenido) contenido.style.display = 'block';
         const esSuperadmin = puedeAdministrar(usuario.role);
         if (optgroupAdmin) optgroupAdmin.style.display = esSuperadmin ? '' : 'none';
+        // La Gala Final solo aparece a los maestres cuando ya está publicada.
+        aplicarVisibilidadGalaFinal();
+        if (typeof cargarGalaFinalDesdeSupabase === 'function') cargarGalaFinalDesdeSupabase();
         const panelTronistasAdmin = document.getElementById('panel-superadmin-tronistas');
         if (panelTronistasAdmin) panelTronistasAdmin.style.display = esSuperadmin ? 'block' : 'none';
         const panelConfigTitulos = document.getElementById('panel-config-titulos-usuarios');
@@ -383,8 +390,17 @@ function actualizarInterfazSesion(usuario) {
         if (esSuperadmin) iniciarAutoRefreshUsuarios();
         else detenerAutoRefreshUsuarios();
 
+        // Relee los votos centrales al iniciar sesión para que la Clasificación
+        // muestre siempre el repositorio común de Supabase, no la caché previa.
+        if (typeof cargarVotosDesdeSupabase === 'function') cargarVotosDesdeSupabase();
+
         cambiarPestana('pestana-clasificacion');
         if (typeof aplicarFinDeJuegoUI === 'function') aplicarFinDeJuegoUI();
+
+        // Nombre de la edición bajo la portada y guías de primer uso.
+        if (typeof aplicarNombreJuego === 'function') aplicarNombreJuego();
+        if (typeof actualizarVisibilidadTutorialConfig === 'function') actualizarVisibilidadTutorialConfig(usuario);
+        if (typeof iniciarGuiasPrimerUso === 'function') iniciarGuiasPrimerUso(usuario);
     } else {
         detenerAutoRefreshUsuarios();
         const panelSorteo = document.getElementById('panel-sorteo-barrios');
@@ -556,7 +572,7 @@ function getTituloCompleto(usuario) {
 
     const icon = getIconoRango(rol, phone);
 
-    // Veladores del LokiTrono (usuarios especiales de la corte)
+    // Consejeros del Lokitrono (usuarios especiales de la corte)
     if (CONSEJEROS_ESPECIALES.includes(phone)) {
         // Ainhoa → Veladora del LokiTrono (663366786)
         const esVeladora = phone === '663366786';
@@ -854,7 +870,6 @@ function renderMisVotosPersonales() {
     const contenedor = document.getElementById('contenedor-mis-votos-body');
     if (!contenedor) return;
 
-    const esSandbox = getAmbitoVista() === 'sandbox';
     const user = getCurrentUser();
     if (!user) {
         contenedor.innerHTML = '<p>Inicia sesión para consultar tus votos.</p>';
@@ -862,38 +877,29 @@ function renderMisVotosPersonales() {
     }
 
     const userId = String(user.phone || user.id || '');
-    // En el Sandbox no existe una "sesión simulada", así que se listan todos los
-    // votos de la partida simulada (diferenciados con la columna del Maestre).
-    // En el Reino real se muestra únicamente el historial del usuario conectado.
-    const votos = (esSandbox
-        ? getVotosDelAmbito()
-        : getRepositorioVotos().filter(v => String(v.maestre_id || '') === userId)
-    ).slice().sort((a, b) => String(b.fecha_juicio || '').localeCompare(String(a.fecha_juicio || '')));
+    // Se muestra únicamente el historial del usuario conectado.
+    const votos = getRepositorioVotos()
+        .filter(v => String(v.maestre_id || '') === userId)
+        .slice()
+        .sort((a, b) => String(b.fecha_juicio || '').localeCompare(String(a.fecha_juicio || '')));
 
     if (!votos.length) {
-        contenedor.innerHTML = esSandbox
-            ? '<p style="color:#93c5fd;">La partida simulada no tiene votos registrados.</p>'
-            : '<p style="color:#d6d3d1;">No ha emitido ninguna votación.</p>';
+        contenedor.innerHTML = '<p style="color:#d6d3d1;">No ha emitido ninguna votación.</p>';
         return;
     }
 
     const eventos = getEventosDelAmbito();
-    const cabeceraMaestre = esSandbox ? '<th>Maestre participante</th>' : '';
     contenedor.innerHTML = `
         <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;">
                 <thead><tr>
-                    ${cabeceraMaestre}<th>Evento</th><th>Barrio</th><th>🍽️ Ocio Hostelero</th><th>🚌 Accesibilidad</th><th>🎉 Ambiente</th><th>🏆 Nota Final</th><th>Fecha del voto</th><th>Estado</th>
+                    <th>Evento</th><th>Barrio</th><th>🍽️ Ocio Hostelero</th><th>🚌 Accesibilidad</th><th>🎉 Ambiente</th><th>🏆 Nota Final</th><th>Fecha del voto</th><th>Estado</th>
                 </tr></thead>
                 <tbody>${votos.map(v => {
                     const evt = eventos.find(e => String(e.id) === String(v.evento_id));
                     const estado = evt ? obtenerEstadoVotacionEvento(evt).estado : 'Histórico';
                     const final = (Number(v.nota_festin || 0) * 0.50) + (Number(v.nota_caminos || 0) * 0.20) + (Number(v.nota_espiritu || 0) * 0.30);
-                    const celdaMaestre = esSandbox
-                        ? `<td>${escaparHTML(v.maestre_nombre || v.maestre_id || '—')}</td>`
-                        : '';
                     return `<tr>
-                        ${celdaMaestre}
                         <td>${escaparHTML(v.evento_nombre || (evt && evt.nombre) || 'Evento anterior')}</td>
                         <td>${escaparHTML(v.barrio || v.casa_visitada || '')}</td>
                         <td>${Number(v.nota_festin || 0)}</td>
@@ -973,7 +979,6 @@ async function guardarVotoBarrioUsuario(event) {
     }
 
     const maestreId = String(user.phone || user.id || '');
-    const esSandbox = getAmbitoVista() === 'sandbox';
     const votosGuardados = getVotosDelAmbito();
     if (votosGuardados.some(v =>
         String(v.maestre_id || '') === maestreId &&
@@ -1017,57 +1022,46 @@ async function guardarVotoBarrioUsuario(event) {
         fecha_juicio: new Date().toISOString()
     };
 
-    // Persistencia central en Supabase, autenticada por el token de sesión.
-    // En modo Sandbox el voto se guarda SOLO en la partida simulada.
-    let sincronizado = false;
-    if (esSandbox) {
-        const sim = leerPartidaSandbox() || { barrios: [], usuarios: [], eventos: [], votos: [] };
-        if (!Array.isArray(sim.votos)) sim.votos = [];
-        sim.votos.push(voto);
-        guardarPartidaSandbox(sim);
-    } else {
-        const client = getSupabaseBarriosClient();
-        if (client && user.token) {
-            try {
-                const casa = (typeof casasCache !== 'undefined' ? casasCache : [])
-                    .find(c => String(c.nombre) === String(barrio));
-                const { error } = await client.rpc('emitir_voto_lokitrono', {
-                    p_token: user.token,
-                    p_evento_id: String(evento.id),
-                    p_casa_id: casa ? casa.id : null,
-                    p_barrio: barrio,
-                    p_festin: voto.nota_festin,
-                    p_caminos: voto.nota_caminos,
-                    p_espiritu: voto.nota_espiritu,
-                    p_detalles: notas
-                });
-                if (error) throw error;
-                sincronizado = true;
-            } catch (error) {
-                console.warn('No se pudo registrar el voto en Supabase; se guarda en el respaldo local:', error?.message || error);
-            }
-        }
-
-        votosGuardados.push(voto);
-        localStorage.setItem(getStorageKeyVotos(), JSON.stringify(votosGuardados));
+    // Persistencia central en Supabase: es la ÚNICA fuente de verdad del Reino.
+    // Un voto que el servidor no confirme NO se guarda en local, para evitar
+    // votos fantasma que el resto de usuarios no puede ver en la Clasificación.
+    const client = getSupabaseBarriosClient();
+    if (!client || !user.token) {
+        mostrarMensajeVoto('error', 'No hay conexión con el servidor de la competición. Vuelve a iniciar sesión e inténtalo de nuevo.');
+        return;
     }
 
-    if (typeof renderRepositorioVotos === 'function') renderRepositorioVotos();
-    if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
-    if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
+    try {
+        const casa = (typeof casasCache !== 'undefined' ? casasCache : [])
+            .find(c => String(c.nombre) === String(barrio));
+        const { error } = await client.rpc('emitir_voto_lokitrono', {
+            p_token: user.token,
+            p_evento_id: String(evento.id),
+            p_casa_id: casa ? casa.id : null,
+            p_barrio: barrio,
+            p_festin: voto.nota_festin,
+            p_caminos: voto.nota_caminos,
+            p_espiritu: voto.nota_espiritu,
+            p_detalles: notas
+        });
+        if (error) throw error;
+    } catch (error) {
+        console.error('No se pudo registrar el voto en Supabase:', error);
+        const detalle = error && error.message ? String(error.message) : 'error desconocido';
+        mostrarMensajeVoto('error', `El servidor rechazó el voto: ${detalle}`);
+        return;
+    }
+
+    // Relée el repositorio central para que este navegador y el resto de
+    // usuarios converjan en el mismo estado (sin votos fantasma locales).
+    await cargarVotosDesdeSupabase();
     renderMisVotosPersonales();
     actualizarBloqueVotacion();
 
     const formulario = document.getElementById('form-votar-barrio');
     if (formulario) formulario.reset();
     cerrarPanelPuntuacion();
-    if (esSandbox) {
-        mostrarMensajeVoto('exito', `Voto simulado registrado para ${barrio}. Ya cuenta en el Códice del Sandbox.`);
-    } else if (sincronizado) {
-        mostrarMensajeVoto('exito', `¡Voto recibido y registrado! Tu puntuación para ${barrio} ya cuenta en el Códice de la Villa.`);
-    } else {
-        mostrarMensajeVoto('aviso', 'El voto se ha guardado en este dispositivo, pero el Reino no ha confirmado su recepción. Se sincronizará cuando el servidor esté disponible.');
-    }
+    mostrarMensajeVoto('exito', `¡Voto recibido y registrado! Tu puntuación para ${barrio} ya cuenta en el Códice de la Villa.`);
 }
 
 const CRITERIOS_VERSION = 2;
@@ -1344,8 +1338,6 @@ function exportarRepositorioCSV() {
         alert('No hay votos para exportar.');
         return;
     }
-    const esSandbox = typeof getAmbitoVista === 'function' && getAmbitoVista() === 'sandbox';
-
     const header = ['maestre_id', 'casa_visitada', 'barrio', 'nota_festin', 'nota_caminos', 'nota_espiritu', 'fecha_juicio'];
     const filas = votos.map(v => header.map(c => `"${String(v[c] ?? '').replace(/"/g, '""')}"`).join(','));
     const csv = [header.join(','), ...filas].join('\n');
@@ -1353,7 +1345,7 @@ function exportarRepositorioCSV() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = esSandbox ? 'repositorio_votos_sandbox.csv' : 'repositorio_votos.csv';
+    link.download = 'repositorio_votos.csv';
     link.click();
     URL.revokeObjectURL(url);
 }
@@ -1397,7 +1389,6 @@ function renderRepositorioVotos() {
     const votos = getVotosDelAmbito();
     const user = getCurrentUser ? getCurrentUser() : null;
     const esAdmin = user && puedeAdministrar(user.role);
-    const esSandbox = getAmbitoVista() === 'sandbox';
 
     cuerpo.innerHTML = votos.length
         ? votos.map((v, index) => `
@@ -1412,28 +1403,7 @@ function renderRepositorioVotos() {
                 </td>
             </tr>
         `).join('')
-        : `<tr><td colspan="6" style="text-align: center; color: #d6d3d1;">Sin votos registrados en el repositorio ${esSandbox ? 'del Sandbox' : 'central'}.</td></tr>`;
-}
-
-// Elimina un voto del Sandbox (su partida simulada). Nunca toca datos reales.
-function eliminarVotoSandboxPorIndice(indice) {
-    const sim = leerPartidaSandbox();
-    if (sim && Array.isArray(sim.votos)) {
-        sim.votos.splice(indice, 1);
-        localStorage.setItem('simulacion_partida_completa', JSON.stringify(sim));
-        localStorage.setItem(getStorageKeyVotosSandbox(), JSON.stringify(sim.votos));
-        sandboxSincronizarPartida(sim);
-        return true;
-    }
-    try {
-        const key = getStorageKeyVotosSandbox();
-        const votos = JSON.parse(localStorage.getItem(key) || '[]');
-        votos.splice(indice, 1);
-        localStorage.setItem(key, JSON.stringify(votos));
-        return true;
-    } catch (e) {
-        return false;
-    }
+        : `<tr><td colspan="6" style="text-align: center; color: #d6d3d1;">Sin votos registrados en el repositorio central.</td></tr>`;
 }
 
 async function eliminarVotoRepositorio(index) {
@@ -1443,15 +1413,6 @@ async function eliminarVotoRepositorio(index) {
         return;
     }
     if (!confirm('🗑️ ¿Deseas eliminar este voto del repositorio?')) return;
-
-    if (getAmbitoVista() === 'sandbox') {
-        eliminarVotoSandboxPorIndice(index);
-        renderRepositorioVotos();
-        if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
-        if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
-        alert('Voto eliminado correctamente.');
-        return;
-    }
 
     const voto = getRepositorioVotos()[index];
     const client = getSupabaseBarriosClient();
@@ -1492,8 +1453,7 @@ function getRepositorioVotos() {
     }
 }
 
-// Descarga los votos centralizados en Supabase y REEMPLAZA la caché del Reino
-// real. El Sandbox vive en su propia clave/tablas y no se toca aquí.
+// Descarga los votos centralizados en Supabase y REEMPLAZA la caché local.
 async function cargarVotosDesdeSupabase() {
     const client = getSupabaseBarriosClient();
     if (!client) return;
@@ -1545,25 +1505,30 @@ function calcularPuntuacionLeyII(festin, caminos, espiritu, n, mediaGlobal, k = 
     return ((n * crudo) + (k * (Number(mediaGlobal) || 0))) / (n + k);
 }
 
-function renderClasificacionReal() {
-    const cuerpo = document.getElementById('clasificacion-body');
-    if (!cuerpo) return;
+// Vista activa del panel de clasificación: 'general' | 'evento' | 'historico'.
+let vistaRankingActual = 'general';
 
-    const votos = getVotosComputablesDelAmbito();
-    const barrios = getBarriosDelAmbito();
+// Cabecera común de las tablas de ranking.
+const TABLA_RANKING_HEADER = `<tr>
+    <th>Estatus</th>
+    <th>Reino / Feudo</th>
+    <th>Ocio Hostelero (50%)</th>
+    <th>Accesibilidad (20%)</th>
+    <th>Ambiente (30%)</th>
+    <th>Nota Final</th>
+    <th>Votos</th>
+</tr>`;
 
-    if (barrios.length === 0) {
-        cuerpo.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#a1a1aa;font-style:italic;">Aún no hay barrios participantes en la competición.</td></tr>';
-        renderGanadoresPorCategoria([]);
-        return;
-    }
-
-    const mediaGlobal = votos.length === 0 ? 0 : votos.reduce((acc, v) => {
+// Calcula el ranking de barrios (Ley II) a partir de un conjunto de votos.
+// Se reutiliza para el Ranking General, el del Evento y el Histórico por evento.
+function calcularRankingBarrios(votos, barrios) {
+    const lista = Array.isArray(votos) ? votos : [];
+    const mediaGlobal = lista.length === 0 ? 0 : lista.reduce((acc, v) => {
         return acc + calcularNotaLeyII(v.nota_festin, v.nota_caminos, v.nota_espiritu);
-    }, 0) / votos.length;
+    }, 0) / lista.length;
 
-    const estadisticas = barrios.map(barrio => {
-        const votosBarrio = votos.filter(v => (v.barrio || v.casa_visitada) === barrio);
+    const estadisticas = (barrios || []).map(barrio => {
+        const votosBarrio = lista.filter(v => (v.barrio || v.casa_visitada) === barrio);
         const totalVotos = votosBarrio.length;
         if (totalVotos === 0) {
             return { barrio, festin: '0.0', caminos: '0.0', espiritu: '0.0', notaFinal: 0, totalVotos: 0 };
@@ -1581,24 +1546,171 @@ function renderClasificacionReal() {
     });
 
     estadisticas.sort((a, b) => b.notaFinal - a.notaFinal);
+    return { estadisticas, mediaGlobal };
+}
 
-    cuerpo.innerHTML = estadisticas.map((item, index) => {
-        const medallas = ['🥇 1º', '🥈 2º', '🥉 3º'];
-        const estatus = medallas[index] || `🏰 ${index + 1}º`;
+// Fila HTML de una posición del ranking.
+function filaRankingHTML(item, index) {
+    const medallas = ['🥇 1º', '🥈 2º', '🥉 3º'];
+    const estatus = medallas[index] || `🏰 ${index + 1}º`;
+    return `
+        <tr>
+            <td><strong>${estatus}</strong></td>
+            <td><strong>${escaparHTML(item.barrio)}</strong></td>
+            <td>${item.festin}</td>
+            <td>${item.caminos}</td>
+            <td>${item.espiritu}</td>
+            <td><strong style="color: var(--oro-brillante); font-size: 1.1rem;">${item.notaFinal} pts</strong></td>
+            <td>${item.totalVotos}</td>
+        </tr>
+    `;
+}
+
+// Votos computables que pertenecen a un evento concreto. Si el evento no tiene
+// votos con evento_id (datos antiguos), se aproxima por barrio anfitrión.
+function votosDeEvento(evento) {
+    if (!evento) return [];
+    const todos = getVotosComputablesDelAmbito();
+    const porId = todos.filter(v => v.evento_id != null && String(v.evento_id) === String(evento.id));
+    if (porId.length) return porId;
+    return todos.filter(v => (v.barrio || v.casa_visitada) === evento.barrio);
+}
+
+// Evento cuya ventana de votación está abierta ahora mismo (el «evento en curso»).
+function obtenerEventoEnCurso() {
+    const abiertos = getEventosConVotacionDelAmbito().filter(e => {
+        try { return obtenerEstadoVotacionEvento(e).estado === 'ABIERTA'; } catch (_) { return false; }
+    });
+    if (!abiertos.length) return null;
+    abiertos.sort((a, b) => `${a.fecha || ''}${a.hora || ''}`.localeCompare(`${b.fecha || ''}${b.hora || ''}`));
+    return abiertos[0];
+}
+
+// Eventos ya celebrados/votados, en orden cronológico (para el histórico).
+function obtenerEventosHistoricos() {
+    const votos = getVotosDelAmbito();
+    const conVotos = getEventosConVotacionDelAmbito().filter(e =>
+        votos.some(v => String(v.evento_id || '') === String(e.id) || (v.barrio || v.casa_visitada) === e.barrio)
+    );
+    conVotos.sort((a, b) => `${a.fecha || ''}${a.hora || ''}`.localeCompare(`${b.fecha || ''}${b.hora || ''}`));
+    return conVotos;
+}
+
+// Ranking General: agrega los votos de TODOS los eventos celebrados con votación.
+function renderRankingGeneral() {
+    const cuerpo = document.getElementById('clasificacion-body');
+    if (!cuerpo) return;
+
+    const votos = getVotosComputablesDelAmbito();
+    const barrios = getBarriosDelAmbito();
+
+    if (barrios.length === 0) {
+        cuerpo.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#a1a1aa;font-style:italic;">Aún no hay barrios participantes en la competición.</td></tr>';
+        renderGanadoresPorCategoria([]);
+        return;
+    }
+
+    const { estadisticas } = calcularRankingBarrios(votos, barrios);
+    cuerpo.innerHTML = estadisticas.map(filaRankingHTML).join('');
+    renderGanadoresPorCategoria(estadisticas);
+}
+
+// Ranking del Evento: solo los votos del evento en curso.
+function renderRankingEvento() {
+    const info = document.getElementById('ranking-evento-info');
+    const cuerpo = document.getElementById('ranking-evento-body');
+    if (!cuerpo) return;
+
+    const evento = obtenerEventoEnCurso();
+    if (!evento) {
+        if (info) info.innerHTML = '<p style="margin:0;color:#d6d3d1;font-style:italic;">⏳ No hay ninguna votación abierta en estos momentos.</p>';
+        cuerpo.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#a1a1aa;font-style:italic;">Sin evento en curso.</td></tr>';
+        return;
+    }
+
+    const estado = (() => { try { return obtenerEstadoVotacionEvento(evento); } catch (_) { return { texto: '' }; } })();
+    if (info) {
+        info.innerHTML = `🗳️ <strong>${escaparHTML(evento.nombre || evento.barrio || 'Evento en curso')}</strong>
+            · Barrio anfitrión: <strong>${escaparHTML(evento.barrio || '—')}</strong>
+            · ${escaparHTML(evento.fecha || '')}
+            · <span style="color:#4ade80;">${escaparHTML(estado.texto || '')}</span>`;
+    }
+
+    const votos = votosDeEvento(evento);
+    const barrios = [...new Set(votos.map(v => v.barrio || v.casa_visitada).filter(Boolean))];
+    if (!barrios.length) {
+        cuerpo.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#a1a1aa;font-style:italic;">Aún no hay votos registrados en el evento en curso.</td></tr>';
+        return;
+    }
+
+    const { estadisticas } = calcularRankingBarrios(votos, barrios);
+    cuerpo.innerHTML = estadisticas.map(filaRankingHTML).join('');
+}
+
+// Ranking Histórico: una tabla con los resultados de cada evento celebrado.
+function renderRankingHistorico() {
+    const contenedor = document.getElementById('ranking-historico-contenido');
+    if (!contenedor) return;
+
+    const eventos = obtenerEventosHistoricos();
+    if (!eventos.length) {
+        contenedor.innerHTML = '<p style="text-align:center;color:#d6d3d1;font-style:italic;">Todavía no hay eventos con votos registrados.</p>';
+        return;
+    }
+
+    contenedor.innerHTML = eventos.map(evento => {
+        const votos = votosDeEvento(evento);
+        const barrios = [...new Set(votos.map(v => v.barrio || v.casa_visitada).filter(Boolean))];
+        const filas = barrios.length
+            ? calcularRankingBarrios(votos, barrios).estadisticas.map(filaRankingHTML).join('')
+            : '<tr><td colspan="7" style="text-align:center;color:#a1a1aa;font-style:italic;">Sin votos registrados en este evento.</td></tr>';
+        const estado = (() => { try { return obtenerEstadoVotacionEvento(evento).texto; } catch (_) { return ''; } })();
         return `
-            <tr>
-                <td><strong>${estatus}</strong></td>
-                <td><strong>${item.barrio}</strong></td>
-                <td>${item.festin}</td>
-                <td>${item.caminos}</td>
-                <td>${item.espiritu}</td>
-                <td><strong style="color: var(--oro-brillante); font-size: 1.1rem;">${item.notaFinal} pts</strong></td>
-                <td>${item.totalVotos}</td>
-            </tr>
+            <div style="margin-bottom:24px;background:rgba(15,23,42,0.6);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:16px;">
+                <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:0 0 4px;">${escaparHTML(evento.nombre || evento.barrio || 'Evento')}</h4>
+                <p style="margin:0 0 12px;color:#a1a1aa;font-size:0.85rem;">
+                    🏰 ${escaparHTML(evento.barrio || '—')} · 📅 ${escaparHTML(evento.fecha || '')} · ${escaparHTML(estado)}
+                </p>
+                <div class="table-responsive">
+                    <table class="leaderboard-table">
+                        <thead>${TABLA_RANKING_HEADER}</thead>
+                        <tbody>${filas}</tbody>
+                    </table>
+                </div>
+            </div>
         `;
     }).join('');
+}
 
-    renderGanadoresPorCategoria(estadisticas);
+// Dispatcher: dibuja la vista de ranking seleccionada y refresca en tiempo real.
+function renderClasificacionReal() {
+    const selector = document.getElementById('ranking-vista-selector');
+    if (selector) {
+        selector.querySelectorAll('button[data-ranking]').forEach(btn => {
+            const activo = btn.dataset.ranking === vistaRankingActual;
+            btn.style.background = activo ? '#1e40af' : '#0f172a';
+            btn.style.borderColor = activo ? '#facc15' : '#3b82f6';
+        });
+    }
+    const paneles = {
+        general: 'ranking-general-panel',
+        evento: 'ranking-evento-panel',
+        historico: 'ranking-historico-panel'
+    };
+    Object.entries(paneles).forEach(([clave, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = clave === vistaRankingActual ? 'block' : 'none';
+    });
+
+    if (vistaRankingActual === 'evento') renderRankingEvento();
+    else if (vistaRankingActual === 'historico') renderRankingHistorico();
+    else renderRankingGeneral();
+}
+
+function setRankingVista(vista) {
+    if (!['general', 'evento', 'historico'].includes(vista)) return;
+    vistaRankingActual = vista;
+    renderClasificacionReal();
 }
 
 // Ganadores del Códice: campeón global, uno por categoría (nivel 1) y uno por
@@ -1752,98 +1864,37 @@ function haVotadoCasa(maestreId, casaId) {
     return getVotosDelAmbito().some(v => v.maestre_id === maestreId && v.casa_visitada === casaId);
 }
 
-// Aislamiento Real ↔ Sandbox.
-//
-// El Reino real SIEMPRE lee y escribe su propia clave. El Sandbox tiene su
-// clave (y sus tablas `sandbox_*` en Supabase) y jamás contamina lo real.
-// Antes esta función devolvía la clave del Sandbox cuando el flag global
-// `modo_sandbox_simulacion` estaba activo, de modo que todas las vistas reales
-// (Clasificación, Repositorio Central, Mis Votos, Oráculo…) acababan leyendo
-// datos de simulación. Ese flag ya no decide la clave de los datos reales.
-const STORAGE_KEY_VOTOS_SANDBOX = 'repositorio_votos_simulacion';
-
 function getStorageKeyVotos() {
     return STORAGE_KEYS.repositorioVotos;
 }
 
-function getStorageKeyVotosSandbox() {
-    return STORAGE_KEY_VOTOS_SANDBOX;
-}
-
-// Ámbito de vista actual. No se persiste: al recargar siempre arranca el Reino
-// real, de modo que una partida de simulación nunca contamina las vistas reales.
-let ambitoVistaActual = 'real';
-
-function getAmbitoVista() {
-    return ambitoVistaActual === 'sandbox' ? 'sandbox' : 'real';
-}
-
-// Lee la partida de simulación guardada (solo Sandbox).
-function leerPartidaSandbox() {
-    try {
-        const raw = localStorage.getItem('simulacion_partida_completa');
-        if (!raw) return null;
-        return JSON.parse(raw);
-    } catch (e) {
-        return null;
-    }
-}
-
-// Votos del ámbito activo. En Real nunca se tocan datos del Sandbox; en Sandbox
-// se leen exclusivamente de la partida simulada.
+// Votos de la competición. Supabase es la fuente de verdad; la caché local solo
+// es un espejo que `cargarVotosDesdeSupabase` reemplaza por completo.
 function getVotosDelAmbito() {
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox();
-        if (sim && Array.isArray(sim.votos) && sim.votos.length > 0) return sim.votos;
-        // Respaldo: la partida de ejemplo guarda sus votos en la clave sandbox.
-        try {
-            const votos = JSON.parse(localStorage.getItem(getStorageKeyVotosSandbox()) || '[]');
-            return Array.isArray(votos) ? votos : [];
-        } catch (e) {
-            return [];
-        }
-    }
     return getRepositorioVotos();
 }
 
-// Barrios del ámbito activo. En Sandbox son los barrios generados en la partida;
-// en Real, los barrios participantes reales.
+// Barrios participantes de la competición.
 function getBarriosDelAmbito() {
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox();
-        if (sim && Array.isArray(sim.barrios) && sim.barrios.length > 0) return sim.barrios;
-        const votos = getVotosDelAmbito();
-        return [...new Set(votos.map(v => v.barrio || v.casa_visitada).filter(Boolean))];
-    }
     return (typeof casasCache !== 'undefined' ? casasCache : [])
         .filter(c => c.participa !== false)
         .map(c => c.nombre)
         .filter(Boolean);
 }
 
-// --- Accesores de objetos por ámbito -----------------------------------------
-// Estas funciones permiten que TODAS las vistas (calendario de eventos, barrios,
-// usuarios, roles y votos) sean independientes entre el Reino real y el Sandbox.
-// En Real delegan en las fuentes reales (Supabase/localStorage); en Sandbox leen
-// exclusivamente la partida simulada. El sandbox nunca toca el Reino real.
-
 function getEventosDelAmbito() {
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox();
-        return (sim && Array.isArray(sim.eventos)) ? sim.eventos : [];
-    }
     return getTodosLosEventos();
 }
 
-// Eventos del ámbito que sí admiten votación (excluye los informativos).
+// Eventos que sí admiten votación (excluye los informativos).
 // Son los únicos que cuentan para proclamar el campeón final.
 function getEventosConVotacionDelAmbito() {
     return getEventosDelAmbito().filter(e => e.tiene_votacion !== false);
 }
 
 // Votos que cuentan para la clasificación: se descartan los que pertenecieran a
-// un evento informativo (sin votación). Los votos sin evento_id (partidas
-// antiguas o del Sandbox) se conservan.
+// un evento informativo (sin votación). Los votos sin evento_id (datos antiguos)
+// se conservan.
 function getVotosComputablesDelAmbito() {
     const sinVotacion = new Set(
         getEventosDelAmbito()
@@ -1872,242 +1923,17 @@ function competicionVotacionCompleta() {
 }
 
 function getUsuariosDelAmbito() {
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox();
-        return (sim && Array.isArray(sim.usuarios)) ? sim.usuarios : [];
-    }
     return getUsuariosAutorizadosLocal();
 }
 
 function getBarriosObjetosDelAmbito() {
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox();
-        const nombres = (sim && Array.isArray(sim.barrios)) ? sim.barrios : [];
-        return [...new Set(nombres)].map(nombre => ({ nombre, participa: true }));
-    }
     return (typeof casasCache !== 'undefined' ? casasCache : []);
 }
 
-// Nombres de TODOS los barrios registrados del ámbito (incluidos los no
-// participantes). Es lo que usan los selectores de formularios; en Sandbox son
-// los barrios de la partida simulada y en Real los del catálogo real.
+// Nombres de TODOS los barrios registrados (incluidos los no participantes).
+// Es lo que usan los selectores de formularios.
 function getBarriosRegistradosDelAmbito() {
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox();
-        return (sim && Array.isArray(sim.barrios)) ? sim.barrios : [];
-    }
     return getBarriosLocal();
-}
-
-// Persiste el objeto `simData` del Sandbox (clave propia + RPC best-effort).
-function guardarPartidaSandbox(simData) {
-    try {
-        localStorage.setItem('simulacion_partida_completa', JSON.stringify(simData));
-        if (Array.isArray(simData?.votos)) {
-            localStorage.setItem(getStorageKeyVotosSandbox(), JSON.stringify(simData.votos));
-        }
-        localStorage.setItem('modo_sandbox_simulacion', 'true');
-    } catch (e) {
-        console.warn('No se pudo guardar la partida del Sandbox:', e);
-    }
-    if (typeof sandboxSincronizarPartida === 'function') sandboxSincronizarPartida(simData);
-}
-
-// Actualiza (o borra, si pinCode === null) el PIN de un usuario de la partida
-// simulada. Devuelve true si el usuario existía en el Sandbox.
-function persistirPinSandbox(userId, pinCode) {
-    const sim = leerPartidaSandbox();
-    if (!sim || !Array.isArray(sim.usuarios)) return false;
-    const idx = sim.usuarios.findIndex(u => String(u.id) === String(userId));
-    if (idx === -1) return false;
-    if (pinCode === null) delete sim.usuarios[idx].pin_code;
-    else sim.usuarios[idx].pin_code = pinCode;
-    guardarPartidaSandbox(sim);
-    if (typeof renderTablaUsuarios === 'function') renderTablaUsuarios();
-    return true;
-}
-
-// Refresca la interfaz según el ámbito activo (Real / Sandbox).
-function aplicarAmbitoVista() {
-    const esSandbox = getAmbitoVista() === 'sandbox';
-
-    const btnReal = document.getElementById('btn-vista-real');
-    if (btnReal) {
-        btnReal.style.background = esSandbox ? '#0f172a' : '#1e40af';
-        btnReal.style.border = esSandbox ? '1px solid #3b82f6' : '1px solid rgba(212,175,55,0.4)';
-        btnReal.style.boxShadow = esSandbox ? 'none' : '0 0 18px rgba(30,64,175,0.35)';
-    }
-    const btnSandbox = document.getElementById('btn-vista-sandbox');
-    if (btnSandbox) {
-        btnSandbox.style.background = esSandbox ? '#2563eb' : '#0f172a';
-        btnSandbox.style.boxShadow = esSandbox ? '0 0 18px rgba(37,99,235,0.35)' : 'none';
-    }
-
-    const banner = document.getElementById('banner-ambito-vista');
-    if (banner) {
-        banner.style.display = 'block';
-        banner.style.color = esSandbox ? '#93c5fd' : '#fde68a';
-        banner.style.borderColor = esSandbox ? '#3b82f6' : 'rgba(212,175,55,0.4)';
-        banner.innerHTML = esSandbox
-            ? '🎮 <strong>Modo Sandbox</strong>: mostrando una partida simulada. El Reino Real permanece intacto.'
-            : '🏰 <strong>Modo Real</strong>: mostrando la competición oficial del LokiTrono.';
-    }
-
-    const titulo = document.getElementById('titulo-tabla-rey');
-    if (titulo) {
-        titulo.textContent = esSandbox
-            ? '🎮 TABLA DEL REY — SANDBOX (Simulación) 🎮'
-            : '🏆 TABLA DEL REY — LOKIBARRIO TXAPELDUN 🏆';
-    }
-
-    const tituloRepo = document.getElementById('titulo-repositorio-central');
-    if (tituloRepo) {
-        tituloRepo.textContent = esSandbox
-            ? '🎮 Repositorio Central de Votos (Sandbox)'
-            : '📊 Repositorio Central de Votos Reales';
-    }
-
-    const tituloMisVotos = document.getElementById('titulo-mis-votos');
-    if (tituloMisVotos) {
-        tituloMisVotos.textContent = esSandbox
-            ? '🎮 Votos de la simulación (Sandbox)'
-            : '📜 Mis votos emitidos';
-    }
-
-    if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
-    if (typeof renderRepositorioVotos === 'function') renderRepositorioVotos();
-    if (typeof renderMisVotosPersonales === 'function') renderMisVotosPersonales();
-    if (typeof actualizarCalendarioMedieval === 'function') actualizarCalendarioMedieval();
-    if (typeof renderListaBarrios === 'function') renderListaBarrios();
-    if (typeof renderTablaUsuarios === 'function') renderTablaUsuarios();
-    if (typeof renderListaTronistas === 'function') renderListaTronistas();
-    if (typeof renderEventosGeneradosPestanaAdmin === 'function') renderEventosGeneradosPestanaAdmin();
-    if (typeof poblarSelectBarriosEvento === 'function') poblarSelectBarriosEvento();
-    if (typeof renderOpcionesVoto === 'function') renderOpcionesVoto();
-    if (typeof actualizarSelectoresBarriosDinamicos === 'function') actualizarSelectoresBarriosDinamicos();
-    if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
-    if (typeof detectarCierresVotacion === 'function') detectarCierresVotacion();
-}
-
-// Cambia de ámbito (con permiso: el Sandbox es exclusivo de administradores).
-function setAmbitoVista(ambito) {
-    ambitoVistaActual = (ambito === 'sandbox') ? 'sandbox' : 'real';
-    if (ambitoVistaActual === 'sandbox') {
-        const usuario = getCurrentUser();
-        if (!usuario || !puedeAdministrar(usuario.role)) {
-            ambitoVistaActual = 'real';
-            alert('Acceso restringido: el Sandbox es exclusivo de administradores.');
-        }
-    }
-    aplicarAmbitoVista();
-}
-
-function generarEjemploCompeticionSimulada() {
-    const usuario = getCurrentUser();
-    if (!usuario || !puedeAdministrar(usuario.role)) {
-        alert('Acceso restringido: Solo Superadministradores pueden generar partidas simuladas.');
-        return;
-    }
-
-    const votosSimulados = [
-        { maestre_id: 'sim-01', casa_visitada: 'Casco Viejo', barrio: 'Casco Viejo', nota_festin: 9, nota_caminos: 8, nota_espiritu: 9, fecha_juicio: new Date().toISOString() },
-        { maestre_id: 'sim-02', casa_visitada: 'Indautxu', barrio: 'Indautxu', nota_festin: 10, nota_caminos: 9, nota_espiritu: 10, fecha_juicio: new Date().toISOString() },
-        { maestre_id: 'sim-03', casa_visitada: 'Deusto', barrio: 'Deusto', nota_festin: 8, nota_caminos: 8, nota_espiritu: 9, fecha_juicio: new Date().toISOString() }
-    ];
-
-    localStorage.setItem(getStorageKeyVotosSandbox(), JSON.stringify(votosSimulados));
-    localStorage.setItem('modo_sandbox_simulacion', 'true');
-    sandboxSincronizarPartida({ nombre: 'Partida Sandbox (ejemplo)', barrios: [], usuarios: [], eventos: [], votos: votosSimulados });
-    alert('🎮 Partida de simulación generada en el Sandbox. La competición real NO se ha visto afectada.');
-    if (typeof renderRepositorioVotos === 'function') renderRepositorioVotos();
-}
-
-// Sincronización BEST-EFFORT del Sandbox con Supabase (tablas sandbox_*).
-// Solo toca datos del Sandbox; si el proxy no está disponible, la partida sigue
-// funcionando en local y no se produce ningún error visible.
-async function sandboxSincronizarPartida(datos) {
-    try {
-        const client = getSupabaseBarriosClient();
-        const user = getCurrentUser();
-        if (!client || !user || !user.token) return false;
-        const { error } = await client.rpc('sandbox_guardar_partida', {
-            p_token: user.token,
-            p_datos: datos || {}
-        });
-        return !error;
-    } catch (e) {
-        return false;
-    }
-}
-
-async function sandboxSincronizarReinicio() {
-    try {
-        const client = getSupabaseBarriosClient();
-        const user = getCurrentUser();
-        if (!client || !user || !user.token) return false;
-        const { error } = await client.rpc('sandbox_reiniciar', { p_token: user.token });
-        return !error;
-    } catch (e) {
-        return false;
-    }
-}
-
-function restaurarCompeticionCero() {
-    const usuario = getCurrentUser();
-    if (!usuario || !puedeAdministrar(usuario.role)) {
-        alert('Acceso restringido: Solo Superadministradores.');
-        return;
-    }
-
-    if (confirm('🔄 ¿Deseas reiniciar a 0 la partida de simulación? (Los datos reales del juego permanecerán intactos).')) {
-        // El Sandbox borra SOLO datos del Sandbox (clave local + tablas sandbox_*).
-        localStorage.removeItem(getStorageKeyVotosSandbox());
-        localStorage.removeItem('simulacion_partida_completa');
-        localStorage.setItem('modo_sandbox_simulacion', 'false');
-        sandboxSincronizarReinicio();
-
-        const banner = document.getElementById('sim-resumen-partida-banner');
-        if (banner) banner.style.display = 'none';
-
-        alert('✅ Sandbox de simulación reiniciado a 0. La competición real permanece intacta.');
-        if (typeof renderRepositorioVotos === 'function') renderRepositorioVotos();
-        if (typeof renderDashboardSimulacionCompleto === 'function') renderDashboardSimulacionCompleto();
-    }
-}
-
-function crearNuevoJuegoTorneo(event) {
-    if (event) event.preventDefault();
-    const usuario = getCurrentUser();
-    if (!usuario || !puedeAdministrar(usuario.role)) {
-        alert('Acceso restringido a Superadmin.');
-        return;
-    }
-
-    const nombreInput = document.getElementById('nuevo-juego-nombre');
-    const modoInput = document.getElementById('nuevo-juego-modo');
-    const nombre = (nombreInput?.value || '').trim();
-    const modo = modoInput?.value || 'oficial';
-
-    if (!nombre) {
-        alert('Indica el nombre de la nueva edición o competición.');
-        return;
-    }
-
-    const nuevoJuego = {
-        id: `juego-${Date.now()}`,
-        nombre,
-        modo,
-        fechaCreacion: new Date().toISOString(),
-        estado: 'activo'
-    };
-
-    const juegos = JSON.parse(localStorage.getItem('juegos_competiciones') || '[]');
-    juegos.push(nuevoJuego);
-    localStorage.setItem('juegos_competiciones', JSON.stringify(juegos));
-    localStorage.setItem('juego_activo_id', nuevoJuego.id);
-
-    if (nombreInput) nombreInput.value = '';
-    alert(`🏆 ¡Nuevo juego "${nombre}" creado correctamente (${modo === 'simulacion' ? 'Modo Sandbox' : 'Modo Oficial'})!`);
 }
 
 /* ==========================================
@@ -2703,18 +2529,6 @@ async function pedirCredencialesSuperadmin() {
 }
 
 async function guardarEventoEnSupabase(evento) {
-    // En modo Sandbox los eventos se guardan SOLO en la partida simulada.
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox() || { barrios: [], usuarios: [], eventos: [], votos: [] };
-        if (!Array.isArray(sim.eventos)) sim.eventos = [];
-        const idx = sim.eventos.findIndex(e => String(e.id) === String(evento.id));
-        const registro = { ...evento, id: String(evento.id) };
-        if (idx >= 0) sim.eventos[idx] = registro;
-        else sim.eventos.push(registro);
-        guardarPartidaSandbox(sim);
-        return true;
-    }
-
     const credenciales = await pedirCredencialesSuperadmin();
     if (!credenciales) return false;
 
@@ -2757,16 +2571,6 @@ async function guardarEventoEnSupabase(evento) {
 }
 
 async function eliminarEventoEnSupabase(eventoId) {
-    // En modo Sandbox el borrado afecta SOLO a la partida simulada.
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox();
-        if (sim && Array.isArray(sim.eventos)) {
-            sim.eventos = sim.eventos.filter(e => String(e.id) !== String(eventoId));
-            guardarPartidaSandbox(sim);
-        }
-        return true;
-    }
-
     const credenciales = await pedirCredencialesSuperadmin();
     if (!credenciales) return false;
 
@@ -2932,6 +2736,13 @@ async function guardarEventoBarrio(event) {
         return;
     }
 
+    const yaExisteEventoBarrio = getEventosDelAmbito().find(e =>
+        e.barrio === barrio && String(e.id) !== String(editId || ''));
+    if (yaExisteEventoBarrio) {
+        alert(`El barrio «${barrio}» ya tiene un evento programado ("${yaExisteEventoBarrio.nombre}"). Solo puede existir un evento por barrio.`);
+        return;
+    }
+
     if (fechaFin && fechaFin < fecha) {
         alert('La fecha de finalización del evento no puede ser anterior a la fecha de inicio.');
         return;
@@ -3020,6 +2831,13 @@ async function guardarEventoBarrioDesdePestana(event) {
     if (!String(barrio || '').trim() || barrio === 'Reino'
         || !getBarriosRegistradosDelAmbito().includes(barrio)) {
         alert('Primero da de alta el barrio en «Gestión de Barrios» para poder programar su evento. Ese barrio entrará en el sorteo.');
+        return;
+    }
+
+    const yaExisteEventoBarrio = getEventosDelAmbito().find(e =>
+        e.barrio === barrio && String(e.id) !== String(editId || ''));
+    if (yaExisteEventoBarrio) {
+        alert(`El barrio «${barrio}» ya tiene un evento programado ("${yaExisteEventoBarrio.nombre}"). Solo puede existir un evento por barrio.`);
         return;
     }
 
@@ -3176,13 +2994,46 @@ const GALA_FINAL_DEFAULT = {
     premio: 'El Barril de Oro Imperial, el Trono Feudal de Bilbao y Pase VIP Dorado para la Gran Gala Final para todos sus Maestres de Honor.'
 };
 
+// Configuración de la Gala Final cacheada desde el servidor del Reino. Es la
+// fuente de verdad compartida: todos los navegadores ven exactamente lo mismo.
+let galaFinalConfigServidor = null;
+
 function getGalaFinalConfig() {
-    try {
-        const raw = localStorage.getItem('evento_final_config');
-        return raw ? JSON.parse(raw) : GALA_FINAL_DEFAULT;
-    } catch (e) {
-        return GALA_FINAL_DEFAULT;
+    if (galaFinalConfigServidor && typeof galaFinalConfigServidor === 'object') {
+        return galaFinalConfigServidor;
     }
+    return GALA_FINAL_DEFAULT;
+}
+
+// La Gala Final solo se considera publicada cuando la corte la ha guardado en
+// el servidor. Hasta entonces su pestaña permanece oculta a los maestres.
+function galaFinalEstaPublicada() {
+    return Boolean(galaFinalConfigServidor && galaFinalConfigServidor.publicada !== false);
+}
+
+// Lee la convocatoria de la Gala Final desde Supabase (sin token: es
+// información pública para toda la corte) y refresca la interfaz.
+async function cargarGalaFinalDesdeSupabase() {
+    const client = getSupabaseBarriosClient();
+    if (!client) return;
+    try {
+        const { data, error } = await client.rpc('gala_final_config_actual');
+        if (error) throw error;
+        galaFinalConfigServidor = (data && typeof data === 'object') ? data : null;
+    } catch (error) {
+        console.error('No se pudo cargar la Gala Final desde Supabase:', error);
+    }
+    renderGalaFinal();
+    aplicarVisibilidadGalaFinal();
+}
+
+// Muestra u oculta la opción de la Gala Final en el menú de la corte según el
+// rol del usuario y si la administración ya la ha publicado.
+function aplicarVisibilidadGalaFinal() {
+    const usuario = getCurrentUser();
+    const esAdmin = Boolean(usuario && puedeAdministrar(usuario.role));
+    const option = document.querySelector('#select-seccion-corte option[value="pestana-evento-final"]');
+    if (option) option.style.display = (esAdmin || galaFinalEstaPublicada()) ? '' : 'none';
 }
 
 function renderGalaFinal() {
@@ -3218,7 +3069,7 @@ function renderGalaFinal() {
     if (inputPremio) inputPremio.value = config.premio || '';
 }
 
-function guardarEventoFinal(event) {
+async function guardarEventoFinal(event) {
     if (event) event.preventDefault();
 
     const user = getCurrentUser();
@@ -3227,30 +3078,68 @@ function guardarEventoFinal(event) {
         return;
     }
 
-    const titulo = document.getElementById('final-titulo')?.value || GALA_FINAL_DEFAULT.titulo;
-    const lugar = document.getElementById('final-lugar')?.value || GALA_FINAL_DEFAULT.lugar;
-    const fecha = document.getElementById('final-fecha')?.value || GALA_FINAL_DEFAULT.fecha;
-    const premio = document.getElementById('final-premio')?.value || GALA_FINAL_DEFAULT.premio;
+    const client = getSupabaseBarriosClient();
+    if (!client || !user.token) {
+        alert('No hay conexión con el servidor del Reino. Vuelve a iniciar sesión e inténtalo de nuevo.');
+        return;
+    }
 
-    const config = { titulo, lugar, fecha, premio };
-    localStorage.setItem('evento_final_config', JSON.stringify(config));
+    const config = {
+        titulo: document.getElementById('final-titulo')?.value || GALA_FINAL_DEFAULT.titulo,
+        lugar: document.getElementById('final-lugar')?.value || GALA_FINAL_DEFAULT.lugar,
+        fecha: document.getElementById('final-fecha')?.value || GALA_FINAL_DEFAULT.fecha,
+        premio: document.getElementById('final-premio')?.value || GALA_FINAL_DEFAULT.premio,
+        publicada: true
+    };
 
-    alert('👑 ¡Configuración de la Gran Gala Final guardada correctamente!');
+    const button = document.getElementById('btn-guardar-gala');
+    if (button) button.disabled = true;
+    try {
+        const { data, error } = await client.rpc('guardar_gala_final', {
+            p_token: user.token,
+            p_config: config
+        });
+        if (error) throw error;
+        galaFinalConfigServidor = (data && typeof data === 'object') ? data : config;
+        alert('👑 ¡Gala Final publicada! Toda la corte podrá ver la convocatoria.');
+    } catch (error) {
+        console.error('No se pudo publicar la Gala Final:', error);
+        alert(`No se pudo guardar la Gala Final: ${error.message || 'error desconocido'}`);
+    } finally {
+        if (button) button.disabled = false;
+    }
     renderGalaFinal();
+    aplicarVisibilidadGalaFinal();
 }
 
-function borrarConfiguracionGalaFinal() {
+async function borrarConfiguracionGalaFinal() {
     const user = getCurrentUser();
     if (!user || !puedeAdministrar(user.role)) {
         alert('Acceso restringido a Superadmin.');
         return;
     }
 
-    if (confirm('🗑️ ¿Deseas restablecer la Gala Final a sus valores predeterminados del Reino?')) {
-        localStorage.removeItem('evento_final_config');
-        alert('✅ Gala Final restablecida.');
-        renderGalaFinal();
+    if (!confirm('🗑️ ¿Deseas despublicar y restablecer la Gala Final a sus valores predeterminados del Reino?')) {
+        return;
     }
+
+    const client = getSupabaseBarriosClient();
+    if (!client || !user.token) {
+        alert('No hay conexión con el servidor del Reino. Vuelve a iniciar sesión e inténtalo de nuevo.');
+        return;
+    }
+
+    try {
+        const { error } = await client.rpc('borrar_gala_final', { p_token: user.token });
+        if (error) throw error;
+        galaFinalConfigServidor = null;
+        alert('✅ Gala Final despublicada y restablecida.');
+    } catch (error) {
+        console.error('No se pudo despublicar la Gala Final:', error);
+        alert(`No se pudo restablecer la Gala Final: ${error.message || 'error desconocido'}`);
+    }
+    renderGalaFinal();
+    aplicarVisibilidadGalaFinal();
 }
 
 function descargarICSGalaFinal() {
@@ -3418,15 +3307,6 @@ async function regenerarPinYEnviarWhatsApp(userId) {
         alert('No tienes permiso para gestionar el PIN de un usuario con ese rol.');
         return;
     }
-    if (getAmbitoVista() === 'sandbox') {
-        const nuevoPinSim = generarPinSeisDigitos();
-        if (persistirPinSandbox(userId, nuevoPinSim)) {
-            alert(`🎮 PIN simulado regenerado: ${nuevoPinSim}`);
-        } else {
-            alert('No se ha encontrado el usuario en el Sandbox.');
-        }
-        return;
-    }
     if (!esUUID(userId)) {
         alert('Este usuario solo existe en el respaldo local; no se puede regenerar su PIN en el servidor.');
         return;
@@ -3477,16 +3357,6 @@ async function editarPinUsuario(userId) {
         alert('No se ha encontrado el usuario.');
         return;
     }
-    if (getAmbitoVista() === 'sandbox') {
-        const nuevo = window.prompt(`Introduce el nuevo PIN de 6 dígitos para ${objetivo.name || objetivo.phone}:`, objetivo.pin_code || '');
-        if (nuevo === null || !nuevo.trim()) return;
-        if (!/^\d{6}$/.test(nuevo.trim())) {
-            alert('El PIN debe contener exactamente 6 dígitos.');
-            return;
-        }
-        if (persistirPinSandbox(userId, nuevo.trim())) alert('🎮 PIN simulado actualizado correctamente.');
-        return;
-    }
     if (!esUUID(userId)) {
         alert('Este usuario solo existe en el respaldo local; no se puede editar su PIN en el servidor.');
         return;
@@ -3527,12 +3397,6 @@ async function borrarPinUsuario(userId) {
     const objetivo = getUsuariosDelAmbito().find(u => u.id === userId) || null;
     if (!objetivo) {
         alert('No se ha encontrado el usuario.');
-        return;
-    }
-    if (getAmbitoVista() === 'sandbox') {
-        if (window.confirm(`¿Eliminar el PIN simulado de ${objetivo.name || objetivo.phone}?`)) {
-            if (persistirPinSandbox(userId, null)) alert('🎮 PIN simulado eliminado.');
-        }
         return;
     }
     if (!esUUID(userId)) {
@@ -3822,48 +3686,6 @@ async function guardarUsuario(event) {
     const esCreacion = !editId;
     const pinAcceso = pinManual || generarPinSeisDigitos();
 
-    // En modo Sandbox los usuarios se guardan SOLO en la partida simulada.
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox() || { barrios: [], usuarios: [], eventos: [], votos: [] };
-        if (!Array.isArray(sim.usuarios)) sim.usuarios = [];
-        if (editId) {
-            const idx = sim.usuarios.findIndex(u => String(u.id) === String(editId));
-            if (idx !== -1) {
-                sim.usuarios[idx] = {
-                    ...sim.usuarios[idx],
-                    phone,
-                    name: nombre || phone,
-                    role,
-                    barrio_representado: barrioRep,
-                    barrio_asignado: barrioAsig,
-                    email,
-                    titulo_custom: tituloCustom,
-                    gender,
-                    ...(pinManual ? { pin_code: pinManual } : {})
-                };
-            }
-        } else {
-            sim.usuarios.push({
-                id: `sim-usr-${Date.now()}`,
-                phone,
-                name: nombre || phone,
-                role,
-                pin_code: pinAcceso,
-                barrio_representado: barrioRep,
-                barrio_asignado: barrioAsig,
-                email,
-                titulo_custom: tituloCustom,
-                gender
-            });
-        }
-        guardarPartidaSandbox(sim);
-        resetFormUsuario();
-        renderTablaUsuarios();
-        renderListaTronistas();
-        alert(esCreacion ? '🎮 Usuario simulado añadido al Sandbox.' : '🎮 Usuario simulado actualizado en el Sandbox.');
-        return;
-    }
-
     // Persistencia central en Supabase (si el usuario editado ya procede de allí).
     if (!editId || esUUID(editId)) {
         try {
@@ -4030,18 +3852,6 @@ async function eliminarUsuario(userId) {
     }
     if (!confirm('🗑️ ¿Eliminar este usuario del Reino?')) return;
 
-    // En modo Sandbox el borrado afecta SOLO a la partida simulada.
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox();
-        if (sim && Array.isArray(sim.usuarios)) {
-            sim.usuarios = sim.usuarios.filter(u => String(u.id) !== String(userId));
-            guardarPartidaSandbox(sim);
-        }
-        renderTablaUsuarios();
-        renderListaTronistas();
-        return;
-    }
-
     if (esUUID(userId)) {
         try {
             const credenciales = await pedirCredencialesSuperadmin();
@@ -4082,17 +3892,6 @@ async function restablecerPinUsuario(userId) {
     const currentUser = getCurrentUser();
     if (!currentUser || !puedeAdministrar(currentUser.role)) {
         alert('Solo Superadmin puede restablecer PINs.');
-        return;
-    }
-    if (getAmbitoVista() === 'sandbox') {
-        const objetivo = getUsuariosDelAmbito().find(u => String(u.id) === String(userId)) || null;
-        const nuevoPin = window.prompt(`Introduce el nuevo PIN de 6 dígitos para ${objetivo ? (objetivo.name || objetivo.phone) : 'el usuario'}:`);
-        if (nuevoPin === null) return;
-        if (!/^\d{6}$/.test(nuevoPin.trim())) {
-            alert('El PIN debe contener exactamente seis dígitos.');
-            return;
-        }
-        if (persistirPinSandbox(userId, nuevoPin.trim())) alert('🎮 PIN simulado restablecido correctamente.');
         return;
     }
     if (!esUUID(userId)) {
@@ -4154,24 +3953,6 @@ async function asignarTronistaAdmin(event) {
         return;
     }
 
-    // En modo Sandbox la designación afecta SOLO a la partida simulada.
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox();
-        if (sim && Array.isArray(sim.usuarios)) {
-            const idx = sim.usuarios.findIndex(u => String(u.id) === String(userId));
-            if (idx === -1) { alert('Usuario no encontrado.'); return; }
-            sim.usuarios[idx].role = 'tronista';
-            sim.usuarios[idx].barrio_asignado = barrio;
-            sim.usuarios[idx].barrio_representado = barrio;
-            sim.usuarios[idx].fecha_designacion = new Date().toISOString();
-            guardarPartidaSandbox(sim);
-            renderTablaUsuarios();
-            renderListaTronistas();
-            alert(`🎮 ${sim.usuarios[idx].name} designado/a Lokitronista de ${barrio} en el Sandbox.`);
-        }
-        return;
-    }
-
     if (esUUID(userId)) {
         try {
             const credenciales = await pedirCredencialesSuperadmin();
@@ -4212,7 +3993,7 @@ async function asignarTronistaAdmin(event) {
 
 const VELADORES_LOKITRONO_PHONES = ['605676002', '663366786'];
 
-// ¿El teléfono corresponde a uno de los Veladores del LokiTrono?
+// ¿El teléfono corresponde a uno de los Consejeros del Lokitrono?
 function esVeladorDelLokitrono(phone) {
     const p = String(phone || '').replace(/\D/g, '').slice(-9);
     return VELADORES_LOKITRONO_PHONES.some(v => String(v).replace(/\D/g, '').slice(-9) === p);
@@ -4232,7 +4013,7 @@ function renderListaTronistas() {
 
     const usuarios = getUsuariosDelAmbito();
     const tronistas = usuarios.filter(u => u.role === 'tronista');
-    // Veladores del LokiTrono (usuarios especiales): 605676002 y 663366786.
+    // Consejeros del Lokitrono (usuarios especiales): 605676002 y 663366786.
     const veladores = [];
     const vistoVelador = new Set();
     usuarios.forEach(u => {
@@ -4285,12 +4066,12 @@ function renderListaTronistas() {
     const GRID = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;';
     let html = '';
 
-    // Los Veladores del LokiTrono se muestran antes que los Lokitronistas.
+    // Los Consejeros del Lokitrono se muestran antes que los Lokitronistas.
     if (veladores.length > 0) {
         html += `<div style="margin-bottom:8px;">
             <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:18px 0 12px;flex-wrap:wrap;">
                 <span style="font-size:1.5rem;">💎</span>
-                <h4 style="color:#c4b5fd;font-family:'Cinzel',serif;margin:0;font-size:1.15rem;">💎 Veladores del LokiTrono</h4>
+                <h4 style="color:#c4b5fd;font-family:'Cinzel',serif;margin:0;font-size:1.15rem;">💎 Consejeros del Lokitrono</h4>
                 <span class="pill-user" style="background:rgba(76,29,149,0.7);color:#d8b4fe;border:1px solid #a78bfa;padding:2px 10px;border-radius:12px;font-size:0.78rem;">${veladores.length}/2</span>
             </div>
             <div style="${GRID}">${veladores.map(tarjetaVelador).join('')}</div>
@@ -4415,6 +4196,7 @@ function iniciarRealtimeLokitrono() {
                 () => programarRefrescoRealtime('eventos', async () => {
                     await cargarEventosDesdeSupabase();
                     if (typeof actualizarBloqueVotacion === 'function') actualizarBloqueVotacion();
+                    if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
                     if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
     if (typeof detectarCierresVotacion === 'function') detectarCierresVotacion();
     if (typeof aplicarFinDeJuegoUI === 'function') aplicarFinDeJuegoUI();
@@ -4646,23 +4428,6 @@ async function quitarUsuarioBarrio(phone) {
         return;
     }
 
-    // En modo Sandbox la desvinculación afecta SOLO a la partida simulada.
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox();
-        if (sim && Array.isArray(sim.usuarios)) {
-            const u = sim.usuarios.find(x => String(x.phone) === String(phone));
-            if (u) {
-                u.barrio_representado = 'Forastero';
-                u.barrio_asignado = 'Forastero';
-                guardarPartidaSandbox(sim);
-            }
-        }
-        renderListaBarrios();
-        if (typeof renderTablaUsuarios === 'function') renderTablaUsuarios();
-        alert('🎮 Usuario desvinculado del barrio en el Sandbox.');
-        return;
-    }
-
     // 1. Actualización local
     let usuarios = typeof getUsuariosAutorizadosLocal === 'function' ? getUsuariosAutorizadosLocal() : [];
     const index = usuarios.findIndex(u => String(u.phone) === String(phone));
@@ -4773,27 +4538,6 @@ async function guardarBarrio(event) {
         return;
     }
 
-    // En modo Sandbox los barrios se gestionan SOLO en la partida simulada.
-    if (getAmbitoVista() === 'sandbox') {
-        const sim = leerPartidaSandbox() || { barrios: [], usuarios: [], eventos: [], votos: [] };
-        if (!Array.isArray(sim.barrios)) sim.barrios = [];
-        if (idEdit) {
-            const idx = sim.barrios.findIndex(b => String(b) === String(idEdit));
-            if (idx !== -1) sim.barrios[idx] = nombre;
-        } else {
-            sim.barrios.push(nombre);
-        }
-        guardarPartidaSandbox(sim);
-        resetFormBarrio();
-        renderListaBarrios();
-        actualizarSelectoresBarriosDinamicos();
-        renderListaTronistas();
-        alert(idEdit
-            ? `🎮 Barrio «${nombre}» actualizado en el Sandbox.`
-            : `🎮 Barrio «${nombre}» creado en el Sandbox.`);
-        return;
-    }
-
     const client = getSupabaseBarriosClient();
     if (!client) {
         alert('No se ha podido inicializar Supabase. Revisa la configuración.');
@@ -4901,24 +4645,6 @@ async function eliminarBarrio(id) {
     const casa = getBarriosObjetosDelAmbito().find(item => String(item.id || item.nombre) === String(id));
     if (!casa) {
         alert('No se encuentra el barrio seleccionado. Actualiza la lista.');
-        return;
-    }
-
-    // En modo Sandbox el borrado afecta SOLO a la partida simulada.
-    if (getAmbitoVista() === 'sandbox') {
-        if (!window.confirm(`¿Seguro que deseas eliminar el barrio simulado «${casa.nombre}»?`)) return;
-        const sim = leerPartidaSandbox();
-        if (sim && Array.isArray(sim.barrios)) {
-            sim.barrios = sim.barrios.filter(b => String(b) !== String(casa.nombre));
-            guardarPartidaSandbox(sim);
-        }
-        if (String(document.getElementById('barrio-id-edit')?.value || '') === String(id)) {
-            resetFormBarrio();
-        }
-        renderListaBarrios();
-        actualizarSelectoresBarriosDinamicos();
-        renderListaTronistas();
-        alert(`🎮 Barrio «${casa.nombre}» eliminado del Sandbox.`);
         return;
     }
 
@@ -5279,25 +5005,28 @@ function initApp() {
     if (typeof renderEventosGeneradosPestanaAdmin === 'function') renderEventosGeneradosPestanaAdmin();
     if (typeof renderCriteriosJerarquicos === 'function') renderCriteriosJerarquicos();
     if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
-    if (typeof renderDashboardSimulacionCompleto === 'function') renderDashboardSimulacionCompleto();
     if (typeof iniciarTimerRelojCuentaAtras === 'function') iniciarTimerRelojCuentaAtras();
     iniciarRealtimeLokitrono();
     if (typeof cargarEstadoJuego === 'function') cargarEstadoJuego().catch(() => {});
+    if (typeof cargarGalaFinalDesdeSupabase === 'function') cargarGalaFinalDesdeSupabase();
+    if (typeof aplicarNombreJuego === 'function') aplicarNombreJuego();
     const currentUser = getCurrentUser();
     if (currentUser) {
         actualizarInterfazSesion(currentUser);
     }
-    const btnVistaReal = document.getElementById('btn-vista-real');
-    if (btnVistaReal) btnVistaReal.addEventListener('click', () => setAmbitoVista('real'));
-    const btnVistaSandbox = document.getElementById('btn-vista-sandbox');
-    if (btnVistaSandbox) btnVistaSandbox.addEventListener('click', () => setAmbitoVista('sandbox'));
-    if (typeof aplicarAmbitoVista === 'function') aplicarAmbitoVista();
     if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
     if (typeof detectarCierresVotacion === 'function') detectarCierresVotacion();
     setInterval(() => {
         if (typeof detectarCierresVotacion === 'function') detectarCierresVotacion();
         if (typeof aplicarFinDeJuegoUI === 'function') aplicarFinDeJuegoUI();
     }, 30000);
+    // Al volver a la pestaña, relee los votos centrales: garantiza que todos los
+    // usuarios vean exactamente el mismo repositorio aunque falle Realtime.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && typeof cargarVotosDesdeSupabase === 'function') {
+            cargarVotosDesdeSupabase();
+        }
+    });
     const fecha = document.getElementById('final-fecha');
     if (fecha && !fecha.value) {
         fecha.value = '2026-10-20T20:30';
@@ -5306,264 +5035,7 @@ function initApp() {
 
 
 
-/* ==========================================
-   SIMULACIÓN AVANZADA, ESTADÍSTICAS & GRÁFICOS
-   ========================================== */
-
-const POOL_BARRIOS_BILBAO = [
-    'Casco Viejo', 'Indautxu', 'Deusto', 'Santutxu', 'Abando', 'San Mamés - Basurto',
-    'Otxarkoaga', 'Rekalde', 'Uribarri', 'Zorrotza', 'Begoña', 'Olabeaga'
-];
-
-const POOL_BARRIOS_ESPANIA = [
-    'Malasaña (Madrid)', 'La Latina (Madrid)', 'Triana (Sevilla)', 'Gràcia (Barcelona)',
-    'Ruzafa (Valencia)', 'Albaicín (Granada)', 'Cimadevilla (Gijón)', 'Vegueta (Las Palmas)',
-    'El Carmen (Valencia)', 'Santa Cruz (Sevilla)'
-];
-
-const NOMBRES_VASCOS_MASCULINOS = [
-    'Aitor', 'Gorka', 'Unai', 'Iker', 'Asier', 'Kepa', 'Eneko', 'Julen', 'Ander', 'Mikel',
-    'Jon', 'Oier', 'Markel', 'Beñat', 'Iñigo', 'Patxi', 'Carlos', 'Javier', 'David', 'Rubén'
-];
-
-const NOMBRES_VASCOS_FEMENINOS = [
-    'Ane', 'Maite', 'Itziar', 'Amaia', 'Nerea', 'Miren', 'Nagore', 'Leire', 'Edurne', 'Uxue',
-    'Garazi', 'Arantza', 'Izaro', 'Haizea', 'Nahia', 'Lucía', 'Sofía', 'María', 'Carmen', 'Elena'
-];
-
-const APELLIDOS_VASCOS = [
-    'Etxeberria', 'Aguirre', 'Zabala', 'Bilbao', 'Larrea', 'Goikoetxea', 'Azkarate',
-    'Elorriaga', 'Uriarte', 'Arana', 'Mendizabal', 'Ibarra', 'García', 'Rodríguez', 'Fernández', 'López'
-];
-
 let simChartInstances = {};
-
-function getRandomElement(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function generarPartidaSimulacionCompleta() {
-    const usuario = getCurrentUser();
-    if (!usuario || !puedeAdministrar(usuario.role)) {
-        alert('Acceso restringido: Solo el Superadministrador puede generar partidas simuladas.');
-        return;
-    }
-
-    const inputNum = document.getElementById('sim-num-barrios');
-    const numBarriosDeseados = parseInt(inputNum?.value || '6', 10);
-    const nBarrios = Math.max(3, Math.min(numBarriosDeseados, 22));
-
-    const barriosSelec = [];
-    for (let i = 0; i < nBarrios; i++) {
-        if (i < POOL_BARRIOS_BILBAO.length) {
-            barriosSelec.push(POOL_BARRIOS_BILBAO[i]);
-        } else {
-            const idxEsp = i - POOL_BARRIOS_BILBAO.length;
-            barriosSelec.push(POOL_BARRIOS_ESPANIA[idxEsp % POOL_BARRIOS_ESPANIA.length]);
-        }
-    }
-
-    const usuariosSim = [];
-    const roles = ['tronista', 'jugador', 'jugador', 'jugador'];
-    let phoneCounter = 610000000;
-
-    barriosSelec.forEach((barrio, bIdx) => {
-        const userCount = 3 + Math.floor(Math.random() * 2);
-        for (let u = 0; u < userCount; u++) {
-            const esHombre = Math.random() > 0.5;
-            const nombre = esHombre ? getRandomElement(NOMBRES_VASCOS_MASCULINOS) : getRandomElement(NOMBRES_VASCOS_FEMENINOS);
-            const ap1 = getRandomElement(APELLIDOS_VASCOS);
-            const ap2 = getRandomElement(APELLIDOS_VASCOS);
-            const nombreCompleto = `${nombre} ${ap1} ${ap2}`;
-            const phone = `+34${phoneCounter++}`;
-            const email = `${nombre.toLowerCase()}.${ap1.toLowerCase()}@feudo.bilbao`;
-
-            usuariosSim.push({
-                id: `sim-usr-${bIdx}-${u}`,
-                name: nombreCompleto,
-                phone,
-                email,
-                role: (bIdx === 0 && u === 0) ? 'superadmin' : getRandomElement(roles),
-                pin_code: '123456',
-                barrio_representado: barrio,
-                barrio_asignado: barrio
-            });
-        }
-    });
-
-    const ahora = new Date();
-    const hoyStr = ahora.toISOString().split('T')[0];
-
-    const haceCincoMin = new Date(ahora.getTime() - 5 * 60 * 1000);
-    const dentroDeCincoMin = new Date(ahora.getTime() + 5 * 60 * 1000);
-
-    const pad = n => String(n).padStart(2, '0');
-    const horaInicioStr = `${pad(haceCincoMin.getHours())}:${pad(haceCincoMin.getMinutes())}`;
-    const horaFinStr = `${pad(dentroDeCincoMin.getHours())}:${pad(dentroDeCincoMin.getMinutes())}`;
-
-    const barrioActivo = barriosSelec[0];
-    const eventoActivo = {
-        id: 'sim-evt-1',
-        nombre: `Justa & Ruta de Pintxos de ${barrioActivo} (Votación en Curso)`,
-        barrio: barrioActivo,
-        fecha: hoyStr,
-        hora: horaInicioStr,
-        hora_inicio_votacion: horaInicioStr,
-        hora_fin_votacion: horaFinStr,
-        lugar: `Plaza Principal de ${barrioActivo}`,
-        estado: 'abierto'
-    };
-
-    const eventosSim = [eventoActivo];
-    const numEventosCelebrados = Math.max(1, nBarrios - 2);
-
-    for (let idx = 1; idx < nBarrios; idx++) {
-        const barrio = barriosSelec[idx];
-        const esCelebrado = idx < numEventosCelebrados;
-        const offsetDays = esCelebrado ? -(idx) * 3 : (idx - numEventosCelebrados + 1) * 7;
-        const evtFecha = new Date(ahora);
-        evtFecha.setDate(evtFecha.getDate() + offsetDays);
-
-        eventosSim.push({
-            id: `sim-evt-${idx + 1}`,
-            nombre: `Justa & Ruta de Pintxos de ${barrio}`,
-            barrio: barrio,
-            fecha: evtFecha.toISOString().split('T')[0],
-            hora: '20:30',
-            hora_inicio_votacion: '20:30',
-            hora_fin_votacion: '23:30',
-            lugar: `Plaza Principal de ${barrio}`,
-            estado: esCelebrado ? 'celebrado' : 'pendiente'
-        });
-    }
-
-    const votosSim = [];
-    const superadminPhones = ['605676002', '+34605676002', '123456789', 'admin', '456123456'];
-
-    usuariosSim.forEach(usr => {
-        const esUsrSuperadmin = usr.role === 'superadmin' || usr.role === 'master' || superadminPhones.includes(usr.phone);
-        if (!esUsrSuperadmin) {
-            votosSim.push({
-                maestre_id: usr.phone,
-                maestre_nombre: usr.name,
-                casa_visitada: eventoActivo.barrio,
-                barrio: eventoActivo.barrio,
-                nota_festin: 7 + Math.floor(Math.random() * 4),
-                nota_caminos: 6 + Math.floor(Math.random() * 5),
-                nota_espiritu: 7 + Math.floor(Math.random() * 4),
-                fecha_juicio: haceCincoMin.toISOString()
-            });
-        }
-    });
-
-    const otrosCelebrados = eventosSim.filter(e => e.id !== 'sim-evt-1' && e.estado === 'celebrado');
-    otrosCelebrados.forEach(evt => {
-        usuariosSim.forEach(usr => {
-            votosSim.push({
-                maestre_id: usr.phone,
-                maestre_nombre: usr.name,
-                casa_visitada: evt.barrio,
-                barrio: evt.barrio,
-                nota_festin: 6 + Math.floor(Math.random() * 5),
-                nota_caminos: 5 + Math.floor(Math.random() * 6),
-                nota_espiritu: 6 + Math.floor(Math.random() * 5),
-                fecha_juicio: evt.fecha + 'T21:00:00.000Z'
-            });
-        });
-    });
-
-    const simData = {
-        barrios: barriosSelec,
-        usuarios: usuariosSim,
-        eventos: eventosSim,
-        votos: votosSim,
-        numEventosCelebrados,
-        numEventosPendientes: 2
-    };
-
-    localStorage.setItem('simulacion_partida_completa', JSON.stringify(simData));
-    localStorage.setItem(getStorageKeyVotosSandbox(), JSON.stringify(votosSim));
-    localStorage.setItem('modo_sandbox_simulacion', 'true');
-    sandboxSincronizarPartida(simData);
-
-    alert(`🎮 Partida simulada creada con éxito:\n- ${nBarrios} Barrios (${numEventosCelebrados} celebrados, 2 votaciones pendientes).\n- ${usuariosSim.length} Usuarios registrados.\n- ${votosSim.length} Votos generados.`);
-
-    renderDashboardSimulacionCompleto();
-    if (typeof renderRepositorioVotos === 'function') renderRepositorioVotos();
-}
-
-function renderDashboardSimulacionCompleto() {
-    const banner = document.getElementById('sim-resumen-partida-banner');
-    const graficos = document.getElementById('contenedor-graficos-simulacion');
-    const directorio = document.getElementById('contenedor-directorio-usuarios-sim');
-    const porEvento = document.getElementById('contenedor-usuarios-por-evento');
-
-    const raw = localStorage.getItem('simulacion_partida_completa');
-    let simData = null;
-    if (raw) {
-        try {
-            simData = JSON.parse(raw);
-        } catch (e) {
-            simData = null;
-        }
-    }
-
-    // Sin partida simulada, el Sandbox no muestra estadísticas ni usuarios.
-    if (!simData) {
-        if (banner) banner.style.display = 'none';
-        if (graficos) graficos.style.display = 'none';
-        if (directorio) directorio.style.display = 'none';
-        if (porEvento) porEvento.style.display = 'none';
-
-        ['stat-num-barrios', 'stat-num-usuarios', 'stat-eventos-celebrados',
-            'stat-eventos-pendientes', 'stat-total-votos-sim'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = '0';
-        });
-
-        Object.keys(simChartInstances).forEach(id => {
-            try { simChartInstances[id].destroy(); } catch (_) { /* noop */ }
-            delete simChartInstances[id];
-        });
-
-        poblarFiltroBarriosDirectorioSim([]);
-        const tbody = document.getElementById('tabla-usuarios-simulacion-body');
-        if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;">Genera una partida simulada para ver el directorio de usuarios.</td></tr>';
-        }
-        poblarSelectEventosSim([]);
-        const detalles = document.getElementById('detalles-evento-usuarios-content');
-        if (detalles) {
-            detalles.innerHTML = '<div style="padding:15px;text-align:center;color:#94a3b8;">Selecciona un evento del desplegable para consultar los usuarios participantes.</div>';
-        }
-        return;
-    }
-
-    if (banner) banner.style.display = 'block';
-    if (graficos) graficos.style.display = 'block';
-    if (directorio) directorio.style.display = 'block';
-    if (porEvento) porEvento.style.display = 'block';
-
-    const { barrios = [], usuarios = [], eventos = [], votos = [] } = simData;
-
-    const statBarrios = document.getElementById('stat-num-barrios');
-    const statUsuarios = document.getElementById('stat-num-usuarios');
-    const statCelebrados = document.getElementById('stat-eventos-celebrados');
-    const statPendientes = document.getElementById('stat-eventos-pendientes');
-    const statTotalVotos = document.getElementById('stat-total-votos-sim');
-
-    if (statBarrios) statBarrios.textContent = barrios.length;
-    if (statUsuarios) statUsuarios.textContent = usuarios.length;
-    if (statCelebrados) statCelebrados.textContent = eventos.filter(e => e.estado === 'celebrado').length;
-    if (statPendientes) statPendientes.textContent = `${eventos.filter(e => e.estado === 'pendiente').length} (Votaciones por hacer)`;
-    if (statTotalVotos) statTotalVotos.textContent = votos.length;
-
-    renderGraficosSimulacion(simData);
-    poblarFiltroBarriosDirectorioSim(barrios);
-    renderDirectorioUsuariosSim();
-    poblarSelectEventosSim(eventos);
-    renderUsuariosPorEventoSim();
-}
 
 function createOrUpdateChart(canvasId, type, data, options) {
     if (simChartInstances[canvasId]) {
@@ -5576,95 +5048,10 @@ function createOrUpdateChart(canvasId, type, data, options) {
     }
 }
 
-function renderGraficosSimulacion(simData) {
-    const { barrios = [], eventos = [], votos = [] } = simData;
-
-    const statsBarrios = barrios.map(barrio => {
-        const votosB = votos.filter(v => (v.barrio || v.casa_visitada) === barrio);
-        const total = votosB.length;
-        if (total === 0) return { barrio, festin: 0, caminos: 0, espiritu: 0, notaFinal: 0 };
-        const sumF = votosB.reduce((a, b) => a + Number(b.nota_festin || 0), 0);
-        const sumC = votosB.reduce((a, b) => a + Number(b.nota_caminos || 0), 0);
-        const sumE = votosB.reduce((a, b) => a + Number(b.nota_espiritu || 0), 0);
-
-        const festin = (sumF / total);
-        const caminos = (sumC / total);
-        const espiritu = (sumE / total);
-        const notaFinal = calcularNotaLeyII(festin, caminos, espiritu);
-
-        return { barrio, festin: festin.toFixed(1), caminos: caminos.toFixed(1), espiritu: espiritu.toFixed(1), notaFinal: notaFinal.toFixed(2) };
-    });
-
-    createOrUpdateChart('chart-ranking-barrios', 'bar', {
-        labels: statsBarrios.map(s => s.barrio),
-        datasets: [{
-            label: 'Puntuación Ley II (pts)',
-            data: statsBarrios.map(s => s.notaFinal),
-            backgroundColor: 'rgba(212, 175, 55, 0.8)',
-            borderColor: '#f59e0b',
-            borderWidth: 1.5
-        }]
-    }, {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, max: 10 } }
-    });
-
-    const labelsEventos = eventos.map(e => e.barrio + (e.estado === 'pendiente' ? ' (Pendiente)' : ''));
-    const dataVotosEventos = eventos.map(e => votos.filter(v => (v.barrio || v.casa_visitada) === e.barrio).length);
-
-    createOrUpdateChart('chart-participacion-eventos', 'bar', {
-        labels: labelsEventos,
-        datasets: [{
-            label: 'Votos Registrados',
-            data: dataVotosEventos,
-            backgroundColor: eventos.map(e => e.estado === 'pendiente' ? 'rgba(239, 68, 68, 0.8)' : 'rgba(59, 130, 246, 0.8)'),
-            borderColor: eventos.map(e => e.estado === 'pendiente' ? '#dc2626' : '#2563eb'),
-            borderWidth: 1.5
-        }]
-    }, {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-    });
-
-    createOrUpdateChart('chart-criterios-barrios', 'bar', {
-        labels: statsBarrios.map(s => s.barrio),
-        datasets: [
-            { label: 'Ocio Hostelero (50%)', data: statsBarrios.map(s => s.festin), backgroundColor: '#ef4444' },
-            { label: 'Accesibilidad (20%)', data: statsBarrios.map(s => s.caminos), backgroundColor: '#3b82f6' },
-            { label: 'Ambiente (30%)', data: statsBarrios.map(s => s.espiritu), backgroundColor: '#10b981' }
-        ]
-    }, {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true, max: 10 } }
-    });
-
-    const celebradosCount = eventos.filter(e => e.estado === 'celebrado').length;
-    const pendientesCount = eventos.filter(e => e.estado === 'pendiente').length;
-
-    createOrUpdateChart('chart-progreso-votaciones', 'doughnut', {
-        labels: ['Votaciones Celebradas', 'Votaciones Pendientes (Faltan 2)'],
-        datasets: [{
-            data: [celebradosCount, pendientesCount],
-            backgroundColor: ['#22c55e', '#ef4444'],
-            borderColor: '#0f172a',
-            borderWidth: 2
-        }]
-    }, {
-        responsive: true,
-        maintainAspectRatio: false
-    });
-}
-
 /* ==========================================
    ESTADÍSTICAS DEL CÓDICE (CAPILARIDAD DE CADA VOTO)
-   Disponibles tanto en el Reino Real como en el Sandbox. Se alimentan de los
-   accesores de ámbito, por lo que respetan el aislamiento total entre ambos.
-   Se refrescan en tiempo real a medida que avanzan las votaciones.
+   Se alimentan de los accesores de ámbito y se refrescan en tiempo real
+   a medida que avanzan las votaciones.
    ========================================== */
 
 // Valor por defecto de una categoría raíz cuando el voto no trae `detalles_notas`.
@@ -5734,12 +5121,9 @@ function calcularEstadisticasPorBarrio() {
     return { barrios, votos, raices, hojas, mediaGlobal, filas };
 }
 
-// Renderiza el panel completo de Estadísticas del Códice. Funciona igual en Real
-// y en Sandbox porque todos los datos salen de los accesores de ámbito.
+// Renderiza el panel completo de Estadísticas del Códice.
 function renderEstadisticasCodice() {
     if (!document.getElementById('panel-estadisticas-codice')) return;
-
-    const esSandbox = getAmbitoVista() === 'sandbox';
 
     const { votos, raices, hojas, filas } = calcularEstadisticasPorBarrio();
     const eventosConVot = getEventosConVotacionDelAmbito();
@@ -5751,10 +5135,8 @@ function renderEstadisticasCodice() {
 
     const nota = document.getElementById('estad-ambito-nota');
     if (nota) {
-        nota.innerHTML = esSandbox
-            ? '🎮 <strong>Estadísticas del Sandbox</strong>: partida simulada. El Reino Real permanece intacto.'
-            : '🏰 <strong>Estadísticas de la competición oficial</strong> del LokiTrono.';
-        nota.style.color = esSandbox ? '#93c5fd' : '#fde68a';
+        nota.innerHTML = '🏰 <strong>Estadísticas de la competición oficial</strong> del LokiTrono.';
+        nota.style.color = '#fde68a';
     }
 
     const resumen = document.getElementById('estad-resumen');
@@ -5971,13 +5353,13 @@ function detectarCierresVotacion() {
     });
 
     if (!cierresVotacionInicializados) {
-        finalizados.forEach(e => eventosCerradosNotificados.add(`${getAmbitoVista()}:${e.id}`));
+        finalizados.forEach(e => eventosCerradosNotificados.add(`real:${e.id}`));
         cierresVotacionInicializados = true;
         return;
     }
 
     finalizados.forEach(e => {
-        const clave = `${getAmbitoVista()}:${e.id}`;
+        const clave = `real:${e.id}`;
         if (!eventosCerradosNotificados.has(clave)) {
             eventosCerradosNotificados.add(clave);
             mostrarNotificacionGlobal(
@@ -5988,132 +5370,6 @@ function detectarCierresVotacion() {
     });
 }
 
-function poblarFiltroBarriosDirectorioSim(barrios) {
-    const select = document.getElementById('select-filtro-barrio-sim');
-    if (!select) return;
-    select.innerHTML = `<option value="">Todos los Barrios (${barrios.length})</option>` +
-        barrios.map(b => `<option value="${b}">${b}</option>`).join('');
-}
-
-function renderDirectorioUsuariosSim() {
-    const tbody = document.getElementById('tabla-usuarios-simulacion-body');
-    if (!tbody) return;
-
-    const raw = localStorage.getItem('simulacion_partida_completa');
-    if (!raw) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;">Genera una partida simulada para ver el directorio de usuarios.</td></tr>';
-        return;
-    }
-
-    const { usuarios = [], votos = [] } = JSON.parse(raw);
-    const busqueda = (document.getElementById('input-buscar-usuario-sim')?.value || '').toLowerCase();
-    const filtroBarrio = document.getElementById('select-filtro-barrio-sim')?.value || '';
-
-    const usuariosFiltrados = usuarios.filter(u => {
-        const coincideNombre = !busqueda || u.name.toLowerCase().includes(busqueda) || u.phone.includes(busqueda);
-        const coincideBarrio = !filtroBarrio || u.barrio_representado === filtroBarrio || u.barrio_asignado === filtroBarrio;
-        return coincideNombre && coincideBarrio;
-    });
-
-    if (usuariosFiltrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8;">No se encontraron usuarios con ese criterio.</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = usuariosFiltrados.map(u => {
-        const votosEmitidos = votos.filter(v => v.maestre_id === u.phone).length;
-        const badgeRol = u.role === 'master' ? '🌟 Master' : (u.role === 'superadmin' ? '👑 Superadmin' : (u.role === 'tronista' ? '🛡️ Tronista' : '👤 Jugador'));
-        return `
-            <tr>
-                <td><strong>${u.name}</strong></td>
-                <td><code>${u.phone}</code></td>
-                <td>${u.email || '-'}</td>
-                <td><span class="pill-user" style="font-size: 0.75rem;">${badgeRol}</span></td>
-                <td>${u.barrio_representado || 'Forastero'}</td>
-                <td>${u.barrio_asignado || 'Forastero'}</td>
-                <td><strong style="color: #60a5fa;">${votosEmitidos} votos</strong></td>
-            </tr>
-        `;
-    }).join('');
-}
-
-function filtrarDirectorioUsuariosSim() {
-    renderDirectorioUsuariosSim();
-}
-
-function poblarSelectEventosSim(eventos) {
-    const select = document.getElementById('select-evento-usuarios-sim');
-    if (!select) return;
-    select.innerHTML = `<option value="">Selecciona un evento (${eventos.length})...</option>` +
-        eventos.map(e => `<option value="${e.id}">${e.nombre} (${e.estado === 'pendiente' ? '⏳ PENDIENTE' : '✅ CELEBRADO'})</option>`).join('');
-}
-
-function renderUsuariosPorEventoSim() {
-    const container = document.getElementById('detalles-evento-usuarios-content');
-    const select = document.getElementById('select-evento-usuarios-sim');
-    if (!container || !select) return;
-
-    const evtId = select.value;
-    if (!evtId) {
-        container.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8;">Selecciona un evento del desplegable.</div>';
-        return;
-    }
-
-    const raw = localStorage.getItem('simulacion_partida_completa');
-    if (!raw) {
-        container.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8;">Selecciona un evento del desplegable.</div>';
-        return;
-    }
-    const { eventos = [], usuarios = [], votos = [] } = JSON.parse(raw);
-
-    const evento = eventos.find(e => e.id === evtId);
-    if (!evento) return;
-
-    if (evento.estado === 'pendiente') {
-        container.innerHTML = `
-            <div style="padding: 20px; text-align: center; background: rgba(127,29,29,0.3); border: 1.5px dashed #f87171; border-radius: 8px;">
-                <h4 style="color: #f87171; margin-top: 0;">⌛ Votación Pendiente de Celebración</h4>
-                <p style="font-size: 0.9rem; color: #fca5a5; margin: 6px 0 0;">
-                    El evento <strong>${evento.nombre}</strong> aún no se ha celebrado (Fecha: ${evento.fecha}).<br>
-                    <strong>Faltan 2 votaciones por realizar en esta competición.</strong> Ningún usuario ha emitido voto todavía en esta justa.
-                </p>
-            </div>
-        `;
-        return;
-    }
-
-    const votosEvento = votos.filter(v => (v.barrio || v.casa_visitada) === evento.barrio);
-
-    container.innerHTML = `
-        <table class="leaderboard-table" style="font-size: 0.85rem; width: 100%;">
-            <thead>
-                <tr>
-                    <th>Usuario Participante</th>
-                    <th>Teléfono</th>
-                    <th>Ocio Hostelero</th>
-                    <th>Accesibilidad</th>
-                    <th>Ambiente</th>
-                    <th>Nota Final</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${votosEvento.map(v => {
-                    const notaLey2 = calcularNotaLeyII(v.nota_festin, v.nota_caminos, v.nota_espiritu).toFixed(2);
-                    return `
-                        <tr>
-                            <td><strong>${v.maestre_nombre || v.maestre_id}</strong></td>
-                            <td><code>${v.maestre_id}</code></td>
-                            <td>${v.nota_festin}</td>
-                            <td>${v.nota_caminos}</td>
-                            <td>${v.nota_espiritu}</td>
-                            <td><strong style="color: #facc15;">${notaLey2} pts</strong></td>
-                        </tr>
-                    `;
-                }).join('')}
-            </tbody>
-        </table>
-    `;
-}
 
 document.addEventListener('DOMContentLoaded', initApp);
 
@@ -6140,17 +5396,14 @@ window.puedeGestionarEventosBarrio = puedeGestionarEventosBarrio;
 window.puedeEditarEventoTronista = puedeEditarEventoTronista;
 window.getCurrentUser = getCurrentUser;
 window.haVotadoCasa = haVotadoCasa;
-window.generarEjemploCompeticionSimulada = generarEjemploCompeticionSimulada;
-window.restaurarCompeticionCero = restaurarCompeticionCero;
-window.crearNuevoJuegoTorneo = crearNuevoJuegoTorneo;
 window.eliminarVotoRepositorio = eliminarVotoRepositorio;
 window.agregarNuevoCriterioJerarquico = agregarNuevoCriterioJerarquico;
 window.eliminarCriterioJerarquico = eliminarCriterioJerarquico;
 window.renderCriteriosJerarquicos = renderCriteriosJerarquicos;
 window.getRepositorioVotos = getRepositorioVotos;
 window.getEstadisticasAdmin = getEstadisticasAdmin;
-window.setAmbitoVista = setAmbitoVista;
-window.getAmbitoVista = getAmbitoVista;
+window.renderClasificacionReal = renderClasificacionReal;
+window.setRankingVista = setRankingVista;
 
 window.cambiarMesCalendario = cambiarMesCalendario;
 window.actualizarCalendarioMedieval = actualizarCalendarioMedieval;
@@ -6164,12 +5417,6 @@ window.guardarEventoFinal = guardarEventoFinal;
 window.borrarConfiguracionGalaFinal = borrarConfiguracionGalaFinal;
 window.descargarICSGalaFinal = descargarICSGalaFinal;
 window.renderGalaFinal = renderGalaFinal;
-
-window.generarPartidaSimulacionCompleta = generarPartidaSimulacionCompleta;
-window.renderDashboardSimulacionCompleto = renderDashboardSimulacionCompleto;
-window.renderDirectorioUsuariosSim = renderDirectorioUsuariosSim;
-window.filtrarDirectorioUsuariosSim = filtrarDirectorioUsuariosSim;
-window.renderUsuariosPorEventoSim = renderUsuariosPorEventoSim;
 
 window.__APP_STATE__ = { eventList: EVENTOS_FEUDALES };
 
@@ -6433,9 +5680,6 @@ function cargarDatosSemilla() {
     localStorage.setItem(STORAGE_KEYS.barrios, JSON.stringify(barriosData));
     localStorage.setItem(STORAGE_KEYS.repositorioVotos, JSON.stringify([]));
     localStorage.setItem('eventos_feudales_custom', JSON.stringify([]));
-    localStorage.setItem(getStorageKeyVotosSandbox(), JSON.stringify([]));
-    localStorage.removeItem('simulacion_partida_completa');
-    localStorage.setItem('modo_sandbox_simulacion', 'false');
 
     alert(`✅ Datos de semilla cargados:\n• ${superadmins.length} superadmins\n• ${jugadores.length} jugadores (maestres)\n• ${tronistas.length} tronistas (2 por barrio)\n• ${barriosActivos.length} barrios: ${barriosActivos.join(', ')}\n• 0 votos\n• 0 eventos\n\nLa página se recargará ahora.`);
     location.reload();
@@ -6850,6 +6094,24 @@ const LOKIBOT_FAQ = [
         respuesta: 'La 🎉 Gala Final es la ceremonia de clausura donde se proclaman las Casas ganadoras según el Códice de la Villa. Puede incluir un sorteo entre los barrios participantes.'
     },
     {
+        id: 'vista-clasificacion-rankings',
+        categoria: 'Menú',
+        claves: ['ranking general', 'ranking del evento', 'historico por evento', 'historico', 'vistas de ranking', 'tres rankings', 'pestañas de clasificacion'],
+        respuesta: 'En 🏆 Clasificación Real tienes tres rankings:\n• 🏆 Ranking General: suma los votos de todos los eventos.\n• 🗳️ Ranking del Evento: solo el evento que tiene la votación abierta ahora.\n• 📜 Histórico por Evento: el resultado de cada evento celebrado, en orden.'
+    },
+    {
+        id: 'vista-tronistas',
+        categoria: 'Menú',
+        claves: ['lokitronistas de barrios', 'veladores', 'vista tronistas', 'quienes son los lokitronistas', 'representantes'],
+        respuesta: 'La vista 👑 Lokitronistas de Barrios muestra qué Maestres representan cada barrio. Recuerda: cada barrio tiene como máximo 2 Lokitronistas y no pueden votar en su propio barrio.'
+    },
+    {
+        id: 'primeros-pasos',
+        categoria: 'Ayuda',
+        claves: ['primeros pasos', 'como empiezo', 'soy nuevo', 'que hago', 'guia', 'tutorial', 'por donde empiezo'],
+        respuesta: 'Guía rápida del Maestre:\n1) Mira el 📅 Calendario para ver la próxima fiesta y su horario.\n2) Cuando la votación esté 🟢 Abierta, entra en 🗳️ Votación de Barrio y valora la Casa.\n3) Sigue la tabla en 🏆 Clasificación Real.\n4) Consulta la 🎉 Gala Final para el cierre.\nYo, Loki-Bot, te resuelvo las dudas en cualquier momento.'
+    },
+    {
         id: 'evento',
         categoria: 'Conceptos',
         claves: ['que es un evento', 'eventos', 'como funciona un evento', 'crear evento', 'fecha del evento', 'duracion evento'],
@@ -6868,12 +6130,6 @@ const LOKIBOT_FAQ = [
         respuesta: 'El 🔮 Oráculo Imperial es un asistente con IA (Groq) que redacta crónicas y recomendaciones del reino. Yo, Loki-Bot, no uso IA: respondo solo con la información de ayuda del reino.'
     },
     {
-        id: 'sellos-codigos',
-        categoria: 'Conceptos',
-        claves: ['sellos', 'codigos diarios', 'codigo diario', 'sellos por maestre', 'pase dorado', 'puntos'],
-        respuesta: 'Los códigos diarios y sellos se generan para los taberneros y premian la participación de los Maestres. Acumular sellos puede desbloquear reconocimientos como el Pase Dorado para la Gran Gala.'
-    },
-    {
         id: 'cerrar-sesion',
         categoria: 'Acceso',
         claves: ['cerrar sesion', 'salir', 'logout', 'desconectarme'],
@@ -6888,10 +6144,11 @@ const LOKIBOT_FAQ = [
 ];
 
 const LOKIBOT_SUGERENCIAS = [
+    '¿Por dónde empiezo?',
     '¿Cuándo puedo votar?',
     '¿Puedo votar dos veces?',
     '¿Qué significan los roles?',
-    '¿Qué vistas tiene el menú?',
+    '¿Qué rankings hay?',
     '¿Cómo se calcula la clasificación?'
 ];
 
@@ -7061,6 +6318,268 @@ window.lokibotAlternarPanel = lokibotAlternarPanel;
 window.lokibotCerrarPanel = lokibotCerrarPanel;
 window.lokibotEnviar = lokibotEnviar;
 window.lokibotResponderChip = lokibotResponderChip;
+
+
+/* ============================================================================
+ * CONFIGURACIÓN INICIAL Y GUÍAS DE PRIMER USO
+ * - Master/Superadmin: nombre del juego + panel-checklist y recorrido guiado.
+ * - Maestres: aviso de bienvenida que resume para qué sirve cada menú.
+ * Todo se apoya en datos reales (barrios, usuarios, eventos, gala) para saber
+ * qué pasos están hechos; localStorage solo recuerda lo descartado/visto.
+ * ========================================================================== */
+
+const NOMBRE_JUEGO_DEFAULT = 'LokiTrono de Barrios';
+
+function getNombreJuego() {
+    try { return localStorage.getItem('config_juego_nombre') || NOMBRE_JUEGO_DEFAULT; }
+    catch (_) { return NOMBRE_JUEGO_DEFAULT; }
+}
+
+function guardarNombreJuego(nombre) {
+    const limpio = String(nombre || '').trim().slice(0, 80);
+    try {
+        if (limpio) localStorage.setItem('config_juego_nombre', limpio);
+        else localStorage.removeItem('config_juego_nombre');
+    } catch (_) { /* almacenamiento no disponible */ }
+    aplicarNombreJuego();
+}
+
+function aplicarNombreJuego() {
+    const sub = document.getElementById('subtitulo-juego');
+    if (!sub) return;
+    let guardado = null;
+    try { guardado = localStorage.getItem('config_juego_nombre'); } catch (_) { guardado = null; }
+    sub.textContent = guardado ? `🎮 ${guardado}` : '';
+    sub.style.display = guardado ? 'block' : 'none';
+    const input = document.getElementById('tutorial-input-nombre-juego');
+    if (input && document.activeElement !== input) input.value = guardado || '';
+}
+
+// Pasos de la puesta en marcha del juego. `tab` es la pestaña a la que enlaza.
+const TUTORIAL_PASOS_DEF = [
+    { id: 'juego', icono: '🎮', titulo: 'Crea el juego y ponle nombre',
+      desc: 'Define el nombre de esta edición o competición. Aparecerá bajo el título de la portada.' },
+    { id: 'ubicaciones', icono: '🏰', titulo: 'Da de alta los barrios (ubicaciones)',
+      desc: 'Registra los barrios del reino y marca cuáles participan en la competición.', tab: 'pestana-barrios' },
+    { id: 'sorteo', icono: '🎲', titulo: 'Genera el sorteo y su orden',
+      desc: 'Reparte el orden de los eventos o las piezas entre los barrios participantes.', tab: 'pestana-sorteo-eventos' },
+    { id: 'usuarios', icono: '👥', titulo: 'Crea los usuarios',
+      desc: 'Da de alta a los participantes con su teléfono y su PIN de acceso.', tab: 'pestana-usuarios' },
+    { id: 'roles', icono: '👑', titulo: 'Designa los roles',
+      desc: 'Asigna Lokitronistas (máximo 2 por barrio), superadmins y masters.', tab: 'pestana-usuarios' },
+    { id: 'eventos', icono: '📅', titulo: 'Programa los eventos',
+      desc: 'Crea cada jornada en su barrio y define su ventana de votación.', tab: 'pestana-generar-evento' },
+    { id: 'gala', icono: '🎉', titulo: 'Configura y publica la Gala Final',
+      desc: 'Fija título, lugar, fecha y premio. Al publicarla se mostrará a los maestres.', tab: 'pestana-evento-final' }
+];
+
+// Calcula qué pasos están completados a partir de los datos reales disponibles.
+function estadoPasosConfiguracion() {
+    const barrios = (typeof casasCache !== 'undefined' ? casasCache : [])
+        .filter(c => c && c.nombre && c.nombre !== 'Forastero');
+    const usuarios = getUsuariosDelAmbito();
+    const eventos = getEventosDelAmbito();
+    const rolesAsignados = usuarios.some(u => ['tronista', 'superadmin', 'master'].includes(u.role));
+    const gala = typeof galaFinalEstaPublicada === 'function' && galaFinalEstaPublicada();
+    let nombreJuego = null;
+    try { nombreJuego = localStorage.getItem('config_juego_nombre'); } catch (_) { nombreJuego = null; }
+    const sorteo = typeof ordenSorteoBarrios !== 'undefined' && ordenSorteoBarrios.length > 0;
+
+    return TUTORIAL_PASOS_DEF.map(paso => {
+        let hecho = false;
+        switch (paso.id) {
+            case 'juego': hecho = Boolean(nombreJuego); break;
+            case 'ubicaciones': hecho = barrios.length > 0; break;
+            case 'sorteo': hecho = sorteo; break;
+            case 'usuarios': hecho = usuarios.length > 0; break;
+            case 'roles': hecho = rolesAsignados; break;
+            case 'eventos': hecho = eventos.length > 0; break;
+            case 'gala': hecho = gala; break;
+        }
+        return { ...paso, hecho };
+    });
+}
+
+function irAPasoConfiguracion(tab) {
+    cerrarTutorialConfiguracion();
+    if (tab && typeof cambiarPestana === 'function') cambiarPestana(tab);
+}
+
+function guardarNombreJuegoDesdeTutorial() {
+    const input = document.getElementById('tutorial-input-nombre-juego');
+    guardarNombreJuego(input ? input.value : '');
+    renderTutorialConfiguracion();
+}
+
+function borrarNombreJuegoDesdeTutorial() {
+    guardarNombreJuego('');
+    renderTutorialConfiguracion();
+}
+
+function renderTutorialConfiguracion() {
+    const cont = document.getElementById('tutorial-config-pasos');
+    if (!cont) return;
+    const pasos = estadoPasosConfiguracion();
+    const hechos = pasos.filter(p => p.hecho).length;
+
+    const barra = document.getElementById('tutorial-progreso-barra');
+    if (barra) barra.style.width = `${Math.round((hechos / pasos.length) * 100)}%`;
+    const texto = document.getElementById('tutorial-progreso-texto');
+    if (texto) texto.textContent = `${hechos} de ${pasos.length} pasos completados.`;
+
+    cont.innerHTML = pasos.map(paso => {
+        const extra = paso.id === 'juego'
+            ? `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                   <input type="text" id="tutorial-input-nombre-juego" class="input-medieval"
+                       placeholder="Nombre del juego o edición" style="flex:1;min-width:160px;">
+                   <button type="button" class="btn-cuervo" onclick="guardarNombreJuegoDesdeTutorial()">Guardar</button>
+                   <button type="button" class="btn-cuervo" style="background:#78350f;" onclick="borrarNombreJuegoDesdeTutorial()">Borrar</button>
+               </div>`
+            : `<button type="button" class="btn-cuervo" style="margin-top:8px;"
+                   onclick="irAPasoConfiguracion('${paso.tab}')">Ir →</button>`;
+        return `
+            <div class="tutorial-paso ${paso.hecho ? 'tutorial-hecho' : ''}">
+                <div class="tutorial-paso-icono">${paso.hecho ? '✅' : paso.icono}</div>
+                <div class="tutorial-paso-cuerpo">
+                    <p class="tutorial-paso-titulo">${paso.titulo}${paso.hecho ? ' · hecho' : ''}</p>
+                    <p class="tutorial-paso-desc">${paso.desc}</p>
+                    ${extra}
+                </div>
+            </div>
+        `;
+    }).join('');
+    aplicarNombreJuego();
+}
+
+function abrirTutorialConfiguracion() {
+    const overlay = document.getElementById('tutorial-config-overlay');
+    if (!overlay) return;
+    renderTutorialConfiguracion();
+    overlay.style.display = 'flex';
+}
+
+function cerrarTutorialConfiguracion() {
+    const overlay = document.getElementById('tutorial-config-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function descartarTutorialConfiguracion() {
+    try { localStorage.setItem('tutorial_config_descartado', '1'); } catch (_) { /* noop */ }
+    cerrarTutorialConfiguracion();
+    actualizarVisibilidadTutorialConfig(getCurrentUser());
+}
+
+function actualizarVisibilidadTutorialConfig(usuario) {
+    const burbuja = document.getElementById('tutorial-config-burbuja');
+    if (!burbuja) return;
+    const esAdmin = usuario && puedeAdministrar(usuario.role);
+    let descartado = false;
+    try { descartado = localStorage.getItem('tutorial_config_descartado') === '1'; } catch (_) { descartado = false; }
+    burbuja.style.display = esAdmin ? 'flex' : 'none';
+    burbuja.style.opacity = '1';
+    burbuja.title = descartado
+        ? 'Configuración inicial (oculta: «No volver a mostrar»)'
+        : 'Configuración inicial del reino';
+    if (!esAdmin) cerrarTutorialConfiguracion();
+}
+
+// Recorrido guiado (primer inicio de sesión de un administrador).
+let tourPasoActual = 0;
+
+function renderTourPaso() {
+    const pasos = TUTORIAL_PASOS_DEF;
+    const paso = pasos[tourPasoActual];
+    if (!paso) return;
+    const set = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = valor; };
+    set('tour-paso-icono', paso.icono);
+    set('tour-paso-titulo', paso.titulo);
+    set('tour-paso-desc', paso.desc);
+    set('tour-paso-contador', `Paso ${tourPasoActual + 1} de ${pasos.length}`);
+    const btnAnt = document.getElementById('tour-btn-anterior');
+    if (btnAnt) btnAnt.style.visibility = tourPasoActual === 0 ? 'hidden' : 'visible';
+    const btnSig = document.getElementById('tour-btn-siguiente');
+    if (btnSig) btnSig.textContent = tourPasoActual === pasos.length - 1 ? 'Abrir checklist →' : 'Siguiente →';
+}
+
+function abrirTourConfiguracion() {
+    const overlay = document.getElementById('tutorial-tour-overlay');
+    if (!overlay) return;
+    tourPasoActual = 0;
+    renderTourPaso();
+    overlay.style.display = 'flex';
+}
+
+function cerrarTourConfiguracion(abrirChecklist) {
+    const overlay = document.getElementById('tutorial-tour-overlay');
+    if (overlay) overlay.style.display = 'none';
+    try { localStorage.setItem('tutorial_admin_visto', '1'); } catch (_) { /* noop */ }
+    if (abrirChecklist) abrirTutorialConfiguracion();
+}
+
+function tourSiguiente() {
+    if (tourPasoActual >= TUTORIAL_PASOS_DEF.length - 1) { cerrarTourConfiguracion(true); return; }
+    tourPasoActual += 1;
+    renderTourPaso();
+}
+
+function tourAnterior() {
+    if (tourPasoActual > 0) { tourPasoActual -= 1; renderTourPaso(); }
+}
+
+// Aviso de bienvenida para maestres (no administradores).
+function mostrarBienvenidaMaestre() {
+    const overlay = document.getElementById('bienvenida-maestre-overlay');
+    const lista = document.getElementById('bienvenida-guia-lista');
+    if (lista) {
+        const puntos = [
+            ['🏆 Clasificación Real', 'La tabla de la competición y sus rankings (general, del evento en curso e histórico).'],
+            ['🗳️ Votación de Barrio', 'Aquí emites tu juicio cuando la ventana de un evento está abierta.'],
+            ['👑 Lokitronistas', 'Quiénes representan a cada barrio.'],
+            ['📅 Calendario', 'Las próximas fiestas y sus horarios de votación.'],
+            ['🎉 Gala Final', 'La ceremonia de cierre y los premios.']
+        ];
+        lista.innerHTML = puntos.map(([t, d]) => `<li><strong>${t}:</strong> ${d}</li>`).join('');
+    }
+    if (overlay) overlay.style.display = 'flex';
+}
+
+function cerrarBienvenidaMaestre(noVolver) {
+    const overlay = document.getElementById('bienvenida-maestre-overlay');
+    if (overlay) overlay.style.display = 'none';
+    try {
+        localStorage.setItem('bienvenida_maestre_vista', '1');
+        if (noVolver) localStorage.setItem('bienvenida_maestre_no_mostrar', '1');
+    } catch (_) { /* noop */ }
+}
+
+// Decide qué guía mostrar en cada inicio de sesión.
+function iniciarGuiasPrimerUso(usuario) {
+    if (!usuario) return;
+    const esAdmin = puedeAdministrar(usuario.role);
+    if (esAdmin) {
+        let visto = false;
+        try { visto = localStorage.getItem('tutorial_admin_visto') === '1'; } catch (_) { visto = false; }
+        if (!visto) abrirTourConfiguracion();
+    } else {
+        let vista = false, noMostrar = false;
+        try {
+            vista = localStorage.getItem('bienvenida_maestre_vista') === '1';
+            noMostrar = localStorage.getItem('bienvenida_maestre_no_mostrar') === '1';
+        } catch (_) { /* noop */ }
+        if (!vista && !noMostrar) mostrarBienvenidaMaestre();
+    }
+}
+
+window.abrirTutorialConfiguracion = abrirTutorialConfiguracion;
+window.cerrarTutorialConfiguracion = cerrarTutorialConfiguracion;
+window.descartarTutorialConfiguracion = descartarTutorialConfiguracion;
+window.guardarNombreJuegoDesdeTutorial = guardarNombreJuegoDesdeTutorial;
+window.borrarNombreJuegoDesdeTutorial = borrarNombreJuegoDesdeTutorial;
+window.irAPasoConfiguracion = irAPasoConfiguracion;
+window.tourSiguiente = tourSiguiente;
+window.tourAnterior = tourAnterior;
+window.cerrarTourConfiguracion = cerrarTourConfiguracion;
+window.cerrarBienvenidaMaestre = cerrarBienvenidaMaestre;
 
 
 /* ============================================================================

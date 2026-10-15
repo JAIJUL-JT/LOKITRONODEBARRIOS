@@ -19,6 +19,7 @@ Thumbs.db
 supabase/.temp/
 
 # Ruido del repositorio: copias, respaldos y duplicados
+backups/
 *.backup
 *.backup-*
 *.bak

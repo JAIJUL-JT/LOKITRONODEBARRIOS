@@ -786,6 +786,28 @@ function renderOpcionesVoto() {
     renderMisVotosPersonales();
     actualizarResumenesVoto();
     actualizarBloqueVotacion();
+    renderOpcionesRecomendacionOraculo();
+}
+
+// El Oráculo solo puede recomendar barrios que existan realmente en el ámbito
+// (en el Reino real, barrios dados de alta y participantes). Nunca inventa barrios.
+function renderOpcionesRecomendacionOraculo() {
+    const select = document.getElementById('select-barrio-recomendacion');
+    if (!select) return;
+
+    const barrios = getBarriosDelAmbito();
+    if (barrios.length === 0) {
+        select.innerHTML = '<option value="">Sin barrios creados en el Reino</option>';
+        select.disabled = true;
+        return;
+    }
+
+    const anterior = select.value;
+    select.disabled = false;
+    select.innerHTML = barrios.map(barrio =>
+        `<option value="${escaparHTML(barrio)}">${escaparHTML(barrio)}</option>`
+    ).join('');
+    if (barrios.includes(anterior)) select.value = anterior;
 }
 
 function actualizarEstadoFormularioVoto() {
@@ -1528,10 +1550,13 @@ function renderClasificacionReal() {
     if (!cuerpo) return;
 
     const votos = getVotosComputablesDelAmbito();
-    const barriosParticipantes = getBarriosDelAmbito();
-    const barrios = barriosParticipantes.length > 0
-        ? barriosParticipantes
-        : ['Casco Viejo', 'Indautxu', 'Deusto', 'Santutxu', 'Abando', 'San Mamés - Basurto'];
+    const barrios = getBarriosDelAmbito();
+
+    if (barrios.length === 0) {
+        cuerpo.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#a1a1aa;font-style:italic;">Aún no hay barrios participantes en la competición.</td></tr>';
+        renderGanadoresPorCategoria([]);
+        return;
+    }
 
     const mediaGlobal = votos.length === 0 ? 0 : votos.reduce((acc, v) => {
         return acc + calcularNotaLeyII(v.nota_festin, v.nota_caminos, v.nota_espiritu);
@@ -4467,7 +4492,7 @@ function getBarriosLocal() {
         const raw = JSON.parse(localStorage.getItem(STORAGE_KEYS.barrios) || '[]');
         if (Array.isArray(raw) && raw.length) return raw.map(b => typeof b === 'string' ? b : b.nombre).filter(Boolean);
     } catch (_) {}
-    return ['Casco Viejo', 'Indautxu', 'Deusto', 'Santutxu', 'Abando', 'San Mamés - Basurto'];
+    return [];
 }
 
 function getBarriosRegistrados() {
@@ -5468,20 +5493,58 @@ function generarPartidaSimulacionCompleta() {
 }
 
 function renderDashboardSimulacionCompleto() {
-    const raw = localStorage.getItem('simulacion_partida_completa');
-    if (!raw) return;
+    const banner = document.getElementById('sim-resumen-partida-banner');
+    const graficos = document.getElementById('contenedor-graficos-simulacion');
+    const directorio = document.getElementById('contenedor-directorio-usuarios-sim');
+    const porEvento = document.getElementById('contenedor-usuarios-por-evento');
 
-    let simData = {};
-    try {
-        simData = JSON.parse(raw);
-    } catch (e) {
+    const raw = localStorage.getItem('simulacion_partida_completa');
+    let simData = null;
+    if (raw) {
+        try {
+            simData = JSON.parse(raw);
+        } catch (e) {
+            simData = null;
+        }
+    }
+
+    // Sin partida simulada, el Sandbox no muestra estadísticas ni usuarios.
+    if (!simData) {
+        if (banner) banner.style.display = 'none';
+        if (graficos) graficos.style.display = 'none';
+        if (directorio) directorio.style.display = 'none';
+        if (porEvento) porEvento.style.display = 'none';
+
+        ['stat-num-barrios', 'stat-num-usuarios', 'stat-eventos-celebrados',
+            'stat-eventos-pendientes', 'stat-total-votos-sim'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '0';
+        });
+
+        Object.keys(simChartInstances).forEach(id => {
+            try { simChartInstances[id].destroy(); } catch (_) { /* noop */ }
+            delete simChartInstances[id];
+        });
+
+        poblarFiltroBarriosDirectorioSim([]);
+        const tbody = document.getElementById('tabla-usuarios-simulacion-body');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;">Genera una partida simulada para ver el directorio de usuarios.</td></tr>';
+        }
+        poblarSelectEventosSim([]);
+        const detalles = document.getElementById('detalles-evento-usuarios-content');
+        if (detalles) {
+            detalles.innerHTML = '<div style="padding:15px;text-align:center;color:#94a3b8;">Selecciona un evento del desplegable para consultar los usuarios participantes.</div>';
+        }
         return;
     }
 
-    const { barrios = [], usuarios = [], eventos = [], votos = [] } = simData;
-
-    const banner = document.getElementById('sim-resumen-partida-banner');
     if (banner) banner.style.display = 'block';
+    if (graficos) graficos.style.display = 'block';
+    if (directorio) directorio.style.display = 'block';
+    if (porEvento) porEvento.style.display = 'block';
+
+    const { barrios = [], usuarios = [], eventos = [], votos = [] } = simData;
 
     const statBarrios = document.getElementById('stat-num-barrios');
     const statUsuarios = document.getElementById('stat-num-usuarios');
@@ -5925,7 +5988,8 @@ function detectarCierresVotacion() {
     });
 }
 
-function poblarFiltroBarriosDirectorioSim(barrios) {    const select = document.getElementById('select-filtro-barrio-sim');
+function poblarFiltroBarriosDirectorioSim(barrios) {
+    const select = document.getElementById('select-filtro-barrio-sim');
     if (!select) return;
     select.innerHTML = `<option value="">Todos los Barrios (${barrios.length})</option>` +
         barrios.map(b => `<option value="${b}">${b}</option>`).join('');
@@ -5936,7 +6000,10 @@ function renderDirectorioUsuariosSim() {
     if (!tbody) return;
 
     const raw = localStorage.getItem('simulacion_partida_completa');
-    if (!raw) return;
+    if (!raw) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;">Genera una partida simulada para ver el directorio de usuarios.</td></tr>';
+        return;
+    }
 
     const { usuarios = [], votos = [] } = JSON.parse(raw);
     const busqueda = (document.getElementById('input-buscar-usuario-sim')?.value || '').toLowerCase();
@@ -5993,7 +6060,10 @@ function renderUsuariosPorEventoSim() {
     }
 
     const raw = localStorage.getItem('simulacion_partida_completa');
-    if (!raw) return;
+    if (!raw) {
+        container.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8;">Selecciona un evento del desplegable.</div>';
+        return;
+    }
     const { eventos = [], usuarios = [], votos = [] } = JSON.parse(raw);
 
     const evento = eventos.find(e => e.id === evtId);
@@ -6232,8 +6302,15 @@ async function generarRecomendacionOraculo() {
     const barrioSelect = document.getElementById('select-barrio-recomendacion');
     const antojoInput = document.getElementById('input-antojo-oraculo');
 
-    const barrio = barrioSelect ? barrioSelect.value : 'Casco Viejo';
+    const barrio = barrioSelect ? barrioSelect.value : '';
     const antojo = antojoInput && antojoInput.value.trim() ? antojoInput.value.trim() : 'Pintxos tradicionales y ambiente festivo';
+
+    if (!barrio) {
+        if (contenedor) contenedor.style.display = 'block';
+        if (salida) salida.textContent = '🔮 El Oráculo no puede recomendar ninguna ruta: aún no hay barrios creados en el Reino. Da de alta un barrio en la pestaña de Barrios.';
+        if (badge) badge.textContent = 'Sin barrios';
+        return;
+    }
 
     if (btn) btn.disabled = true;
     if (salida) salida.textContent = `🍷 Consultando a las mentes sabias sobre la mejor ruta en ${barrio}...`;

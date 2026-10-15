@@ -103,7 +103,7 @@ function setCurrentUser(user) {
     localStorage.setItem(STORAGE_KEYS.usuarioActual, JSON.stringify(user || null));
 }
 
-const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-oraculo-ia', 'pestana-locales-promocion'];
+const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-sorteo-eventos', 'pestana-oraculo-ia', 'pestana-locales-promocion'];
 
 /* ==========================================
    FIN DEL JUEGO: ESTADO, PROTECCIÓN Y BLOQUEO
@@ -321,6 +321,9 @@ function cambiarPestana(valor) {
     }
     if (esLocalesPromocion && esMaster && typeof cargarLocalesPromocion === 'function') {
         cargarLocalesPromocion();
+    }
+    if (valor === 'pestana-sorteo-eventos' && esSuperadmin && typeof cargarOrdenSorteoBarrios === 'function') {
+        cargarOrdenSorteoBarrios();
     }
     const sections = document.querySelectorAll('.tab-content');
     sections.forEach(section => {
@@ -1411,25 +1414,50 @@ function eliminarVotoSandboxPorIndice(indice) {
     }
 }
 
-function eliminarVotoRepositorio(index) {
+async function eliminarVotoRepositorio(index) {
     const user = getCurrentUser();
     if (!user || !puedeAdministrar(user.role)) {
-        alert('Solo el Superadmin puede eliminar votos.');
+        alert('Solo el Master o un Superadmin puede eliminar votos.');
         return;
     }
-    if (confirm('🗑️ ¿Deseas eliminar este voto del repositorio?')) {
-        if (getAmbitoVista() === 'sandbox') {
-            eliminarVotoSandboxPorIndice(index);
-        } else {
-            const key = getStorageKeyVotos();
-            const votos = JSON.parse(localStorage.getItem(key) || '[]');
-            votos.splice(index, 1);
-            localStorage.setItem(key, JSON.stringify(votos));
-        }
+    if (!confirm('🗑️ ¿Deseas eliminar este voto del repositorio?')) return;
+
+    if (getAmbitoVista() === 'sandbox') {
+        eliminarVotoSandboxPorIndice(index);
         renderRepositorioVotos();
         if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
+        if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
         alert('Voto eliminado correctamente.');
+        return;
     }
+
+    const voto = getRepositorioVotos()[index];
+    const client = getSupabaseBarriosClient();
+    if (client && user.token && voto && voto.id) {
+        try {
+            const { error } = await client.rpc('eliminar_voto_superadmin', {
+                p_token: user.token,
+                p_voto_id: voto.id
+            });
+            if (error) throw error;
+            await cargarVotosDesdeSupabase();
+            alert('Voto eliminado correctamente.');
+        } catch (error) {
+            console.error('No se pudo eliminar el voto en Supabase:', error);
+            alert(`No se pudo eliminar el voto: ${error.message || 'error desconocido'}`);
+        }
+        return;
+    }
+
+    // Respaldo local si no hay conexión o el voto no tiene id (datos antiguos).
+    const key = getStorageKeyVotos();
+    const votos = JSON.parse(localStorage.getItem(key) || '[]');
+    votos.splice(index, 1);
+    localStorage.setItem(key, JSON.stringify(votos));
+    renderRepositorioVotos();
+    if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
+    if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
+    alert('Voto eliminado correctamente.');
 }
 
 function getRepositorioVotos() {
@@ -1471,6 +1499,7 @@ async function cargarVotosDesdeSupabase() {
         localStorage.setItem(STORAGE_KEYS.repositorioVotos, JSON.stringify(votos));
         if (typeof renderRepositorioVotos === 'function') renderRepositorioVotos();
         if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
+        if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
         renderMisVotosPersonales();
     } catch (error) {
         console.warn('No se pudieron cargar los votos desde Supabase:', error?.message || error);
@@ -6357,6 +6386,10 @@ async function restaurarCompeticion() {
         if (typeof cargarEventosDesdeSupabase === 'function') await cargarEventosDesdeSupabase();
         if (typeof cargarVotosDesdeSupabase === 'function') await cargarVotosDesdeSupabase();
         if (typeof cargarOrdenSorteoBarrios === 'function') await cargarOrdenSorteoBarrios();
+        if (typeof cargarEstadoJuego === 'function') await cargarEstadoJuego();
+        if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
+        if (typeof renderClasificacionReal === 'function') renderClasificacionReal();
+        if (typeof aplicarFinDeJuegoUI === 'function') aplicarFinDeJuegoUI();
     } catch (error) {
         console.error('Error al restaurar la competición:', error);
         if (estado) estado.textContent = `No se pudo restaurar la competición: ${error.message || 'error desconocido'}`;

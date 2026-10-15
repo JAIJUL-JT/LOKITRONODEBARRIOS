@@ -260,8 +260,8 @@ assert(!indexHtmlContent.includes('value="organizador"'), 'El rol organizador ya
 assert(indexHtmlContent.includes('value="pestana-votacion-barrio"'), 'La pestaña de votación de barrio está disponible para todos los usuarios');
 assert(appJsContent.includes('EVENTOS_FEUDALES'), 'Crónica de EVENTOS_FEUDALES definida con fechas y Casas');
 assert(appJsContent.includes('descargarICSEvento'), 'Función para sincronizar citas con Google Calendar (.ics) implementada');
-assert(appJsContent.includes("function puedeGestionarUsuarios(role) {\n    return role === 'superadmin';"), 'Solo Superadmin puede gestionar usuarios y sus roles');
-assert(appJsContent.includes("return role === 'superadmin';"), 'Solo Superadmin puede gestionar eventos de barrio');
+assert(appJsContent.includes("function puedeGestionarUsuarios(role) {\n    return role === 'superadmin' || role === 'master';"), 'Master y Superadmin pueden gestionar usuarios y sus roles');
+assert(appJsContent.includes("return role === 'superadmin' || role === 'master';"), 'Master y Superadmin pueden gestionar eventos de barrio');
 assert(appJsContent.includes("select: \"select('id, phone, name, role, pin_code, barrio_asignado')\""), 'La sesión de usuario conserva los campos requeridos');
 assert(appJsContent.includes('function puedeEditarEventoTronista'), 'Tronista tiene una regla específica de edición de eventos');
 assert(appJsContent.includes("if (role === 'superadmin') return true;"), 'La edición de eventos por barrio se reserva al superadmin');

@@ -2900,6 +2900,12 @@ async function guardarEventoBarrio(event) {
         return;
     }
 
+    if (!String(barrio || '').trim() || barrio === 'Reino'
+        || !getBarriosRegistradosDelAmbito().includes(barrio)) {
+        alert('Primero da de alta el barrio en «Gestión de Barrios» para poder programar su evento. Ese barrio entrará en el sorteo.');
+        return;
+    }
+
     if (fechaFin && fechaFin < fecha) {
         alert('La fecha de finalización del evento no puede ser anterior a la fecha de inicio.');
         return;
@@ -2982,6 +2988,12 @@ async function guardarEventoBarrioDesdePestana(event) {
 
     if (!nombre || !fecha || !lugar) {
         alert('Por favor, completa los campos requeridos del evento.');
+        return;
+    }
+
+    if (!String(barrio || '').trim() || barrio === 'Reino'
+        || !getBarriosRegistradosDelAmbito().includes(barrio)) {
+        alert('Primero da de alta el barrio en «Gestión de Barrios» para poder programar su evento. Ese barrio entrará en el sorteo.');
         return;
     }
 
@@ -4468,7 +4480,7 @@ async function cargarBarriosDesdeSupabase() {
         return;
     }
     const { data, error } = await client.from('casas')
-        .select('id,nombre,lema,emblema,color_heraldo,imagen_url,participa,created_at')
+        .select('id,nombre,lema,emblema,color_heraldo,imagen_url,participa,created_at,ciudad_id,distrito_id,barrio_id,codigo_postal')
         .order('nombre', { ascending: true });
     if (error) {
         console.error('No se pudieron cargar los barrios desde casas:', error.message);
@@ -4688,6 +4700,8 @@ function editarBarrio(id) {
     }
     campoEmblema.value = casa.emblema || '🏰';
 
+    if (typeof barrioGeoSetDesde === 'function') barrioGeoSetDesde(casa);
+
     if (botonGuardar) botonGuardar.textContent = '💾 Guardar Cambios';
     if (botonCancelar) botonCancelar.style.display = 'inline-block';
 
@@ -4770,6 +4784,13 @@ async function guardarBarrio(event) {
         return;
     }
 
+    const ubicacion = (typeof barrioGeoUbicacion === 'function')
+        ? barrioGeoUbicacion()
+        : { ciudad_id: null, distrito_id: null, barrio_id: null, codigo_postal: null, ruta: '' };
+    const imagenFicha = ubicacion.ciudad_id
+        ? geoFichaMiniatura({ nombre, color: '#d4af37', emblema })
+        : null;
+
     const boton = document.getElementById('btn-guardar-barrio');
     const textoOriginal = boton?.textContent || '➕ Añadir Nuevo Barrio';
     if (boton) {
@@ -4790,7 +4811,12 @@ async function guardarBarrio(event) {
                 p_lema: lema,
                 p_emblema: emblema,
                 p_color_heraldo: casasCache.find(c => String(c.id) === String(idEdit))?.color_heraldo || '#d4af37',
-                p_participa: casasCache.find(c => String(c.id) === String(idEdit))?.participa ?? true
+                p_participa: casasCache.find(c => String(c.id) === String(idEdit))?.participa ?? true,
+                p_ciudad_id: ubicacion.ciudad_id,
+                p_distrito_id: ubicacion.distrito_id,
+                p_barrio_id: ubicacion.barrio_id,
+                p_codigo_postal: ubicacion.codigo_postal,
+                p_imagen_url: imagenFicha
             }));
         } else {
             ({ data, error } = await client.rpc('crear_casa_superadmin', {
@@ -4798,7 +4824,12 @@ async function guardarBarrio(event) {
                 p_pin: pinConfirmacion.trim(),
                 p_nombre: nombre,
                 p_lema: lema,
-                p_emblema: emblema
+                p_emblema: emblema,
+                p_ciudad_id: ubicacion.ciudad_id,
+                p_distrito_id: ubicacion.distrito_id,
+                p_barrio_id: ubicacion.barrio_id,
+                p_codigo_postal: ubicacion.codigo_postal,
+                p_imagen_url: imagenFicha
             }));
         }
 
@@ -4933,6 +4964,240 @@ function resetFormBarrio() {
 
     const cancelar = document.getElementById('btn-cancelar-barrio');
     if (cancelar) cancelar.style.display = 'none';
+
+    barrioGeoReset();
+}
+
+/* ============================================================================
+ * LOKITRONO — UBICACIÓN GEOGRÁFICA DEL BARRIO (CASCADA)
+ * CCAA → provincia → municipio → distrito → barrio → CP. Reutiliza el catálogo
+ * del panel de geografía. La ubicación se guarda en `casas` y alimenta el
+ * sorteo de barrios y la ficha del puzzle de ubicaciones.
+ * ========================================================================== */
+const barrioGeoEstado = { ine: null, distritos: [], barrios: [], cps: [] };
+
+function barrioGeoOpt(txt) { return `<option value="">${geoEsc(txt)}</option>`; }
+
+function barrioGeoRefrescar() {
+    const sel = document.getElementById('barrio-geo-ccaa');
+    if (!sel) return;
+    if (!geoEstado.comunidades.size && typeof geoCargarCatalogo === 'function') {
+        geoCargarCatalogo().then(barrioGeoRefrescar);
+        return;
+    }
+    const previo = sel.value;
+    const ccaa = [...geoEstado.comunidades.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es'));
+    sel.innerHTML = barrioGeoOpt('— Comunidad —') +
+        ccaa.map(([id, n]) => `<option value="${geoEsc(id)}">${geoEsc(n)}</option>`).join('');
+    if (previo && geoEstado.comunidades.has(previo)) sel.value = previo;
+    barrioGeoRenderProvincias();
+}
+
+function barrioGeoRenderProvincias() {
+    const sel = document.getElementById('barrio-geo-provincia');
+    if (!sel) return;
+    const ccaa = document.getElementById('barrio-geo-ccaa')?.value || '';
+    const previo = sel.value;
+    let provs = [...geoEstado.provincias.values()];
+    if (ccaa) provs = provs.filter(p => String(p.comunidad_id || '') === ccaa);
+    provs.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    sel.innerHTML = barrioGeoOpt('— Provincia —') +
+        provs.map(p => `<option value="${geoEsc(p.id)}">${geoEsc(p.nombre)}</option>`).join('');
+    if (previo && geoEstado.provincias.has(previo)) sel.value = previo;
+    barrioGeoRenderCiudades();
+}
+
+function barrioGeoRenderCiudades() {
+    const sel = document.getElementById('barrio-geo-ciudad');
+    if (!sel) return;
+    const prov = document.getElementById('barrio-geo-provincia')?.value || '';
+    const ccaa = document.getElementById('barrio-geo-ccaa')?.value || '';
+    const previo = sel.value;
+    let lista = [];
+    if (prov) {
+        lista = geoEstado.ciudadesPorProvincia.get(String(prov)) || [];
+    } else {
+        const provincias = [...geoEstado.provincias.values()]
+            .filter(p => !ccaa || String(p.comunidad_id || '') === ccaa);
+        for (const p of provincias) {
+            lista = lista.concat(geoEstado.ciudadesPorProvincia.get(String(p.id)) || []);
+        }
+    }
+    lista = [...lista].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    sel.innerHTML = barrioGeoOpt('— Municipio —') +
+        lista.map(c => `<option value="${geoEsc(c.id)}">${geoEsc(c.nombre)}</option>`).join('');
+    if (previo && [...sel.options].some(o => o.value === previo)) sel.value = previo;
+    barrioGeoCargarEntidadesCiudad(sel.value);
+}
+
+async function barrioGeoCargarEntidadesCiudad(ine) {
+    barrioGeoEstado.ine = ine ? String(ine) : null;
+    barrioGeoEstado.distritos = [];
+    barrioGeoEstado.barrios = [];
+    barrioGeoEstado.cps = [];
+    if (barrioGeoEstado.ine) {
+        try {
+            if (!geoEstado.cargadas.has(barrioGeoEstado.ine) && typeof geoCargarCiudad === 'function') {
+                await geoCargarCiudad(barrioGeoEstado.ine);
+            }
+        } catch (error) { /* sin entidades */ }
+        const reg = (typeof geoReg === 'function') ? geoReg(barrioGeoEstado.ine) : null;
+        if (reg) {
+            barrioGeoEstado.distritos = reg.distritos || [];
+            barrioGeoEstado.barrios = reg.barrios || [];
+            barrioGeoEstado.cps = reg.cps || [];
+        }
+    }
+    barrioGeoRenderDistritos();
+}
+
+function barrioGeoRenderDistritos() {
+    const sel = document.getElementById('barrio-geo-distrito');
+    if (!sel) return;
+    const previo = sel.value;
+    const distritos = [...(barrioGeoEstado.distritos || [])];
+    sel.innerHTML = barrioGeoOpt('— Distrito —') +
+        distritos.map(d => `<option value="${geoEsc(d.codigo)}">${geoEsc(d.nombre)}</option>`).join('');
+    sel.disabled = distritos.length === 0;
+    if (previo && [...sel.options].some(o => o.value === previo)) sel.value = previo;
+    barrioGeoRenderBarrios();
+}
+
+function barrioGeoRenderBarrios() {
+    const sel = document.getElementById('barrio-geo-barrio');
+    if (!sel) return;
+    const dist = document.getElementById('barrio-geo-distrito')?.value || '';
+    const previo = sel.value;
+    let barrios = [...(barrioGeoEstado.barrios || [])];
+    if (dist) barrios = barrios.filter(b => String(b.distrito_codigo) === dist);
+    sel.innerHTML = barrioGeoOpt('— Barrio —') +
+        barrios.map(b => `<option value="${geoEsc(b.codigo)}">${geoEsc(b.nombre)}</option>`).join('');
+    sel.disabled = (barrioGeoEstado.barrios || []).length === 0;
+    if (previo && [...sel.options].some(o => o.value === previo)) sel.value = previo;
+    barrioGeoRenderCps();
+}
+
+function barrioGeoRenderCps() {
+    const sel = document.getElementById('barrio-geo-cp');
+    if (!sel) return;
+    const previo = sel.value;
+    const cps = [...(barrioGeoEstado.cps || [])]
+        .map(c => (typeof c === 'string' ? c : c.codigo)).filter(Boolean);
+    sel.innerHTML = barrioGeoOpt(cps.length ? '— Código postal —' : '— Sin CP —') +
+        cps.map(cp => `<option value="${geoEsc(cp)}">${geoEsc(cp)}</option>`).join('');
+    sel.disabled = cps.length === 0;
+    if (previo && [...sel.options].some(o => o.value === previo)) sel.value = previo;
+    barrioGeoRenderFicha();
+}
+
+// Ficha-mini-mapa simple (decisión c): color + emblema + nombre, sin geometría.
+function geoFichaMiniatura({ nombre, color, emblema } = {}) {
+    const c = (color && /^#[0-9a-fA-F]{3,8}$/.test(color)) ? color : '#d4af37';
+    const em = emblema || '🏰';
+    const txt = String(nombre || 'Ubicación').slice(0, 20).replace(/[<>&"]/g, '');
+    const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">` +
+        `<rect width="120" height="120" rx="14" fill="#1c1917" stroke="${c}" stroke-width="4"/>` +
+        `<text x="60" y="60" font-size="42" text-anchor="middle">${em}</text>` +
+        `<text x="60" y="98" font-size="14" text-anchor="middle" fill="${c}" font-family="sans-serif">${txt}</text>` +
+        `</svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+function barrioGeoUbicacion() {
+    const selCcaa = document.getElementById('barrio-geo-ccaa');
+    if (!selCcaa) return { ciudad_id: null, distrito_id: null, barrio_id: null, codigo_postal: null, ruta: '' };
+    const ine = document.getElementById('barrio-geo-ciudad')?.value || '';
+    const dist = document.getElementById('barrio-geo-distrito')?.value || '';
+    const bar = document.getElementById('barrio-geo-barrio')?.value || '';
+    const cp = document.getElementById('barrio-geo-cp')?.value || '';
+    const distrito_id = (ine && dist) ? `${ine}-${dist}` : null;
+    const barrio_id = (ine && dist && bar) ? `${ine}-${dist}-${bar}` : null;
+
+    const partes = [];
+    if (selCcaa.value) partes.push(geoNombreComunidad(selCcaa.value));
+    const prov = document.getElementById('barrio-geo-provincia')?.value || '';
+    if (prov) partes.push(geoNombreProvincia(prov));
+    if (ine) partes.push(geoEstado.porIne.get(String(ine))?.nombre || ine);
+    if (dist) partes.push((barrioGeoEstado.distritos.find(d => String(d.codigo) === dist) || {}).nombre || dist);
+    if (bar) partes.push((barrioGeoEstado.barrios.find(b => String(b.codigo) === bar) || {}).nombre || bar);
+    if (cp) partes.push('CP ' + cp);
+
+    return {
+        ciudad_id: ine || null, distrito_id, barrio_id,
+        codigo_postal: cp || null, ruta: partes.filter(Boolean).join(' › ')
+    };
+}
+
+function barrioGeoRenderFicha() {
+    const cont = document.getElementById('barrio-geo-ficha');
+    if (!cont) return;
+    const u = barrioGeoUbicacion();
+    const nombre = document.getElementById('barrio-nombre')?.value?.trim() || '';
+    const emblema = document.getElementById('barrio-emblema')?.value || '🏰';
+    if (!u.ciudad_id) {
+        cont.innerHTML = '<span style="color:#a1a1aa;font-size:.85rem;">Sin ubicación geográfica asignada (opcional).</span>';
+        return;
+    }
+    const img = geoFichaMiniatura({ nombre, color: '#d4af37', emblema });
+    cont.innerHTML =
+        `<img src="${img}" alt="Ficha de ${geoEsc(nombre || 'la ubicación')}" width="72" height="72" style="border-radius:10px;">` +
+        `<span style="color:#d6d3d1;font-size:.85rem;">${geoEsc(u.ruta)}</span>`;
+}
+
+function barrioGeoCambioCcaa() { barrioGeoRenderProvincias(); }
+function barrioGeoCambioProvincia() { barrioGeoRenderCiudades(); }
+function barrioGeoCambioCiudad() {
+    const ine = document.getElementById('barrio-geo-ciudad')?.value || '';
+    barrioGeoCargarEntidadesCiudad(ine);
+}
+function barrioGeoCambioDistrito() { barrioGeoRenderBarrios(); }
+function barrioGeoCambioBarrio() { barrioGeoRenderCps(); }
+
+function barrioGeoReset() {
+    barrioGeoEstado.ine = null;
+    barrioGeoEstado.distritos = [];
+    barrioGeoEstado.barrios = [];
+    barrioGeoEstado.cps = [];
+    const ccaa = document.getElementById('barrio-geo-ccaa');
+    if (ccaa) ccaa.value = '';
+    barrioGeoRenderProvincias();
+    barrioGeoRenderFicha();
+}
+
+async function barrioGeoSetDesde(casa) {
+    if (!casa || !casa.ciudad_id) { barrioGeoReset(); return; }
+    if (!geoEstado.comunidades.size && typeof geoCargarCatalogo === 'function') {
+        await geoCargarCatalogo();
+    }
+    const ine = String(casa.ciudad_id);
+
+    let provinciaId = '';
+    for (const [pid, lista] of geoEstado.ciudadesPorProvincia) {
+        if (lista.some(c => String(c.id) === ine)) { provinciaId = String(pid); break; }
+    }
+    const prov = geoEstado.provincias.get(provinciaId);
+    const selCcaa = document.getElementById('barrio-geo-ccaa');
+    if (selCcaa && prov && prov.comunidad_id) { selCcaa.value = String(prov.comunidad_id); barrioGeoRenderProvincias(); }
+    const selProv = document.getElementById('barrio-geo-provincia');
+    if (selProv && provinciaId) { selProv.value = provinciaId; barrioGeoRenderCiudades(); }
+    const selCiudad = document.getElementById('barrio-geo-ciudad');
+    if (selCiudad) { selCiudad.value = ine; await barrioGeoCargarEntidadesCiudad(ine); }
+
+    const partes = (casa.barrio_id || casa.distrito_id || '').split('-');
+    if (casa.distrito_id && partes[1]) {
+        const selDist = document.getElementById('barrio-geo-distrito');
+        if (selDist) { selDist.value = partes[1]; barrioGeoRenderBarrios(); }
+    }
+    if (casa.barrio_id && partes[2]) {
+        const selBar = document.getElementById('barrio-geo-barrio');
+        if (selBar) { selBar.value = partes[2]; barrioGeoRenderCps(); }
+    }
+    if (casa.codigo_postal) {
+        const selCp = document.getElementById('barrio-geo-cp');
+        if (selCp) selCp.value = String(casa.codigo_postal);
+    }
+    barrioGeoRenderFicha();
 }
 
 function generarLemaAleatorio() {
@@ -7466,8 +7731,10 @@ function geoPuzzleRenderOrden() {
         const pos = p.posicion == null ? (i + 1) : p.posicion;
         const tipo = p.tipo === 'cp' ? `📮 ${geoEsc(p.codigo_postal || '')}` : geoEsc(p.tipo);
         const ubic = geoEsc(p.ciudad_id || '');
+        const ficha = geoFichaMiniatura({ nombre: p.nombre, color: p.color, emblema: p.tipo === 'cp' ? '📮' : '🧩' });
         return `<li>
             <span class="geo-pos">${pos}</span>
+            <img src="${ficha}" alt="" width="40" height="40" style="border-radius:8px;flex:none;">
             <span class="geo-barra-color" style="background:${geoEsc(p.color || '#d4af37')}"></span>
             <strong>${geoEsc(p.nombre)}</strong>
             <em style="opacity:.7;font-size:.8rem;">${tipo}${ubic ? ' · ' + ubic : ''}</em>
@@ -7769,6 +8036,7 @@ function geoInicializar() {
     }
 
     geoCargarCatalogo();
+    if (typeof barrioGeoRefrescar === 'function') barrioGeoRefrescar();
     geoPuzzleRenderEventos();
     geoPuzzleRender();
     geoRefrescarSegunActiva();

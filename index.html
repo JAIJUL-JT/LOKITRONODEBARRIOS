@@ -1013,6 +1013,27 @@
     <option value="🌊">🌊 30. Olas de la ría</option>
 </select>
                         </div>
+                        <div class="form-group">
+                            <label>📍 Ubicación del Barrio (cascada geográfica):</label>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <select id="barrio-geo-ccaa" class="input-medieval" style="flex: 1; min-width: 150px;"
+                                    onchange="barrioGeoCambioCcaa()"></select>
+                                <select id="barrio-geo-provincia" class="input-medieval" style="flex: 1; min-width: 150px;"
+                                    onchange="barrioGeoCambioProvincia()"></select>
+                                <select id="barrio-geo-ciudad" class="input-medieval" style="flex: 1; min-width: 150px;"
+                                    onchange="barrioGeoCambioCiudad()"></select>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                                <select id="barrio-geo-distrito" class="input-medieval" style="flex: 1; min-width: 150px;"
+                                    onchange="barrioGeoCambioDistrito()"></select>
+                                <select id="barrio-geo-barrio" class="input-medieval" style="flex: 1; min-width: 150px;"
+                                    onchange="barrioGeoCambioBarrio()"></select>
+                                <select id="barrio-geo-cp" class="input-medieval" style="flex: 1; min-width: 120px;"
+                                    onchange="barrioGeoRenderFicha()"></select>
+                            </div>
+                            <div id="barrio-geo-ficha" style="margin-top: 10px; display: flex; align-items: center; gap: 12px;"
+                                aria-live="polite"></div>
+                        </div>
                         <button type="submit" class="btn-cuervo" id="btn-guardar-barrio">➕ Añadir Nuevo Barrio</button>
                         <button type="button" class="btn-cuervo" id="btn-cancelar-barrio"
                             style="display: none; background: #44403c;" onclick="resetFormBarrio()">Cancelar

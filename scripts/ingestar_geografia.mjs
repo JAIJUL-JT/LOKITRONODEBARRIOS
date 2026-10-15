@@ -5,7 +5,7 @@
 // Script reproducible y SIN dependencias externas (Node >= 18, usa fetch global).
 //
 // Genera:
-//   * sql/seeds/geografia/provincias_ciudades.sql   (todos los municipios de España)
+//   * sql/seeds/geografia/provincias_ciudades.sql   (comunidades, provincias y municipios)
 //   * sql/seeds/geografia/codigos_postales.sql       (CP y su relación con municipios)
 //   * sql/seeds/geografia/<ine>_distritos_barrios.sql (solo ciudades con open data)
 //   * data/ciudades/<ine>.geojson                    (límite municipal, IGN)
@@ -23,7 +23,9 @@
 //   node scripts/ingestar_geografia.mjs todo          (base + manifest)
 //
 // FUENTES Y ATRIBUCIÓN (obligatoria):
-//   · Municipios y códigos postales: INE — www.ine.es
+//   · Comunidades, provincias y municipios: INE — www.ine.es
+//     (vía dataset derivado `codeforspain/ds-organizacion-administrativa`)
+//   · Códigos postales: INE — www.ine.es
 //     (vía dataset derivado `regi-es/ds-codigos-postales-ine-es`, licencia MIT del código)
 //   · Límites municipales: IGN/CNIG — api-features.ign.es (CC-BY 4.0)
 //   · Barcelona (distritos y barrios): Ajuntament de Barcelona, Open Data BCN (CC-BY 4.0)
@@ -41,6 +43,7 @@ const DIR_SEEDS = path.join(ROOT, 'sql', 'seeds', 'geografia');
 const DIR_CIUDADES = path.join(ROOT, 'data', 'ciudades');
 
 const FUENTES = {
+    organizacion: 'https://raw.githubusercontent.com/codeforspain/ds-organizacion-administrativa/master/data',
     ine: 'https://raw.githubusercontent.com/regi-es/ds-codigos-postales-ine-es/master/data',
     ign: 'https://api-features.ign.es/collections/administrativeunit/items',
     bcnDistrictes: 'https://raw.githubusercontent.com/martgnz/bcn-geodata/master/districtes/districtes.geojson',
@@ -56,35 +59,46 @@ const DISTRITOS_BILBAO = {
     5: 'Ibaiondo', 6: 'Abando', 7: 'Errekalde', 8: 'Basurtu-Zorrotza'
 };
 
-// Códigos oficiales de provincia (2 dígitos) → { nombre, ccaa }.
-const PROVINCIAS = {
-    '01': ['Araba/Álava', 'País Vasco'], '02': ['Albacete', 'Castilla-La Mancha'],
-    '03': ['Alicante/Alacant', 'Comunitat Valenciana'], '04': ['Almería', 'Andalucía'],
-    '05': ['Ávila', 'Castilla y León'], '06': ['Badajoz', 'Extremadura'],
-    '07': ['Balears, Illes', 'Illes Balears'], '08': ['Barcelona', 'Cataluña'],
-    '09': ['Burgos', 'Castilla y León'], '10': ['Cáceres', 'Extremadura'],
-    '11': ['Cádiz', 'Andalucía'], '12': ['Castellón/Castelló', 'Comunitat Valenciana'],
-    '13': ['Ciudad Real', 'Castilla-La Mancha'], '14': ['Córdoba', 'Andalucía'],
-    '15': ['Coruña, A', 'Galicia'], '16': ['Cuenca', 'Castilla-La Mancha'],
-    '17': ['Girona', 'Cataluña'], '18': ['Granada', 'Andalucía'],
-    '19': ['Guadalajara', 'Castilla-La Mancha'], '20': ['Gipuzkoa', 'País Vasco'],
-    '21': ['Huelva', 'Andalucía'], '22': ['Huesca', 'Aragón'],
-    '23': ['Jaén', 'Andalucía'], '24': ['León', 'Castilla y León'],
-    '25': ['Lleida', 'Cataluña'], '26': ['Rioja, La', 'La Rioja'],
-    '27': ['Lugo', 'Galicia'], '28': ['Madrid', 'Comunidad de Madrid'],
-    '29': ['Málaga', 'Andalucía'], '30': ['Murcia', 'Región de Murcia'],
-    '31': ['Navarra', 'Navarra'], '32': ['Ourense', 'Galicia'],
-    '33': ['Asturias', 'Principado de Asturias'], '34': ['Palencia', 'Castilla y León'],
-    '35': ['Palmas, Las', 'Canarias'], '36': ['Pontevedra', 'Galicia'],
-    '37': ['Salamanca', 'Castilla y León'], '38': ['Santa Cruz de Tenerife', 'Canarias'],
-    '39': ['Cantabria', 'Cantabria'], '40': ['Segovia', 'Castilla y León'],
-    '41': ['Sevilla', 'Andalucía'], '42': ['Soria', 'Castilla y León'],
-    '43': ['Tarragona', 'Cataluña'], '44': ['Teruel', 'Aragón'],
-    '45': ['Toledo', 'Castilla-La Mancha'], '46': ['Valencia/València', 'Comunitat Valenciana'],
-    '47': ['Valladolid', 'Castilla y León'], '48': ['Bizkaia', 'País Vasco'],
-    '49': ['Zamora', 'Castilla y León'], '50': ['Zaragoza', 'Aragón'],
-    '51': ['Ceuta', 'Ceuta'], '52': ['Melilla', 'Melilla']
+// Autonomía (código INE 01–19) a la que pertenece cada provincia. El dataset de
+// codeforspain no publica esta relación, así que se fija aquí según el INE.
+const PROVINCIA_AUTONOMIA = {
+    '04': '01', '11': '01', '14': '01', '18': '01', '21': '01', '23': '01', '29': '01', '41': '01',
+    '22': '02', '44': '02', '50': '02',
+    '33': '03',
+    '07': '04',
+    '35': '05', '38': '05',
+    '39': '06',
+    '05': '07', '09': '07', '24': '07', '34': '07', '37': '07', '40': '07', '42': '07', '47': '07', '49': '07',
+    '02': '08', '13': '08', '16': '08', '19': '08', '45': '08',
+    '08': '09', '17': '09', '25': '09', '43': '09',
+    '03': '10', '12': '10', '46': '10',
+    '06': '11', '10': '11',
+    '15': '12', '27': '12', '32': '12', '36': '12',
+    '28': '13',
+    '30': '14',
+    '31': '15',
+    '01': '16', '20': '16', '48': '16',
+    '26': '17',
+    '51': '18', '52': '19'
 };
+
+// Nombres "naturales" de las comunidades para la interfaz (los del dataset de
+// codeforspain son los oficiales del INE, p. ej. "Asturias, Principado de"; aquí
+// se conservan los habituales y se usan solo los códigos del dataset).
+const NOMBRES_COMUNIDAD = {
+    '01': 'Andalucía', '02': 'Aragón', '03': 'Principado de Asturias',
+    '04': 'Illes Balears', '05': 'Canarias', '06': 'Cantabria',
+    '07': 'Castilla y León', '08': 'Castilla-La Mancha', '09': 'Cataluña',
+    '10': 'Comunitat Valenciana', '11': 'Extremadura', '12': 'Galicia',
+    '13': 'Comunidad de Madrid', '14': 'Región de Murcia',
+    '15': 'Comunidad Foral de Navarra', '16': 'País Vasco', '17': 'La Rioja',
+    '18': 'Ceuta', '19': 'Melilla'
+};
+
+// El dataset publica algunos nombres con doble codificación (mojibake); se
+// reinterpreta latin-1 → utf-8 para recuperar los acentos originales.
+const arreglarMojibake = s => Buffer.from(String(s == null ? '' : s), 'latin1').toString('utf8');
+
 
 // Ciudades con open data municipal de distritos/barrios (adaptador por código INE).
 const OPEN_DATA = {
@@ -139,32 +153,63 @@ function centroide(geometry) {
 }
 
 // ------------------------------------------------------------------------------
-// BASE: provincias, ciudades y códigos postales (INE)
+// BASE: comunidades, provincias, ciudades (codeforspain/INE) y códigos postales
 // ------------------------------------------------------------------------------
-async function cargarBaseIne() {
-    log('descargando municipios (INE)…');
-    const municipios = await fetchJson(`${FUENTES.ine}/municipios.json`);
-    log('descargando códigos postales (INE)…');
-    const cpInverso = await fetchJson(`${FUENTES.ine}/codigos_postales.json`);
-    return { municipios, cpInverso };
+async function cargarBaseGeo() {
+    log('descargando comunidades, provincias y municipios (codeforspain/INE)…');
+    const [autonomias, provinciasArr, municipiosArr, cpInverso] = await Promise.all([
+        fetchJson(`${FUENTES.organizacion}/autonomias.json`),
+        fetchJson(`${FUENTES.organizacion}/provincias.json`),
+        fetchJson(`${FUENTES.organizacion}/municipios.json`),
+        fetchJson(`${FUENTES.ine}/codigos_postales.json`)
+    ]);
+
+    const comunidades = new Map();
+    for (const a of autonomias) {
+        comunidades.set(a.autonomia_id, NOMBRES_COMUNIDAD[a.autonomia_id] || arreglarMojibake(a.nombre));
+    }
+
+    const provincias = new Map();
+    for (const p of provinciasArr) {
+        provincias.set(p.provincia_id, {
+            nombre: p.nombre,
+            comunidad_id: PROVINCIA_AUTONOMIA[p.provincia_id] || null
+        });
+    }
+
+    const municipios = {};
+    for (const m of municipiosArr) {
+        municipios[m.municipio_id] = { nombre: m.nombre, provincia_id: m.provincia_id };
+    }
+
+    log(`base: ${comunidades.size} comunidades, ${provincias.size} provincias, ` +
+        `${Object.keys(municipios).length} municipios, ${Object.keys(cpInverso).length} códigos postales.`);
+    return { comunidades, provincias, municipios, cpInverso };
 }
 
-function generarSqlBase({ municipios, cpInverso }) {
+function generarSqlBase({ comunidades, provincias, municipios, cpInverso }) {
     ensureDir(DIR_SEEDS);
 
-    // 1) Provincias
-    const filasProv = Object.entries(PROVINCIAS)
-        .map(([id, [nombre, ccaa]]) => `(${esc(id)}, ${esc(nombre)}, ${esc(ccaa)})`)
+    // 1) Comunidades autónomas y provincias (con su comunidad)
+    const filasCom = [...comunidades.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([id, nombre]) => `(${esc(id)}, ${esc(nombre)})`)
+        .join(',\n  ');
+    const filasProv = [...provincias.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([id, p]) => `(${esc(id)}, ${esc(p.nombre)}, ${esc(p.comunidad_id ? comunidades.get(p.comunidad_id) : null)}, ${esc(p.comunidad_id)})`)
         .join(',\n  ');
     escribirArchivo(path.join(DIR_SEEDS, 'provincias_ciudades.sql'),
         `-- Generado por scripts/ingestar_geografia.mjs — NO editar a mano.\n` +
-        `-- Fuente: INE (www.ine.es). Atribución obligatoria.\n\n` +
-        `INSERT INTO public.provincias (id, nombre, ccaa) VALUES\n  ${filasProv}\n` +
-        `ON CONFLICT (id) DO UPDATE SET nombre = EXCLUDED.nombre, ccaa = EXCLUDED.ccaa;\n\n` +
+        `-- Fuente: INE (www.ine.es) vía codeforspain/ds-organizacion-administrativa. Atribución obligatoria.\n\n` +
+        `INSERT INTO public.comunidades (id, nombre) VALUES\n  ${filasCom}\n` +
+        `ON CONFLICT (id) DO UPDATE SET nombre = EXCLUDED.nombre;\n\n` +
+        `INSERT INTO public.provincias (id, nombre, ccaa, comunidad_id) VALUES\n  ${filasProv}\n` +
+        `ON CONFLICT (id) DO UPDATE SET nombre = EXCLUDED.nombre, ccaa = EXCLUDED.ccaa, comunidad_id = EXCLUDED.comunidad_id;\n\n` +
         `INSERT INTO public.ciudades (id, nombre, provincia_id) VALUES\n  ` +
         Object.entries(municipios)
             .sort(([a], [b]) => a.localeCompare(b))
-            .map(([id, m]) => `(${esc(id)}, ${esc(m.nombre)}, ${esc(id.slice(0, 2))})`)
+            .map(([id, m]) => `(${esc(id)}, ${esc(m.nombre)}, ${esc(m.provincia_id)})`)
             .join(',\n  ') +
         `\nON CONFLICT (id) DO UPDATE SET nombre = EXCLUDED.nombre, provincia_id = EXCLUDED.provincia_id;\n`
     );
@@ -193,7 +238,7 @@ function generarSqlBase({ municipios, cpInverso }) {
 // LÍMITES MUNICIPALES (IGN API-Features)
 // ------------------------------------------------------------------------------
 async function descargarLimite(ine) {
-    const { municipios } = await cargarBaseIne();
+    const { municipios, provincias } = await cargarBaseGeo();
     const ciudad = municipios[ine];
     if (!ciudad) throw new Error(`Municipio ${ine} no encontrado en el INE`);
 
@@ -208,7 +253,7 @@ async function descargarLimite(ine) {
     const geojson = {
         type: 'FeatureCollection',
         fuente: 'IGN/CNIG — api-features.ign.es (CC-BY 4.0)',
-        properties: { ine, nombre: ciudad.nombre, provincia: PROVINCIAS[ine.slice(0, 2)]?.[0] || null },
+        properties: { ine, nombre: ciudad.nombre, provincia: provincias.get(ine.slice(0, 2))?.nombre || null },
         features: [feature]
     };
     const rutaRel = `data/ciudades/${ine}.geojson`;
@@ -324,7 +369,7 @@ function generarSqlDistritosBarrios(ine, { distritos, barrios }) {
 // app pueda construir la cascada y la selección aunque el SQL aún no se aplique.
 function escribirEntidades(ine, { distritos, barrios, cps }, base) {
     const nombre = base?.municipios?.[ine]?.nombre || OPEN_DATA[ine]?.nombre || ine;
-    const provincia = PROVINCIAS[ine.slice(0, 2)]?.[0] || null;
+    const provincia = base?.provincias?.get(ine.slice(0, 2))?.nombre || null;
     escribirArchivo(path.join(DIR_CIUDADES, `${ine}.entidades.json`),
         JSON.stringify({
             ine,
@@ -392,13 +437,13 @@ async function main() {
     const [comando, ...args] = process.argv.slice(2);
 
     if (!comando || comando === 'todo') {
-        generarSqlBase(await cargarBaseIne());
+        generarSqlBase(await cargarBaseGeo());
         generarManifiesto();
         return;
     }
 
     if (comando === 'base') {
-        generarSqlBase(await cargarBaseIne());
+        generarSqlBase(await cargarBaseGeo());
         return;
     }
 
@@ -410,7 +455,7 @@ async function main() {
     }
 
     if (comando === 'limites-todas') {
-        const { municipios } = await cargarBaseIne();
+        const { municipios } = await cargarBaseGeo();
         const ids = Object.keys(municipios).sort();
         log(`Descargando ${ids.length} límites municipales del IGN (puede tardar bastante)…`);
         for (const ine of ids) {
@@ -423,7 +468,7 @@ async function main() {
 
     if (comando === 'opendata') {
         if (!args.length) throw new Error('Indica al menos un código INE con adaptador, p. ej.: opendata 08019 48020');
-        const base = await cargarBaseIne();
+        const base = await cargarBaseGeo();
         for (const ine of args) {
             const datos = await descargarOpenData(ine, base);
             generarSqlDistritosBarrios(ine, datos);

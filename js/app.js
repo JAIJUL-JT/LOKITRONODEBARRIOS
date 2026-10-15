@@ -6790,30 +6790,41 @@ async function geoCargarCatalogo() {
         }
     } catch (error) { console.warn('Provincias no disponibles:', error); }
 
-    // Municipios de toda España, agrupados por provincia.
+    // Municipios de toda España, agrupados por provincia. PostgREST recorta a
+    // 1000 filas por petición, así que se pagina hasta agotar el catálogo.
     try {
-        const { data, error } = await client.from('ciudades')
-            .select('id, nombre, provincia_id, es_capital')
-            .order('nombre', { ascending: true })
-            .limit(9000);
-        if (!error && Array.isArray(data)) {
-            for (const c of data) {
-                const prov = c.provincia_id ? String(c.provincia_id) : null;
-                if (prov) {
-                    if (!geoEstado.ciudadesPorProvincia.has(prov)) geoEstado.ciudadesPorProvincia.set(prov, []);
-                    geoEstado.ciudadesPorProvincia.get(prov).push({
-                        id: String(c.id), nombre: c.nombre, es_capital: !!c.es_capital
-                    });
-                }
-                const ine = String(c.id);
-                if (!geoEstado.porIne.has(ine)) {
-                    geoEstado.porIne.set(ine, {
-                        ine, nombre: c.nombre, provincia: prov,
-                        geom: null, distritos: null, barrios: null, entidades: null,
-                        centro: [null, null], es_capital: !!c.es_capital
-                    });
-                }
+        const PAGE = 1000;
+        let todos = [];
+        for (let desde = 0; ; desde += PAGE) {
+            const { data, error } = await client.from('ciudades')
+                .select('id, nombre, provincia_id, es_capital')
+                .order('id', { ascending: true })
+                .range(desde, desde + PAGE - 1);
+            if (error) { console.warn('Catálogo Supabase no disponible:', error); break; }
+            if (!Array.isArray(data) || data.length === 0) break;
+            todos = todos.concat(data);
+            if (data.length < PAGE) break;
+        }
+        for (const c of todos) {
+            const prov = c.provincia_id ? String(c.provincia_id) : null;
+            if (prov) {
+                if (!geoEstado.ciudadesPorProvincia.has(prov)) geoEstado.ciudadesPorProvincia.set(prov, []);
+                geoEstado.ciudadesPorProvincia.get(prov).push({
+                    id: String(c.id), nombre: c.nombre, es_capital: !!c.es_capital
+                });
             }
+            const ine = String(c.id);
+            if (!geoEstado.porIne.has(ine)) {
+                geoEstado.porIne.set(ine, {
+                    ine, nombre: c.nombre, provincia: prov,
+                    geom: null, distritos: null, barrios: null, entidades: null,
+                    centro: [null, null], es_capital: !!c.es_capital
+                });
+            }
+        }
+        // Ordenar los municipios de cada provincia por nombre.
+        for (const lista of geoEstado.ciudadesPorProvincia.values()) {
+            lista.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
         }
     } catch (error) { console.warn('Catálogo Supabase no disponible:', error); }
 

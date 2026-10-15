@@ -174,13 +174,31 @@
 
     <div id="contenido-reino-protegido" style="display: none;">
         <main class="container">
+            <div id="banner-fin-juego"
+                style="display:none; margin: 0 0 18px; padding: 14px 18px; border-radius: 10px; border: 2px solid var(--oro-real); background: radial-gradient(circle at 50% 30%, rgba(35,28,15,0.98), rgba(10,8,5,0.99)); text-align: center;">
+                <span style="font-family: 'Cinzel', serif; font-weight: 900; color: var(--oro-brillante); letter-spacing: 1px; font-size: 1.05rem;">🏁 EL JUEGO HA CONCLUIDO — DATOS PROTEGIDOS</span>
+                <p id="banner-fin-juego-detalle" style="margin: 6px 0 0; font-size: 0.88rem; color: #e5e7eb;"></p>
+            </div>
             <!-- PESTAÑA 0: Clasificación de Reinos -->
             <section id="pestana-clasificacion" class="tab-content active tema-trono">
 
                 <div class="leaderboard-container">
                     <div class="leaderboard-header">
-                        <h2>🏆 TABLA DEL REY — LOKIBARRIO TXAPELDUN 🏆</h2>
+                        <h2 id="titulo-tabla-rey">🏆 TABLA DEL REY — LOKIBARRIO TXAPELDUN 🏆</h2>
                         <p>Estatus ponderado de las Tierras y Reinos disputados</p>
+                        <!-- Selector de Ámbito: Real / Sandbox -->
+                        <div id="selector-ambito-vista"
+                            style="display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap; margin-top:15px; padding:10px; background:rgba(30,41,59,0.4); border:1px solid rgba(212,175,55,0.25); border-radius:8px;">
+                            <button id="btn-vista-real" type="button" class="btn-cuervo"
+                                style="background:#1e40af; min-width:140px; box-shadow:0 0 18px rgba(30,64,175,0.25);">🏰 Reino Real</button>
+                            <button id="btn-vista-sandbox" type="button" class="btn-cuervo"
+                                style="background:#0f172a; min-width:140px; border:1px solid #3b82f6;">🎮 Sandbox</button>
+                            <span style="color:#cbd5f5; font-size:0.85rem; padding:4px 10px; border-radius:20px; background:rgba(15,23,42,0.6); border:1px dashed rgba(148,163,184,0.4);">
+                                El Reino Real <strong>nunca</strong> lee datos del Sandbox. El Sandbox <strong>nunca</strong> contamina lo Real.
+                            </span>
+                        </div>
+                        <div id="banner-ambito-vista"
+                            style="display:none; margin-top:12px; padding:8px 14px; border-radius:8px; border:1px dashed rgba(212,175,55,0.4); background:rgba(15,23,42,0.6); font-size:0.9rem;"></div>
                         <div id="superadmin-simulacion-actions"
                             style="display: none; margin-top: 15px; gap: 10px; justify-content: center; flex-wrap: wrap;">
                             <button onclick="generarEjemploCompeticionSimulada()" class="btn-cuervo"
@@ -371,7 +389,7 @@
                     <!-- BLOQUE 3: HISTORIAL DE VOTOS DEL USUARIO -->
                     <div id="seccion-mis-votos-personales"
                         style="margin-top: 20px; background: rgba(28, 25, 23, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px;">
-                        <h3 style="color: var(--oro-brillante); margin: 0 0 12px; font-family: 'Cinzel', serif;">📜 Mis
+                        <h3 id="titulo-mis-votos" style="color: var(--oro-brillante); margin: 0 0 12px; font-family: 'Cinzel', serif;">📜 Mis
                             votos emitidos</h3>
                         <div id="contenedor-mis-votos-body"></div>
                     </div>
@@ -507,7 +525,14 @@
                             <!-- FRANJA HORARIA INDEPENDIENTE DE VOTACIÓN -->
                             <div style="background: rgba(45, 35, 20, 0.85); padding: 15px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.4); margin: 15px 0;">
                                 <h4 style="color: var(--oro-brillante); margin: 0 0 10px; font-family: 'Cinzel', serif;">🗳️ Configuración del Periodo de Votaciones</h4>
-                                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="form-group" style="max-width: 360px; margin-bottom: 12px;">
+                                    <label style="color: var(--oro-real); font-weight: bold;">⚖️ Tipo de Evento:</label>
+                                    <select id="evento-dedicated-tiene-votacion" class="input-medieval" onchange="alternarCamposVotacionEvento()">
+                                        <option value="con">🗳️ Con Votación (se puede puntuar)</option>
+                                        <option value="sin">📜 Sin Votación (solo informativo)</option>
+                                    </select>
+                                </div>
+                                <div id="evento-dedicated-votacion-campos" style="display: flex; gap: 15px; flex-wrap: wrap;">
                                     <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                                         <label style="color: #4ade80; font-weight: bold;">🟢 Hora Inicio Votación:</label>
                                         <input type="time" id="evento-dedicated-votacion-inicio" class="input-medieval" value="20:30" required>
@@ -550,6 +575,21 @@
             <section id="tab-superadmin" class="tab-content tema-consejo" data-tab="tab-superadmin" style="display: none;">
                 <div class="panel-card">
                     <h2>👑 Consejo Real del Superadmin</h2>
+
+                    <!-- CIERRE Y PROTECCIÓN DEL JUEGO (EXCLUSIVO DEL TRONO MAYOR / MASTER) -->
+                    <div id="panel-fin-juego"
+                        style="display:none; margin-top: 20px; background: rgba(69, 26, 3, 0.6); border: 2px solid #f59e0b; border-radius: 8px; padding: 20px;">
+                        <h3 style="color: #fbbf24; margin-top: 0; font-family: 'Cinzel', serif;">🏁 Cierre y Protección del Juego</h3>
+                        <p id="fin-juego-estado" style="font-size: 0.9rem; color: #fde68a; margin: 6px 0;">El juego está en curso.</p>
+                        <p style="font-size: 0.82rem; color: #fcd34d; margin: 8px 0;">
+                            Al finalizar, la competición queda <strong>sellada</strong>: nadie podrá modificar eventos, votos, barrios ni usuarios.
+                            Solo el <strong>Master (Trono Mayor)</strong> puede reabrirla.
+                        </p>
+                        <button type="button" id="btn-finalizar-juego" class="btn-cuervo" style="background:#b45309;">
+                            🏁 FINALIZAR JUEGO
+                        </button>
+                    </div>
+
                     <!-- GESTIÓN DE JUEGOS Y SANDBOX DE SIMULACIÓN AISLADO (EXCLUSIVO SUPERADMIN) -->
                     <div id="seccion-sandbox-simulacion"
                         style="margin-top: 25px; background: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; padding: 20px; border-radius: 8px;">
@@ -637,7 +677,7 @@
                                 </div>
                             </div>
 
-                            <div style="max-height: 300px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+                            <div style="max-height: 300px; overflow-y: auto; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
                                 <table class="leaderboard-table" style="font-size: 0.85rem; width: 100%;">
                                     <thead>
                                         <tr>
@@ -716,7 +756,7 @@
                     </div>
 
                     <div style="margin-top: 25px;">
-                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">📊 Repositorio Central de Votos Reales</h3>
+                        <h3 id="titulo-repositorio-central" style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">📊 Repositorio Central de Votos Reales</h3>
                         <table class="leaderboard-table repositorio-table">
                             <thead>
                                 <tr>
@@ -990,6 +1030,52 @@
                         </div>
                         <p id="estado-restaurar-competicion" role="status" aria-live="polite"
                             style="color:#d6d3d1;"></p>
+                    </section>
+
+                    <!-- LOKITRONO: ESTADÍSTICAS DEL CÓDICE (CAPILARIDAD DE CADA VOTO) -->
+                    <section id="panel-estadisticas-codice" class="panel-card" style="margin-top:30px;">
+                        <h3 style="color:var(--oro-brillante);">📊 Estadísticas del Códice</h3>
+                        <p style="color:#d6d3d1;margin-bottom:10px;">
+                            Ranking y estadísticas que se actualizan <strong>en tiempo real</strong> a medida que
+                            avanzan las votaciones. Incluye el desglose por barrio y por cada tipo de voto
+                            (categorías y subcategorías), con acceso a la capilaridad de cada voto individual.
+                        </p>
+                        <p id="estad-ambito-nota" role="status" style="font-size:0.85rem;color:#fde68a;margin-bottom:14px;"></p>
+
+                        <div id="estad-resumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px;"></div>
+
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;">
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">🥇 Ranking Media Ley II por Barrio</h5>
+                                <div style="position:relative;height:220px;"><canvas id="estad-chart-ranking"></canvas></div>
+                            </div>
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">🗳️ Votos Emitidos por Evento</h5>
+                                <div style="position:relative;height:220px;"><canvas id="estad-chart-eventos"></canvas></div>
+                            </div>
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">⚖️ Desglose por Categoría</h5>
+                                <div style="position:relative;height:220px;"><canvas id="estad-chart-criterios"></canvas></div>
+                            </div>
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">⏳ Estado de las Votaciones</h5>
+                                <div style="position:relative;height:220px;"><canvas id="estad-chart-progreso"></canvas></div>
+                            </div>
+                        </div>
+
+                        <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:24px 0 12px;">🧬 Desglose por barrio y tipo de voto</h4>
+                        <div style="overflow-x:auto;">
+                            <table class="leaderboard-table" style="min-width:640px;">
+                                <thead><tr id="estad-capilaridad-head"></tr></thead>
+                                <tbody id="estad-capilaridad-body"></tbody>
+                            </table>
+                        </div>
+
+                        <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:24px 0 12px;">🔍 Capilaridad voto a voto</h4>
+                        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+                            <button type="button" class="btn-cuervo" onclick="exportarEstadisticasVotosCSV()" style="padding:6px 12px;font-size:0.82rem;background:#166534;">⬇️ Exportar votos detallados (CSV)</button>
+                        </div>
+                        <div id="estad-votos-detalle"></div>
                     </section>
 
                     <!-- LOKITRONO: GEOGRAFÍA (CIUDADES / DISTRITOS / BARRIOS / CÓDIGOS POSTALES) -->

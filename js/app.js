@@ -3394,8 +3394,8 @@ async function probarEnvioWebhookMake() {
     if (estado) estado.textContent = 'Enviando prueba…';
     const resultado = await enviarWebhookMake({
         evento: 'PRUEBA_WEBHOOK',
-        telefono: '000000000',
-        nombre: 'Prueba del Reino',
+        telefono: '605676002',
+        nombre: 'Julio',
         mensaje: '🧪 Prueba de conexión desde LokiTrono de Barrios. Si recibes este mensaje, el webhook está operativo.'
     });
     if (estado) {

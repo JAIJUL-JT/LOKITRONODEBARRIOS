@@ -2103,8 +2103,9 @@ const NOMBRES_MESES = [
 function getTodosLosEventos() {
     const porId = new Map();
 
-    // Eventos incluidos de serie en la aplicación.
-    EVENTOS_FEUDALES.forEach(evt => porId.set(String(evt.id), { ...evt }));
+    // Los eventos «de serie» (EVENTOS_FEUDALES) ya NO se mezclan aquí: el
+    // calendario se nutre solo de Supabase y de los eventos locales heredados.
+    // Así «Restaurar competición» deja de verdad 0 eventos.
 
     // Conservamos los eventos locales existentes durante la transición.
     try {
@@ -6640,6 +6641,10 @@ async function restaurarCompeticion() {
         });
         if (error) throw error;
 
+        // Los eventos locales heredados también forman parte de la partida.
+        try { localStorage.setItem('eventos_feudales_custom', JSON.stringify([])); } catch (_) { /* almacenamiento no disponible */ }
+        eventosSupabaseCache = [];
+
         const r = data || {};
         if (estado) {
             estado.textContent = `Competición restaurada. Barrios eliminados: ${r.casas_eliminadas || 0}, `
@@ -7826,10 +7831,7 @@ async function geoPuzzlePintarPieza(pieza, capas) {
 function geoPuzzleEventos() {
     const cache = (typeof eventosSupabaseCache !== 'undefined' && Array.isArray(eventosSupabaseCache))
         ? eventosSupabaseCache : [];
-    const fuente = cache.length
-        ? cache
-        : ((window.__APP_STATE__ && Array.isArray(window.__APP_STATE__.eventList)) ? window.__APP_STATE__.eventList : []);
-    return fuente.filter(e => e && !e.eliminado);
+    return cache.filter(e => e && !e.eliminado);
 }
 
 function geoPuzzleRenderEventos() {

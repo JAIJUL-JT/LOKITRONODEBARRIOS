@@ -5837,7 +5837,7 @@ async function generarSorteoBarrios() {
     const client = getSupabaseBarriosClient();
 
     if (!usuario || !puedeAdministrar(usuario.role)) {
-        alert('Solo un superadministrador puede generar el sorteo.');
+        alert('Solo un administrador puede generar el sorteo.');
         return;
     }
 
@@ -5882,7 +5882,7 @@ async function guardarOrdenSorteoBarrios() {
     const client = getSupabaseBarriosClient();
 
     if (!usuario || !puedeAdministrar(usuario.role)) {
-        alert('Solo un superadministrador puede guardar el orden.');
+        alert('Solo un administrador puede guardar el orden.');
         return;
     }
 

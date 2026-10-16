@@ -363,6 +363,10 @@ function actualizarInterfazSesion(usuario) {
         if (contenido) contenido.style.display = 'block';
         const esSuperadmin = puedeAdministrar(usuario.role);
         if (optgroupAdmin) optgroupAdmin.style.display = esSuperadmin ? '' : 'none';
+        const optConfigCodice = document.querySelector("option[value=\"pestana-config-codice\"]");
+        if (optConfigCodice) optConfigCodice.style.display = usuario.role === "master" ? "" : "none";
+        const optConfigJuego = document.querySelector("option[value=\"tab-superadmin\"]");
+        if (optConfigJuego) optConfigJuego.style.display = usuario.role === "master" ? "" : "none";
         // La Gala Final solo aparece a los maestres cuando ya está publicada.
         aplicarVisibilidadGalaFinal();
         if (typeof cargarGalaFinalDesdeSupabase === 'function') cargarGalaFinalDesdeSupabase();
@@ -513,8 +517,8 @@ const TITULOS_CONFIG_DEFAULT = {
     superadmin_femenino: 'Gran Maestra',
     master_masculino: 'Lokitrono Mayor',
     master_femenino: 'Lokitrona Mayor',
-    consejero_masculino: 'Velador del LokiTrono',
-    consejero_femenino: 'Veladora del LokiTrono'
+    consejero_masculino: 'Consejero del LokiTrono',
+    consejero_femenino: 'Consejera del LokiTrono'
 };
 
 const CONSEJEROS_ESPECIALES = ['605676002', '+34605676002', '663366786'];
@@ -574,7 +578,7 @@ function getTituloCompleto(usuario) {
 
     // Consejeros del Lokitrono (usuarios especiales de la corte)
     if (CONSEJEROS_ESPECIALES.includes(phone)) {
-        // Ainhoa → Veladora del LokiTrono (663366786)
+        // Ainhoa → Consejera del LokiTrono (663366786)
         const esVeladora = phone === '663366786';
         const titulo = esVeladora ? config.consejero_femenino : config.consejero_masculino;
         return `${icon} ${titulo} ${nombre}`;
@@ -3994,7 +3998,7 @@ async function asignarTronistaAdmin(event) {
 const VELADORES_LOKITRONO_PHONES = ['605676002', '663366786'];
 
 // ¿El teléfono corresponde a uno de los Consejeros del Lokitrono?
-function esVeladorDelLokitrono(phone) {
+function esConsejeroDelLokitrono(phone) {
     const p = String(phone || '').replace(/\D/g, '').slice(-9);
     return VELADORES_LOKITRONO_PHONES.some(v => String(v).replace(/\D/g, '').slice(-9) === p);
 }
@@ -4015,11 +4019,11 @@ function renderListaTronistas() {
     const tronistas = usuarios.filter(u => u.role === 'tronista');
     // Consejeros del Lokitrono (usuarios especiales): 605676002 y 663366786.
     const veladores = [];
-    const vistoVelador = new Set();
+    const vistoConsejero = new Set();
     usuarios.forEach(u => {
-        if (esVeladorDelLokitrono(u.phone)) {
+        if (esConsejeroDelLokitrono(u.phone)) {
             const norm = String(u.phone || '').replace(/\D/g, '').slice(-9);
-            if (!vistoVelador.has(norm)) { vistoVelador.add(norm); veladores.push(u); }
+            if (!vistoConsejero.has(norm)) { vistoConsejero.add(norm); veladores.push(u); }
         }
     });
 
@@ -4052,12 +4056,12 @@ function renderListaTronistas() {
             <hr style="border-color:var(--oro-real);opacity:0.3;margin:12px 0 0 0;">
         </div>`;
     }
-    function tarjetaVelador(user) {
+    function tarjetaConsejero(user) {
         return `<div class="card-item" style="background:rgba(20,16,5,0.95);border:2px solid #a78bfa;padding:18px;border-radius:10px;">
             <div style="text-align:center;margin-bottom:10px;"><span style="font-size:2.5rem;">💎</span></div>
             <div style="text-align:center;margin-bottom:8px;"><strong style="color:#c4b5fd;font-family:'Cinzel',serif;font-size:1.05rem;">${getTituloCompleto(user)}</strong></div>
             <div style="text-align:center;font-size:0.82rem;color:#a1a1aa;margin-bottom:6px;">📱 ${phoneMask(user.phone)}</div>
-            <div style="text-align:center;margin-bottom:6px;"><span class="pill-user" style="background:rgba(76,29,149,0.7);color:#d8b4fe;border:1px solid #a78bfa;padding:2px 8px;border-radius:12px;font-size:0.78rem;">💎 Velador/a del LokiTrono</span></div>
+            <div style="text-align:center;margin-bottom:6px;"><span class="pill-user" style="background:rgba(76,29,149,0.7);color:#d8b4fe;border:1px solid #a78bfa;padding:2px 8px;border-radius:12px;font-size:0.78rem;">💎 Consejero/a del LokiTrono</span></div>
             <div style="text-align:center;font-size:0.82rem;color:#d6d3d1;margin-bottom:6px;">⚔️ Votos emitidos: <strong>${votosDe(user.phone)}</strong></div>
             <hr style="border-color:#a78bfa;opacity:0.3;margin:12px 0 0 0;">
         </div>`;
@@ -4074,7 +4078,7 @@ function renderListaTronistas() {
                 <h4 style="color:#c4b5fd;font-family:'Cinzel',serif;margin:0;font-size:1.15rem;">💎 Consejeros del Lokitrono</h4>
                 <span class="pill-user" style="background:rgba(76,29,149,0.7);color:#d8b4fe;border:1px solid #a78bfa;padding:2px 10px;border-radius:12px;font-size:0.78rem;">${veladores.length}/2</span>
             </div>
-            <div style="${GRID}">${veladores.map(tarjetaVelador).join('')}</div>
+            <div style="${GRID}">${veladores.map(tarjetaConsejero).join('')}</div>
         </div>`;
     }
 

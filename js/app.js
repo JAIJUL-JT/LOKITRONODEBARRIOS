@@ -363,8 +363,6 @@ function actualizarInterfazSesion(usuario) {
         if (contenido) contenido.style.display = 'block';
         const esSuperadmin = puedeAdministrar(usuario.role);
         if (optgroupAdmin) optgroupAdmin.style.display = esSuperadmin ? '' : 'none';
-        const optConfigCodice = document.querySelector("option[value=\"pestana-config-codice\"]");
-        if (optConfigCodice) optConfigCodice.style.display = usuario.role === "master" ? "" : "none";
         const optConfigJuego = document.querySelector("option[value=\"tab-superadmin\"]");
         if (optConfigJuego) optConfigJuego.style.display = usuario.role === "master" ? "" : "none";
         // La Gala Final solo aparece a los maestres cuando ya está publicada.

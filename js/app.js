@@ -3171,9 +3171,11 @@ function generarPinSeisDigitos() {
 // El escenario de Make antepone "34" al número (to = "34{{telefono}}").
 // Normalizamos a los 9 dígitos nacionales para evitar destinos como "34+34605676002".
 function normalizarTelefonoWhatsApp(phone) {
-    let p = String(phone || '').replace(/\D/g, '');
-    if (p.startsWith('0034')) p = p.slice(4);
-    else if (p.startsWith('34') && p.length > 9) p = p.slice(2);
+    if (!phone) return "";
+    let p = String(phone).replace(/\s+/g, "").replace(/\+/g, "");
+    p = p.replace(/\D/g, "");
+    if (p.startsWith("0034")) p = p.slice(4);
+    else if (p.startsWith("34") && p.length > 9) p = p.slice(2);
     return p;
 }
 
@@ -3233,18 +3235,25 @@ function guardarWebhookMakeConfig() {
 }
 
 async function enviarWebhookMake(payload) {
-    const url = getMakeWebhookUrl();
-    if (!url) return { ok: false, motivo: 'sin_webhook' };
+    let url = getMakeWebhookUrl();
+    if (!url) return { ok: false, motivo: "sin_webhook" };
+    if (!url.startsWith("https://") && !url.startsWith("http://")) {
+        url = "https://" + url;
+    }
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         const respuesta = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
         return { ok: respuesta.ok, status: respuesta.status };
     } catch (error) {
-        console.warn('No se pudo enviar el webhook de Make/WhatsApp:', error?.message || error);
-        return { ok: false, motivo: 'error_red' };
+        console.error("Error crítico en webhook Make/WhatsApp:", error);
+        return { ok: false, motivo: error.name === "AbortError" ? "timeout" : "error_red" };
     }
 }
 

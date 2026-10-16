@@ -8055,3 +8055,109 @@ document.addEventListener('mousemove', (e) => {
         torch.style.setProperty('--torch-y', y + '%');
     }
 });
+
+// ============================================================================
+// ⏳ SISTEMA DE RELOJ DE JUSTA Y EFECTOS DINÁMICOS
+// ============================================================================
+
+function actualizarRelojJusta() {
+    const timerContainer = document.getElementById('timer-justa-activa');
+    const clockEl = document.getElementById('timer-clock');
+    if (!timerContainer || !clockEl) return;
+
+    const eventos = getEventosDelAmbito();
+    const eventoActivo = eventos.find(e => {
+        const ahora = new Date();
+        const inicio = new Date(e.fecha + 'T' + e.hora_inicio_votacion);
+        const fin = new Date((e.fecha_fin_votacion || e.fecha) + 'T' + e.hora_fin_votacion);
+        return ahora >= inicio && ahora <= fin;
+    });
+
+    if (!eventoActivo) {
+        timerContainer.style.display = 'none';
+        return;
+    }
+
+    timerContainer.style.display = 'block';
+    const ahora = new Date();
+    const fin = new Date((eventoActivo.fecha_fin_votacion || eventoActivo.fecha) + 'T' + eventoActivo.hora_fin_votacion);
+    const diff = fin - ahora;
+
+    if (diff <= 0) {
+        clockEl.textContent = "00:00:00:00";
+        clockEl.style.color = "red";
+        return;
+    }
+
+    const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const horas = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const mins = Math.floor((diff / (1000 * 60)) % 60);
+    const segs = Math.floor((diff / 1000) % 60);
+
+    clockEl.textContent = 
+        String(dias).padStart(2, '0') + ':' + 
+        String(horas).padStart(2, '0') + ':' + 
+        String(mins).padStart(2, '0') + ':' + 
+        String(segs).padStart(2, '0');
+    clockEl.style.color = "#fff";
+}
+
+function lanzarEfectosJusta() {
+    const container = document.getElementById('efectos-especiales-votacion');
+    if (!container) return;
+
+    // ⚡ Relámpago aleatorio
+    if (Math.random() < 0.02) {
+        const flash = document.createElement('div');
+        flash.className = 'lightning-flash flash-active';
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 200);
+    }
+
+    // 🕷️ Araña moviéndose
+    if (Math.random() < 0.05) {
+        const spider = document.createElement('div');
+        spider.className = 'spider-entity';
+        spider.textContent = '🕷️';
+        spider.style.left = Math.random() * 100 + 'vw';
+        spider.style.top = Math.random() * 100 + 'vh';
+        container.appendChild(spider);
+
+        setTimeout(() => {
+            spider.style.left = Math.random() * 100 + 'vw';
+            spider.style.top = Math.random() * 100 + 'vh';
+        }, 100);
+
+        setTimeout(() => spider.remove(), 5000);
+    }
+
+    // 🐦 Cuervo volando
+    if (Math.random() < 0.01) {
+        const crow = document.createElement('div');
+        crow.className = 'crow-entity';
+        crow.textContent = '🐦';
+        crow.style.top = Math.random() * 60 + 'vh';
+        container.appendChild(crow);
+        setTimeout(() => crow.remove(), 10000);
+    }
+}
+
+// Integrar en el ciclo de vida de la aplicación
+const originalDetectarCierres = typeof detectarCierresVotacion === 'function' ? detectarCierresVotacion : function(){};
+detectarCierresVotacion = function() {
+    originalDetectarCierres();
+    actualizarRelojJusta();
+    // Solo lanzar efectos si el usuario está en la pestaña de votación
+    if (document.getElementById('pestana-votacion-barrio').style.display !== 'none') {
+        lanzarEfectosJusta();
+    }
+};
+
+// Intervalo dedicado para el reloj de la Justa (cada segundo)
+setInterval(actualizarRelojJusta, 1000);
+// Intervalo para efectos visuales (más frecuente que el de cierres)
+setInterval(() => {
+    if (document.getElementById('pestana-votacion-barrio') && document.getElementById('pestana-votacion-barrio').style.display !== 'none') {
+        lanzarEfectosJusta();
+    }
+}, 500);

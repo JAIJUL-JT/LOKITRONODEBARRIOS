@@ -51,7 +51,7 @@ function puedeGestionarEventosBarrio(role) {
  * Jerarquía feudal de la corte:
  *   master > superadmin > tronista (lokitronista) / jugador (maestre)
  *
- * El master (Trono Mayor) y los superadmins gestionan usuarios, barrios y eventos.
+ * El master (Administración) y los superadmins gestionan usuarios, barrios y eventos.
  * Maestres y lokitronistas no crean roles, barrios ni eventos.
  */
 const ROLES_VALIDOS = ['jugador', 'tronista', 'superadmin'];
@@ -146,14 +146,14 @@ function restriccionFinDeJuegoActiva() {
     return juegoEstaFinalizado() || juegoConcluidoAutomaticamente();
 }
 
-// Cuando el juego está sellado, nadie escribe hasta que el Master lo reabra.
+// Cuando el juego está sellado, nadie escribe hasta que el Administrador lo reabra.
 function puedeEscribirAhora() {
     return !juegoEstaFinalizado();
 }
 
 // Aviso estándar para operaciones bloqueadas por el sellado del juego.
 function avisoJuegoFinalizado() {
-    alert('🏁 El juego está FINALIZADO y sus datos protegidos. Solo el Master puede reabrirlo para volver a modificarlos.');
+    alert('🏁 El juego está FINALIZADO y sus datos protegidos. Solo la administración puede reabrirlo para volver a modificarlos.');
 }
 
 async function cargarEstadoJuego() {
@@ -181,11 +181,11 @@ async function cargarEstadoJuego() {
     aplicarFinDeJuegoUI();
 }
 
-// FINALIZAR / REABRIR el juego (exclusivo del Master).
+// FINALIZAR / REABRIR el juego (exclusivo del Administrador).
 async function finalizarJuegoSupabase(finalizar) {
     const usuario = getCurrentUser();
     if (!usuario || !esRolMaster(usuario.role)) {
-        alert('Acceso restringido: solo el Master (Trono Mayor) puede finalizar o reabrir el juego.');
+        alert('Acceso restringido: solo el Administrador (Administración) puede finalizar o reabrir el juego.');
         return;
     }
     if (!usuario.token) {
@@ -196,7 +196,7 @@ async function finalizarJuegoSupabase(finalizar) {
         const ok = confirm('¿Reabrir el juego? Los datos dejarán de estar protegidos y podrán volver a modificarse.');
         if (!ok) return;
     } else {
-        const ok = confirm('¿FINALIZAR el juego y proteger sus datos? Después solo el Master podrá reabrirlo.');
+        const ok = confirm('¿FINALIZAR el juego y proteger sus datos? Después solo el Administrador podrá reabrirlo.');
         if (!ok) return;
     }
 
@@ -302,7 +302,7 @@ function cambiarPestana(valor) {
     const usuario = getCurrentUser();
     const esSuperadmin = !!(usuario && puedeAdministrar(usuario.role));
     const esMaster = !!(usuario && esRolMaster(usuario.role));
-    // El Oráculo Imperial es territorio exclusivo del Trono Mayor (rol master).
+    // El Oráculo Imperial es territorio exclusivo del Administración (rol master).
     const esOraculo = valor === 'pestana-oraculo-ia' || valor === 'tab-oraculo-ia';
     if (esOraculo && !esMaster) {
         valor = 'pestana-clasificacion';
@@ -458,7 +458,7 @@ function getUsuariosAutorizadosLocal() {
                     u.role = 'superadmin';
                     actualizado = true;
                 }
-                // El autor de la aplicación ostenta en exclusiva el Trono Mayor (rol master).
+                // El autor de la aplicación ostenta en exclusiva el Administración (rol master).
                 if (String(u.phone || '').replace(/\D/g, '').slice(-9) === '605676002') {
                     if (u.role !== 'master' || u.name !== 'Julio' || u.barrio_asignado !== 'Zorrotza') {
                         u.role = 'master';
@@ -513,8 +513,8 @@ const TITULOS_CONFIG_DEFAULT = {
     tronista_femenino: 'Lokitronista Lady',
     superadmin_masculino: 'Gran Maestre',
     superadmin_femenino: 'Gran Maestra',
-    master_masculino: 'Lokitrono Mayor',
-    master_femenino: 'Lokitrona Mayor',
+    master_masculino: ' Administrador',
+    master_femenino: ' Administradora',
     consejero_masculino: 'Consejero del LokiTrono',
     consejero_femenino: 'Consejera del LokiTrono'
 };
@@ -585,7 +585,7 @@ function getTituloCompleto(usuario) {
     let titulo = '';
     const gender = usuario.gender || 'M';
     if (rol === 'master') {
-        titulo = gender === 'F' ? (config.master_femenino || 'Lokitrona Mayor') : (config.master_masculino || 'Lokitrono Mayor');
+        titulo = gender === 'F' ? (config.master_femenino || ' Administradora') : (config.master_masculino || ' Administrador');
     } else if (rol === 'superadmin') {
         titulo = gender === 'F' ? config.superadmin_femenino : config.superadmin_masculino;
     } else if (rol === 'tronista') {
@@ -1411,7 +1411,7 @@ function renderRepositorioVotos() {
 async function eliminarVotoRepositorio(index) {
     const user = getCurrentUser();
     if (!user || !puedeAdministrar(user.role)) {
-        alert('Solo el Master o un Superadmin puede eliminar votos.');
+        alert('Solo el Administrador o un Superadmin puede eliminar votos.');
         return;
     }
     if (!confirm('🗑️ ¿Deseas eliminar este voto del repositorio?')) return;
@@ -3179,7 +3179,7 @@ function normalizarTelefonoWhatsApp(phone) {
 
 function etiquetaRol(role) {
     const etiquetas = {
-        master: 'Lokitrono Mayor',
+        master: ' Administrador',
         superadmin: 'Superadmin',
         tronista: 'Lokitronista',
         jugador: 'Maestre'
@@ -3346,7 +3346,7 @@ async function regenerarPinYEnviarWhatsApp(userId) {
     }
 }
 
-// Establece manualmente un PIN de 6 dígitos para un usuario (solo rol Master).
+// Establece manualmente un PIN de 6 dígitos para un usuario (solo rol Administrador).
 async function editarPinUsuario(userId) {
     const currentUser = getCurrentUser();
     if (!currentUser || !esRolMaster(currentUser.role)) {
@@ -3389,7 +3389,7 @@ async function editarPinUsuario(userId) {
     }
 }
 
-// Borra el PIN de un usuario y revoca sus sesiones (exclusivo del Master).
+// Borra el PIN de un usuario y revoca sus sesiones (exclusivo del Administrador).
 async function borrarPinUsuario(userId) {
     const currentUser = getCurrentUser();
     if (!currentUser || !esRolMaster(currentUser.role)) {
@@ -3424,7 +3424,7 @@ async function borrarPinUsuario(userId) {
     }
 }
 
-// Descarga un CSV con las credenciales de todos los usuarios (exclusivo del Master).
+// Descarga un CSV con las credenciales de todos los usuarios (exclusivo del Administrador).
 function descargarUsuariosCSV() {
     const currentUser = getCurrentUser();
     if (!currentUser || !esRolMaster(currentUser.role)) {
@@ -3506,7 +3506,7 @@ function renderTablaUsuarios() {
 
     const currentUser = getCurrentUser();
     const esSuperadmin = currentUser && puedeAdministrar(currentUser.role);
-    // Solo el propio Trono Mayor (master) ve el rol master; ante el resto de
+    // Solo el propio Administración (master) ve  la administración; ante el resto de
     // usuarios el master se muestra con el mismo rango que un superadmin.
     const viewerEsMaster = !!(currentUser && esRolMaster(currentUser.role));
     let usuarios = getUsuariosDelAmbito();
@@ -3535,7 +3535,7 @@ function renderTablaUsuarios() {
 
         let rolBadge = '';
         if (rolVisible === 'master') {
-            rolBadge = `<span class="pill-user" style="background:rgba(120,53,15,0.9);color:#fde68a;border:1px solid var(--oro-brillante);padding:2px 8px;border-radius:12px;font-size:0.78rem;">🌟 Master</span>`;
+            rolBadge = `<span class="pill-user" style="background:rgba(120,53,15,0.9);color:#fde68a;border:1px solid var(--oro-brillante);padding:2px 8px;border-radius:12px;font-size:0.78rem;">🌟 Administrador</span>`;
         } else if (rolVisible === 'superadmin') {
             rolBadge = `<span class="pill-user" style="background:rgba(22,101,52,0.8);color:#86efac;border:1px solid #4ade80;padding:2px 8px;border-radius:12px;font-size:0.78rem;">🏰 Superadmin</span>`;
         } else if (rolVisible === 'tronista') {
@@ -6324,7 +6324,7 @@ window.lokibotResponderChip = lokibotResponderChip;
 
 /* ============================================================================
  * CONFIGURACIÓN INICIAL Y GUÍAS DE PRIMER USO
- * - Master/Superadmin: nombre del juego + panel-checklist y recorrido guiado.
+ * - Administrador/Superadmin: nombre del juego + panel-checklist y recorrido guiado.
  * - Maestres: aviso de bienvenida que resume para qué sirve cada menú.
  * Todo se apoya en datos reales (barrios, usuarios, eventos, gala) para saber
  * qué pasos están hechos; localStorage solo recuerda lo descartado/visto.
@@ -7661,11 +7661,11 @@ window.geoEstado = geoEstado;
 window.geoPuzzleEstado = geoPuzzleEstado;
 
 /* ============================================================================
- * LOKITRONO — LOCALES PROMOCIONADOS (sección privada del MASTER)
+ * LOKITRONO — LOCALES PROMOCIONADOS (sección privada del ADMINISTRACIÓN)
  * Promoción de los locales donde se celebran los eventos: nombre, dirección,
  * redes sociales, foto, cuenta atrás (fecha/hora propias del evento en el
  * local) y sello de donación confirmada para el mantenimiento del portal.
- * Solo el Trono Mayor (rol master) consulta y gestiona la sección.
+ * Solo el Administración (rol master) consulta y gestiona la sección.
  * ========================================================================== */
 const localesPromocionEstado = { locales: [], tickActivo: false, cargando: false };
 
@@ -7897,7 +7897,7 @@ async function guardarLocalFormulario() {
     const client = getSupabaseBarriosClient();
     const estado = document.getElementById('locales-estado');
     if (!usuario || !esRolMaster(usuario.role)) {
-        alert('Solo el Trono Mayor puede gestionar los locales promocionados.');
+        alert('Solo el Administración puede gestionar los locales promocionados.');
         return;
     }
     if (!client) {
@@ -7914,7 +7914,7 @@ async function guardarLocalFormulario() {
         return;
     }
 
-    const pin = window.prompt('Introduce tu PIN de MASTER para guardar el local:');
+    const pin = window.prompt('Introduce tu PIN de administración para guardar el local:');
     if (pin === null) return;
     if (!/^\d{6}$/.test(pin.trim())) { alert('El PIN debe contener exactamente seis dígitos.'); return; }
 
@@ -7958,7 +7958,7 @@ async function eliminarLocalFormulario() {
     const estado = document.getElementById('locales-estado');
     if (!usuario || !esRolMaster(usuario.role) || !client) return;
 
-    const pin = window.prompt('Introduce tu PIN de MASTER para eliminar el local:');
+    const pin = window.prompt('Introduce tu PIN de administración para eliminar el local:');
     if (pin === null) return;
     if (!/^\d{6}$/.test(pin.trim())) { alert('El PIN debe contener exactamente seis dígitos.'); return; }
 
@@ -7985,8 +7985,8 @@ async function marcarDonacionLocal(id, confirmada) {
     if (!usuario || !esRolMaster(usuario.role) || !client) return;
 
     const mensaje = confirmada
-        ? 'Registra la donación del local introduciendo tu PIN de MASTER:'
-        : 'Retira la donación del local introduciendo tu PIN de MASTER:';
+        ? 'Registra la donación del local introduciendo tu PIN de administración:'
+        : 'Retira la donación del local introduciendo tu PIN de administración:';
     const pin = window.prompt(mensaje);
     if (pin === null) return;
     if (!/^\d{6}$/.test(pin.trim())) { alert('El PIN debe contener exactamente seis dígitos.'); return; }
@@ -8044,3 +8044,14 @@ window.renderLocalesPromocion = renderLocalesPromocion;
 window.cargarLocalEnFormulario = cargarLocalEnFormulario;
 window.limpiarFormularioLocal = limpiarFormularioLocal;
 window.marcarDonacionLocal = marcarDonacionLocal;
+
+// Efecto de Luz de Antorcha Dinámica
+document.addEventListener('mousemove', (e) => {
+    const torch = document.querySelector('.atmosfera-antorcha');
+    if (torch) {
+        const x = (e.clientX / window.innerWidth) * 100;
+        const y = (e.clientY / window.innerHeight) * 100;
+        torch.style.setProperty('--torch-x', x + '%');
+        torch.style.setProperty('--torch-y', y + '%');
+    }
+});

@@ -1,3 +1,12 @@
+:root {
+    --oro-real: #d4af37;
+    --oro-brillante: #fef08a;
+    --sangre-real: #7f1d1d;
+    --piedra-oscura: #0a0a0b;
+    --pergamino: #f5e6ca;
+    --sombra-profunda: rgba(0, 0, 0, 0.85);
+    --brillo-antorcha: rgba(255, 140, 0, 0.15);
+}
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=MedievalSharp&display=swap');
 
 :root {
@@ -1663,7 +1672,7 @@ body {
 }
 
 /* ============================================================================
- * LOKITRONO — LOCALES PROMOCIONADOS (sección privada del MASTER)
+ * LOKITRONO — LOCALES PROMOCIONADOS (sección privada de administración)
  * ======================================================================== */
 .grid-locales-promocion {
     display: grid;

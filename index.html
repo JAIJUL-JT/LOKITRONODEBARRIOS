@@ -43,6 +43,7 @@
 
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/medieval-theme.css">
     <link rel="stylesheet" href="css/legal.css">
     <!-- Leaflet: mapas interactivos de ciudades/distritos/barrios -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
@@ -106,7 +107,12 @@
 </head>
 
 <body>
-    <header class="hero" style="text-align: center;">
+    <header class="hero" style="text-align: center; position: relative;">
+        <div class="atmosfera-antorcha"></div>
+        <div class="web-decor web-tl"></div>
+        <div class="web-decor web-tr"></div>
+        <div class="web-decor web-bl"></div>
+        <div class="web-decor web-br"></div>
         <div class="hero-brand">
             <a href="index.html" aria-label="Ir a la página de inicio" class="hero-brand-logo">
                 <img src="juego-de-barrios-logo.png?v=4" alt="LokiTrono de Barrios, inicio">
@@ -552,14 +558,14 @@
                 <div class="panel-card">
                     <h2>👑 Consejo Real del Superadmin</h2>
 
-                    <!-- CIERRE Y PROTECCIÓN DEL JUEGO (EXCLUSIVO DEL TRONO MAYOR / MASTER) -->
+                    <!-- CIERRE Y PROTECCIÓN DEL JUEGO (EXCLUSIVO DE ADMINISTRACIÓN) -->
                     <div id="panel-fin-juego"
                         style="display:none; margin-top: 20px; background: rgba(69, 26, 3, 0.6); border: 2px solid #f59e0b; border-radius: 8px; padding: 20px;">
                         <h3 style="color: #fbbf24; margin-top: 0; font-family: 'Cinzel', serif;">🏁 Cierre y Protección del Juego</h3>
                         <p id="fin-juego-estado" style="font-size: 0.9rem; color: #fde68a; margin: 6px 0;">El juego está en curso.</p>
                         <p style="font-size: 0.82rem; color: #fcd34d; margin: 8px 0;">
                             Al finalizar, la competición queda <strong>sellada</strong>: nadie podrá modificar eventos, votos, barrios ni usuarios.
-                            Solo el <strong>Master (Trono Mayor)</strong> puede reabrirla.
+                            Solo un <strong style="color: var(--oro-brillante);">Administrador</strong> puede reabrirla.
                         </p>
                         <button type="button" id="btn-finalizar-juego" class="btn-cuervo" style="background:#b45309;">
                             🏁 FINALIZAR JUEGO
@@ -761,7 +767,7 @@
                 </div>
             </section>
 
-            <!-- PESTAÑA: Sorteo y orden de los eventos de los barrios (Master / Superadmin) -->
+            <!-- PESTAÑA: Sorteo y orden de los eventos de los barrios (Administración) -->
             <section id="pestana-sorteo-eventos" class="tab-content tema-fortaleza" data-tab="tab-sorteo-eventos" style="display: none;">
                 <div class="panel-card">
                     <section id="panel-sorteo-barrios" class="panel-card">
@@ -1131,7 +1137,7 @@
                 </div>
             </section>
 
-            <!-- PESTAÑA: Locales promocionados (solo MASTER) -->
+            <!-- PESTAÑA: Locales promocionados (solo Administración) -->
             <section id="pestana-locales-promocion" class="tab-content tema-corte" data-tab="tab-locales-promocion" style="display: none;">
                 <div class="panel-card">
                     <div class="leaderboard-header" style="text-align: center; margin-bottom: 20px;">
@@ -1144,7 +1150,7 @@
                     </div>
 
                     <div id="panel-gestion-locales" style="background: rgba(10,10,10,0.55); border: 1px solid #44403c; border-radius: 10px; padding: 18px; margin-bottom: 26px;">
-                        <h3 style="color: var(--oro-brillante); margin-bottom: 12px;">✍️ Gestión de locales (MASTER)</h3>
+                        <h3 style="color: var(--oro-brillante); margin-bottom: 12px;">✍️ Gestión de locales (Administración)</h3>
                         <form id="form-local-promocion">
                             <input type="hidden" id="local-id" value="">
                             <div style="display: flex; gap: 12px; flex-wrap: wrap;">

@@ -8161,3 +8161,37 @@ setInterval(() => {
         lanzarEfectosJusta();
     }
 }, 500);
+
+// ============================================================================
+// 🌌 SISTEMA DE PARTÍCULAS DE POLVO (Sustancia Atmosférica)
+// ============================================================================
+function crearParticulasPolvo() {
+    const body = document.body;
+    const numParticulas = 40;
+    
+    for (let i = 0; i < numParticulas; i++) {
+        const part = document.createElement('div');
+        part.className = 'particula-polvo';
+        
+        // Tamaño aleatorio
+        const size = Math.random() * 4 + 1;
+        part.style.width = size + 'px';
+        part.style.height = size + 'px';
+        
+        // Posición inicial aleatoria
+        part.style.left = Math.random() * 100 + 'vw';
+        part.style.top = Math.random() * 100 + 'vh';
+        
+        // Duración y retraso aleatorio
+        const duration = Math.random() * 10 + 10;
+        part.style.animationDuration = duration + 's';
+        part.style.animationDelay = Math.random() * 10 + 's';
+        
+        body.appendChild(part);
+    }
+}
+
+// Inicialización de atmósfera al cargar la app
+document.addEventListener('DOMContentLoaded', () => {
+    crearParticulasPolvo();
+});

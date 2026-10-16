@@ -31,11 +31,31 @@ body {
     inset: 0;
     pointer-events: none;
     z-index: 9999;
-    background: radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.5) 80%);
+    background: radial-gradient(circle at var(--torch-x, 50%) var(--torch-y, 50%), 
+                transparent 20%, 
+                rgba(0,0,0,0.4) 80%);
     animation: torchFlicker 4s infinite ease-in-out;
 }
 
-/* DISEÑO DE TARJETAS (PERGAMINO Y PIEDRA) */
+/* TELARAÑAS EN LAS ESQUINAS */
+.web-decor {
+    position: fixed;
+    width: 200px;
+    height: 200px;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.3;
+    filter: grayscale(1) brightness(0.6);
+    background-image: url('https://cdn-icons-png.flaticon.com/512/1051/1051367.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+.web-tl { top: 0; left: 0; }
+.web-tr { top: 0; right: 0; transform: rotate(90deg); }
+.web-bl { bottom: 0; left: 0; transform: rotate(270deg); }
+.web-br { bottom: 0; right: 0; transform: rotate(180deg); }
+
+/* REDISEÑO DE TARJETAS (PERGAMINO Y PIEDRA) */
 .panel-card {
     background: linear-gradient(135deg, #1a1a1c 0%, #0f0f11 100%) !important;
     border: 3px solid var(--oro-real) !important;
@@ -66,7 +86,6 @@ body {
     background: rgba(0,0,0,0.7) !important;
     color: var(--oro-brillante) !important;
     border: 2px solid var(--oro-real) !important;
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
 }
 
 /* 2. Votación - La Mesa del Juez */
@@ -84,19 +103,17 @@ body {
     color: #2d241a !important;
     border: 1px solid #8b4513 !important;
 }
-#pestana-votacion-barrio .btn-cuervo {
-    font-weight: bold;
-    color: #7f1d1d !important;
-}
 
 /* 3. Gestión/Admin - El Archivo Secreto */
-#tab-usuarios, #pestana-barrios, #pestana-sorteo-eventos, #tab-superadmin {
-    background: #0f0f11 !important;
-    background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png') !important;
+.tema-corte-admin {
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%) !important;
+    border-top: 5px solid var(--oro-real) !important;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.5) !important;
 }
-#tab-usuarios .panel-card {
-    border-color: #4b5563 !important;
-    background: #111827 !important;
+.tema-corte-admin .panel-card {
+    border-color: var(--oro-real) !important;
+    background: rgba(30, 41, 59, 0.7) !important;
+    backdrop-filter: blur(5px);
 }
 
 /* 4. Oráculo - La Cripta Mística */
@@ -109,56 +126,121 @@ body {
     background: rgba(10, 10, 20, 0.9) !important;
     box-shadow: 0 0 40px rgba(139, 92, 246, 0.4) !important;
 }
-#pestana-oraculo-ia h2 {
-    color: #c4b5fd !important;
-    text-shadow: 0 0 15px #8b5cf6 !important;
+
+/* 📅 CALENDARIO DE EVENTOS - PERGAMINO VIEJO */
+#tab-calendario {
+    background: #fdf6e3 !important;
+    background-image: url('https://www.transparenttextures.com/patterns/old-map.png') !important;
+    color: #4b3621 !important;
 }
 
-/* ELEMENTOS DECORATIVOS */
-.web-decor {
-    position: fixed;
-    width: 200px;
-    height: 200px;
-    pointer-events: none;
-    z-index: 100;
-    opacity: 0.3;
-    filter: grayscale(1) brightness(0.6);
-    background-image: url('https://cdn-icons-png.flaticon.com/512/1051/1051367.png');
+.cal-grid-dias {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    gap: 15px !important;
+    padding: 30px !important;
+}
+
+.cal-dia-cell {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid rgba(75, 54, 31, 0.3) !important;
+    transition: all 0.4s ease !important;
+    cursor: pointer !important;
+    position: relative !important;
+}
+
+.cal-dia-numero {
+    font-family: 'MedievalSharp', cursive !important;
+    color: #2d241a !important;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+}
+
+.cal-dia-cell.seleccionado {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+}
+.cal-dia-cell.seleccionado::after {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: 3px solid #8b4513;
+    border-radius: 45% 55% 50% 50% / 50% 50% 55% 45%;
+    transform: rotate(-2deg);
+    opacity: 0.7;
+}
+
+.cal-cruz-roja-marca {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, #d40000 0%, #8b0000 100%);
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 0 10px #4a0000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+.cal-cruz-roja-marca::before, .cal-cruz-roja-marca::after {
+    content: "";
+    position: absolute;
+    width: 30px;
+    height: 4px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 2px;
+}
+.cal-cruz-roja-marca::before { transform: rotate(45deg); }
+.cal-cruz-roja-marca::after { transform: rotate(-45deg); }
+
+.cal-sello-logo {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-image: url('juego-de-barrios-logo.png');
     background-size: contain;
     background-repeat: no-repeat;
+    background-position: center;
+    filter: brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5);
+    z-index: 3;
 }
-.web-tl { top: 0; left: 0; }
-.web-tr { top: 0; right: 0; transform: rotate(90deg); }
-.web-bl { bottom: 0; left: 0; transform: rotate(270deg); }
-.web-br { bottom: 0; right: 0; transform: rotate(180deg); }
+
+.cal-evento-badge {
+    font-family: 'Caveat', cursive !important;
+    background: transparent !important;
+    color: #8b4513 !important;
+    font-style: italic !important;
+    font-weight: bold !important;
+    text-decoration: underline wavy #8b4513 !important;
+    font-size: 0.7rem !important;
+}
 
 /* ⏳ RELOJ DE CUENTA ATRÁS MEDIEVAL */
 .timer-medieval-container {
-    background: rgba(0,0,0,0.8);
-    border: 2px solid var(--oro-real);
-    padding: 15px;
-    display: inline-block;
-    border-radius: 0;
-    box-shadow: 0 0 15px var(--sangre-real);
-    font-family: 'Cinzel', serif;
-    min-width: 300px;
+    background: rgba(0,0,0,0.8) !important;
+    border: 2px solid var(--oro-real) !important;
+    padding: 15px !important;
+    display: inline-block !important;
+    box-shadow: 0 0 15px var(--sangre-real) !important;
+    font-family: 'Cinzel', serif !important;
 }
 .timer-label {
     display: block;
-    color: var(--oro-brillante);
-    font-size: 0.9rem;
-    letter-spacing: 2px;
-    margin-bottom: 5px;
+    color: var(--oro-brillante) !important;
+    font-size: 0.9rem !important;
+    letter-spacing: 2px !important;
 }
 .timer-medieval-clock {
-    font-size: 2.2rem;
-    color: #fff;
-    text-shadow: 0 0 10px var(--sangre-real), 0 0 20px red;
-    font-weight: bold;
-    font-variant-numeric: tabular-nums;
+    font-size: 2.2rem !important;
+    color: #fff !important;
+    text-shadow: 0 0 10px var(--sangre-real), 0 0 20px red !important;
+    font-weight: bold !important;
 }
 
-/* ⚡ EFECTO RELÁMPAGO */
+/* ⚡ EFECTOS DINÁMICOS */
 .lightning-flash {
     position: fixed;
     inset: 0;
@@ -178,7 +260,6 @@ body {
     100% { opacity: 0; }
 }
 
-/* 🕷️ ARAÑAS EN MOVIMIENTO */
 .spider-entity {
     position: absolute;
     font-size: 1.5rem;
@@ -187,7 +268,6 @@ body {
     z-index: 10;
 }
 
-/* 🐦 CUERVOS VOLANDO */
 .crow-entity {
     position: absolute;
     font-size: 2.5rem;
@@ -202,151 +282,4 @@ body {
     50% { transform: translate(110vw, -50px) scaleX(-1); }
     95% { transform: translate(-100px, -50px) scaleX(-1); }
     100% { transform: translate(-100px, 0) scaleX(1); }
-}
-
-/* 📅 CALENDARIO DE EVENTOS - PERGAMINO VIEJO */
-#tab-calendario {
-    background: #fdf6e3 !important;
-    background-image: url('https://www.transparenttextures.com/patterns/old-map.png') !important;
-    border: 20px solid transparent;
-    border-image: url('https://www.transparenttextures.com/patterns/dark-leather.png') 30 round;
-    color: #4b3621 !important;
-    font-family: 'Cinzel', serif !important;
-}
-
-#tab-calendario .panel-card {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: #4b3621 !important;
-}
-
-#tab-calendario h2, #tab-calendario h3 {
-    color: #4b3621 !important;
-    text-align: center;
-    text-decoration: underline double #8b4513;
-}
-
-/* El Grid del Calendario */
-.cal-grid-dias {
-    display: grid !important;
-    grid-template-columns: repeat(7, 1fr) !important;
-    gap: 10px !important;
-    background: transparent !important;
-    padding: 20px !important;
-}
-
-.cal-dia-cell {
-    background: rgba(255, 255, 255, 0.3) !important;
-    border: 1px solid #d2b48c !important;
-    border-radius: 0 !important;
-    aspect-ratio: 1 / 1;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    position: relative !important;
-    transition: all 0.3s ease !important;
-    cursor: pointer !important;
-}
-
-.cal-dia-cell:hover {
-    background: rgba(255, 255, 255, 0.6) !important;
-    border-color: #8b4513 !important;
-    transform: scale(1.05);
-}
-
-.cal-dia-numero {
-    font-size: 1.2rem !important;
-    font-weight: bold !important;
-    color: #4b3621 !important;
-}
-
-/* 🔴 EL SELLO DE LACRA ROJA (X con Logotipo) */
-.cal-cruz-roja-marca {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 40px;
-    height: 40px;
-    background: radial-gradient(circle, #d40000 0%, #8b0000 100%);
-    border-radius: 50%;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 0 10px #4a0000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-}
-
-/* La X de lacra */
-.cal-cruz-roja-marca::before, .cal-cruz-roja-marca::after {
-    content: "";
-    position: absolute;
-    width: 30px;
-    height: 4px;
-    background: rgba(0,0,0,0.3);
-    border-radius: 2px;
-}
-.cal-cruz-roja-marca::before { transform: rotate(45deg); }
-.cal-cruz-roja-marca::after { transform: rotate(-45deg); }
-
-/* El logotipo estampado en sangre */
-.cal-sello-logo {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background-image: url('juego-de-barrios-logo.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    filter: brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5); /* Tono sangre */
-    z-index: 3;
-    pointer-events: none;
-}
-
-.cal-evento-badge {
-    font-size: 0.6rem !important;
-    background: #8b4513 !important;
-    color: #fef08a !important;
-    padding: 2px 5px !important;
-    border-radius: 2px !important;
-    margin-top: 5px !important;
-    z-index: 4 !important;
-}
-
-/* 🏛️ TEMA DE ADMINISTRACIÓN (LA CORTE REAL) */
-.tema-corte-admin {
-    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%) !important;
-    border-top: 5px solid var(--oro-real) !important;
-    box-shadow: inset 0 0 50px rgba(0,0,0,0.5) !important;
-}
-.tema-corte-admin .panel-card {
-    border-color: var(--oro-real) !important;
-    background: rgba(30, 41, 59, 0.7) !important;
-    backdrop-filter: blur(5px);
-}
-.tema-corte-admin h2, .tema-corte-admin h3 {
-    color: var(--oro-brillante) !important;
-    border-bottom: 1px solid var(--oro-real);
-    padding-bottom: 5px;
-}
-
-/* APLICACIÓN DE LETRINA GÓTICA A TEMAS MEDIEVALES */
-.tema-taberna p::first-letter, .tema-taberna .panel-card::first-letter {
-    font-family: 'Pirata One', cursive !important;
-    font-size: 2.5em !important;
-    color: #8b4513 !important;
-    float: left;
-    margin-right: 8px;
-    line-height: 0.8;
-}
-
-.tema-corte-admin p::first-letter, .tema-corte-admin .panel-card::first-letter {
-    font-family: 'Pirata One', cursive !important;
-    font-size: 2.5em !important;
-    color: var(--oro-real) !important;
-    float: left;
-    margin-right: 8px;
-    line-height: 0.8;
 }

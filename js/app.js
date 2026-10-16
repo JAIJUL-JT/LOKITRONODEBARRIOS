@@ -2124,7 +2124,7 @@ function actualizarCalendarioMedieval() {
         let contenidoInner = `<span class="cal-dia-numero">${d}</span>`;
 
         if (tieneEvento) {
-            contenidoInner += `<div class="cal-cruz-roja-marca" title="📅 Evento oficial: ${eventosDia.map(e => e.nombre).join(', ')}">❌</div>`;
+            contenidoInner += `<div class="cal-cruz-roja-marca" title="📅 Evento oficial: ${eventosDia.map(e => e.nombre).join(', ')}"><div class="cal-sello-logo"></div></div>`;
             contenidoInner += `<div class="cal-evento-badge" title="${eventosDia[0].nombre}">${eventosDia[0].barrio || 'Evento'}</div>`;
         }
 

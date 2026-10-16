@@ -203,3 +203,114 @@ body {
     95% { transform: translate(-100px, -50px) scaleX(-1); }
     100% { transform: translate(-100px, 0) scaleX(1); }
 }
+
+/* 📅 CALENDARIO DE EVENTOS - PERGAMINO VIEJO */
+#tab-calendario {
+    background: #fdf6e3 !important;
+    background-image: url('https://www.transparenttextures.com/patterns/old-map.png') !important;
+    border: 20px solid transparent;
+    border-image: url('https://www.transparenttextures.com/patterns/dark-leather.png') 30 round;
+    color: #4b3621 !important;
+    font-family: 'Cinzel', serif !important;
+}
+
+#tab-calendario .panel-card {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #4b3621 !important;
+}
+
+#tab-calendario h2, #tab-calendario h3 {
+    color: #4b3621 !important;
+    text-align: center;
+    text-decoration: underline double #8b4513;
+}
+
+/* El Grid del Calendario */
+.cal-grid-dias {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    gap: 10px !important;
+    background: transparent !important;
+    padding: 20px !important;
+}
+
+.cal-dia-cell {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid #d2b48c !important;
+    border-radius: 0 !important;
+    aspect-ratio: 1 / 1;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+}
+
+.cal-dia-cell:hover {
+    background: rgba(255, 255, 255, 0.6) !important;
+    border-color: #8b4513 !important;
+    transform: scale(1.05);
+}
+
+.cal-dia-numero {
+    font-size: 1.2rem !important;
+    font-weight: bold !important;
+    color: #4b3621 !important;
+}
+
+/* 🔴 EL SELLO DE LACRA ROJA (X con Logotipo) */
+.cal-cruz-roja-marca {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, #d40000 0%, #8b0000 100%);
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 0 10px #4a0000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+/* La X de lacra */
+.cal-cruz-roja-marca::before, .cal-cruz-roja-marca::after {
+    content: "";
+    position: absolute;
+    width: 30px;
+    height: 4px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 2px;
+}
+.cal-cruz-roja-marca::before { transform: rotate(45deg); }
+.cal-cruz-roja-marca::after { transform: rotate(-45deg); }
+
+/* El logotipo estampado en sangre */
+.cal-sello-logo {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-image: url('juego-de-barrios-logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5); /* Tono sangre */
+    z-index: 3;
+    pointer-events: none;
+}
+
+.cal-evento-badge {
+    font-size: 0.6rem !important;
+    background: #8b4513 !important;
+    color: #fef08a !important;
+    padding: 2px 5px !important;
+    border-radius: 2px !important;
+    margin-top: 5px !important;
+    z-index: 4 !important;
+}

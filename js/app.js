@@ -3245,7 +3245,7 @@ async function enviarWebhookMake(payload) {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
         const respuesta = await fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "text/plain" },
             body: JSON.stringify(payload),
             signal: controller.signal
         });

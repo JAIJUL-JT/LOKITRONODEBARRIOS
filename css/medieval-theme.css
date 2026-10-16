@@ -331,3 +331,22 @@ body {
     border-bottom: 1px solid var(--oro-real);
     padding-bottom: 5px;
 }
+
+/* APLICACIÓN DE LETRINA GÓTICA A TEMAS MEDIEVALES */
+.tema-taberna p::first-letter, .tema-taberna .panel-card::first-letter {
+    font-family: 'Pirata One', cursive !important;
+    font-size: 2.5em !important;
+    color: #8b4513 !important;
+    float: left;
+    margin-right: 8px;
+    line-height: 0.8;
+}
+
+.tema-corte-admin p::first-letter, .tema-corte-admin .panel-card::first-letter {
+    font-family: 'Pirata One', cursive !important;
+    font-size: 2.5em !important;
+    color: var(--oro-real) !important;
+    float: left;
+    margin-right: 8px;
+    line-height: 0.8;
+}

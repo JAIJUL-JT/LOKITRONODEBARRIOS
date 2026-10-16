@@ -3235,29 +3235,18 @@ function guardarWebhookMakeConfig() {
 }
 
 async function enviarWebhookMake(payload) {
-    let url = getMakeWebhookUrl();
-    if (!url) return { ok: false, motivo: "sin_webhook" };
-    if (!url.startsWith("https://") && !url.startsWith("http://")) {
-        url = "https://" + url;
-    }
+    const client = getSupabaseBarriosClient();
+    if (!client) return { ok: false, motivo: "sin_cliente" };
+    
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        const respuesta = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify(payload),
-            signal: controller.signal
+        const { error } = await client.rpc("enviar_webhook_whatsapp_admin", { 
+            p_payload: payload 
         });
-        clearTimeout(timeoutId);
-        if (!respuesta.ok) {
-            console.error(`Error HTTP en Make: ${respuesta.status} ${respuesta.statusText}`);
-            return { ok: false, motivo: "error_http", status: respuesta.status };
-        }
-        return { ok: true, status: respuesta.status };
+        if (error) throw error;
+        return { ok: true, status: 200 };
     } catch (error) {
-        console.error("Error de red en webhook Make:", error);
-        return { ok: false, motivo: error.name === "AbortError" ? "timeout" : "error_red" };
+        console.error("Error en el túnel de envío (Servidor):", error);
+        return { ok: false, motivo: "error_servidor", detail: error.message };
     }
 }
 

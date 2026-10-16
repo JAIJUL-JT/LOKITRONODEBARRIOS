@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — Extraviado en las Mazmorras de la Villa | LokiTrono de Barrios</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=MedievalSharp&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/medieval-theme.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(10, 10, 15, 0.6) 0%, rgba(4, 7, 12, 0.95) 85%),
+                url('ambiente-prision.jpg') !important;
+            background-size: cover !important;
+            background-position: center !important;
+            color: #f3f4f6;
+            text-align: center;
+        }
+
+        .error-card {
+            max-width: 540px;
+            width: 100%;
+            background: rgba(12, 12, 18, 0.9);
+            border: 2px solid var(--oro-real);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(212, 175, 55, 0.25);
+            padding: 40px 30px;
+            border-radius: 14px;
+            position: relative;
+            backdrop-filter: blur(14px);
+        }
+
+        .error-logo {
+            width: 120px;
+            height: auto;
+            margin: 0 auto 16px;
+            filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.5));
+            animation: flotarLogo 4s infinite ease-in-out;
+        }
+
+        @keyframes flotarLogo {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .error-code {
+            font-family: 'Cinzel', serif;
+            font-size: 4rem;
+            font-weight: 900;
+            margin: 0;
+            color: var(--oro-brillante);
+            text-shadow: 0 0 25px rgba(212, 175, 55, 0.8), 0 0 50px rgba(185, 28, 28, 0.6);
+            letter-spacing: 0.1em;
+            line-height: 1;
+        }
+
+        .error-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            color: #fef08a;
+            margin: 16px 0 12px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .error-joke {
+            font-family: 'MedievalSharp', cursive;
+            font-size: 1.1rem;
+            color: #d6d3d1;
+            line-height: 1.6;
+            margin: 0 0 26px;
+            background: rgba(0, 0, 0, 0.45);
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 3px solid var(--sangre-real);
+        }
+
+        .error-joke em {
+            color: var(--oro-brillante);
+            font-style: normal;
+        }
+
+        .btn-regreso {
+            display: inline-block;
+            font-family: 'Cinzel', serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #000;
+            background: var(--oro-metalico);
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5), 0 5px 15px rgba(0, 0, 0, 0.6);
+            transition: all 0.3s ease;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-regreso:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 35px rgba(254, 240, 138, 0.8), 0 8px 25px rgba(0, 0, 0, 0.9);
+            color: #1a1005;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-card">
+        <a href="index.html" aria-label="Volver al Trono">
+            <img src="logo-lokitrono.png?v=4" alt="LokiTrono de Barrios" class="error-logo">
+        </a>
+        <h1 class="error-code">404</h1>
+        <h2 class="error-title">⚔️ ¡Por las barbas de don Diego López de Haro!</h2>
+        
+        <p class="error-joke">
+            Has errado el camino hacia la taberna y te has metido de lleno en las mazmorras olvidadas de Bilbao.<br><br>
+            Aquí no hay pintxo de bacalao ni zurito de txakoli... <em>¡sólo telarañas, cadenas oxidadas y guardias con pocas pulgas!</em>
+        </p>
+
+        <a href="index.html" class="btn-regreso">
+            🛡️ Huir a las Puertas del Reino (Acceder)
+        </a>
+    </div>
+
+    <!-- El dragón también vuela protegiendo las mazmorras del 404 -->
+    <script src="js/dragon.js"></script>
+</body>
+
+</html>

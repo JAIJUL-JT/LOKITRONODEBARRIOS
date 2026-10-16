@@ -626,6 +626,9 @@ async function iniciarSesionDirecta() {
 
     if (button) button.disabled = true;
     if (message) message.textContent = 'Verificando credenciales…';
+    if (typeof window.mostrarEsperaMedieval === 'function') {
+        window.mostrarEsperaMedieval('Consultando el Códice Real...', '«Verificando credenciales con los escribanos de Supabase»');
+    }
     try {
         const { data, error } = await client.rpc('validar_login_lokitrono', {
             p_phone: phone,
@@ -663,6 +666,9 @@ async function iniciarSesionDirecta() {
             ? error.message
             : 'No se pudo validar la cuenta en Supabase. Comprueba que se haya aplicado la migración de acceso.';
     } finally {
+        if (typeof window.ocultarEsperaMedieval === 'function') {
+            window.ocultarEsperaMedieval();
+        }
         if (button) button.disabled = false;
     }
 }

@@ -366,3 +366,161 @@ body {
     20%, 100% { left: 160%; }
 }
 
+/* ⏳ RELOJ DE ARENA MEDIEVAL DE TIEMPOS DE ESPERA */
+.medieval-loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 5, 8, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.medieval-loading-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.hourglass-container {
+    position: relative;
+    width: 90px;
+    height: 130px;
+    filter: drop-shadow(0 0 18px rgba(212, 175, 55, 0.45));
+}
+
+.hourglass-frame {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hourglass-plate-top, .hourglass-plate-bottom {
+    width: 80px;
+    height: 10px;
+    background: var(--oro-metalico);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+}
+
+.hourglass-glass {
+    position: relative;
+    width: 60px;
+    height: 106px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 26px 26px 2px 2px / 50px 50px 2px 2px;
+    border: 2px solid rgba(212, 175, 55, 0.4);
+    box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.2);
+    overflow: hidden;
+    animation: girarReloj 4s infinite cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Bulbo Superior y Bulbo Inferior */
+.hourglass-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    overflow: hidden;
+    clip-path: polygon(0 0, 100% 0, 60% 100%, 40% 100%);
+}
+
+.sand-top {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(180deg, #d4af37 0%, #f59e0b 60%, #b45309 100%);
+    animation: vaciarArena 4s infinite cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.hourglass-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    overflow: hidden;
+    clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+}
+
+.sand-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0%;
+    background: linear-gradient(0deg, #b45309 0%, #f59e0b 40%, #d4af37 100%);
+    border-radius: 50% 50% 0 0;
+    animation: llenarArena 4s infinite cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Chorro de arena que cae */
+.sand-stream {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2.5px;
+    height: 48px;
+    background: #fef08a;
+    box-shadow: 0 0 6px #f59e0b;
+    animation: chorroArena 4s infinite ease-in-out;
+}
+
+@keyframes vaciarArena {
+    0% { height: 85%; }
+    45%, 50% { height: 0%; }
+    55% { height: 0%; }
+    95%, 100% { height: 85%; }
+}
+
+@keyframes llenarArena {
+    0% { height: 0%; }
+    45%, 50% { height: 85%; }
+    55% { height: 85%; }
+    95%, 100% { height: 0%; }
+}
+
+@keyframes chorroArena {
+    0%, 45% { opacity: 1; }
+    46%, 54% { opacity: 0; }
+    55%, 100% { opacity: 1; }
+}
+
+@keyframes girarReloj {
+    0%, 45% { transform: rotate(0deg); }
+    50%, 95% { transform: rotate(180deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hourglass-caption {
+    margin-top: 22px;
+    font-family: 'Cinzel', serif;
+    font-size: 1.15rem;
+    color: var(--oro-brillante);
+    text-shadow: 0 0 12px rgba(212, 175, 55, 0.6);
+    letter-spacing: 0.08em;
+    text-align: center;
+}
+
+.hourglass-subcaption {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #a8a29e;
+    font-style: italic;
+    text-align: center;
+    max-width: 320px;
+}
+
+

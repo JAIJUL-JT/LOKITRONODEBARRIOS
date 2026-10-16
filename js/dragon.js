@@ -312,4 +312,48 @@
     } else {
         animate();
     }
+
+    // --- ⏳ CONTROL GLOBAL DEL RELOJ DE ARENA DE ESPERA ---
+    let hourglassOverlay = null;
+
+    function crearOverlayEspera() {
+        if (hourglassOverlay) return hourglassOverlay;
+        const div = document.createElement('div');
+        div.id = 'medieval-hourglass-loader';
+        div.className = 'medieval-loading-overlay hidden';
+        div.innerHTML = `
+            <div class="hourglass-container">
+                <div class="hourglass-frame">
+                    <div class="hourglass-plate-top"></div>
+                    <div class="hourglass-glass">
+                        <div class="hourglass-top"><div class="sand-top"></div></div>
+                        <div class="sand-stream"></div>
+                        <div class="hourglass-bottom"><div class="sand-bottom"></div></div>
+                    </div>
+                    <div class="hourglass-plate-bottom"></div>
+                </div>
+            </div>
+            <div id="hourglass-text-main" class="hourglass-caption">Fluyen las arenas del destino...</div>
+            <div id="hourglass-text-sub" class="hourglass-subcaption">«La paciencia es virtud de nobles y maestres»</div>
+        `;
+        document.body.appendChild(div);
+        hourglassOverlay = div;
+        return div;
+    }
+
+    window.mostrarEsperaMedieval = function (mensajePrincipal, mensajeSecundario) {
+        const overlay = crearOverlayEspera();
+        const main = overlay.querySelector('#hourglass-text-main');
+        const sub = overlay.querySelector('#hourglass-text-sub');
+        if (main && mensajePrincipal) main.textContent = mensajePrincipal;
+        if (sub && mensajeSecundario) sub.textContent = mensajeSecundario;
+        overlay.classList.remove('hidden');
+    };
+
+    window.ocultarEsperaMedieval = function () {
+        if (hourglassOverlay) {
+            hourglassOverlay.classList.add('hidden');
+        }
+    };
 })();
+

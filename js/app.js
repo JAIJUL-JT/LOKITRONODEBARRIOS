@@ -2515,7 +2515,7 @@ async function pedirCredencialesSuperadmin() {
     }
 
     const pin = window.prompt(
-        'Introduce el PIN de superadministrador para confirmar la operación:'
+        'Introduce el PIN de administración para confirmar la operación:'
     );
 
     if (pin === null || !pin.trim()) {
@@ -4423,7 +4423,7 @@ async function quitarUsuarioBarrio(phone) {
     const confirmacion = window.confirm(`¿Seguro que deseas desvincular al usuario (Tel: ${phone}) de su barrio actual?\nPasará a ser 'Forastero'.`);
     if (!confirmacion) return;
 
-    const pinConfirmacion = window.prompt('Introduce tu PIN de superadministrador para confirmar:');
+    const pinConfirmacion = window.prompt('Introduce tu PIN de administración para confirmar:');
     if (pinConfirmacion === null) return;
     if (!/^\d{6}$/.test(pinConfirmacion.trim())) {
         alert('El PIN debe contener exactamente seis dígitos.');
@@ -4547,7 +4547,7 @@ async function guardarBarrio(event) {
     }
 
     const pinConfirmacion = window.prompt(
-        `Introduce tu PIN de superadministrador para confirmar ${idEdit ? 'la edición' : 'la creación'} del barrio:`
+        `Introduce tu PIN de administración para confirmar ${idEdit ? 'la edición' : 'la creación'} del barrio:`
     );
 
     if (pinConfirmacion === null) return;
@@ -4657,7 +4657,7 @@ async function eliminarBarrio(id) {
     if (!confirmacion) return;
 
     const pinConfirmacion = window.prompt(
-        `Introduce tu PIN de superadministrador para eliminar «${casa.nombre}»:`
+        `Introduce tu PIN de administración para eliminar «${casa.nombre}»:`
     );
     if (pinConfirmacion === null) return;
 
@@ -5846,7 +5846,7 @@ async function generarSorteoBarrios() {
         return;
     }
 
-    const pin = window.prompt('Introduce tu PIN de superadministrador para generar el sorteo:');
+    const pin = window.prompt('Introduce tu PIN de administración para generar el sorteo:');
     if (pin === null) return;
     if (!/^\d{6}$/.test(pin.trim())) {
         alert('El PIN debe contener exactamente seis dígitos.');
@@ -5896,7 +5896,7 @@ async function guardarOrdenSorteoBarrios() {
         return;
     }
 
-    const pin = window.prompt('Introduce tu PIN de superadministrador para guardar el orden:');
+    const pin = window.prompt('Introduce tu PIN de administración para guardar el orden:');
     if (pin === null) return;
     if (!/^\d{6}$/.test(pin.trim())) {
         alert('El PIN debe contener exactamente seis dígitos.');
@@ -5945,7 +5945,7 @@ async function restaurarCompeticion() {
         return;
     }
 
-    const pin = window.prompt('Introduce tu PIN de superadministrador para restaurar la competición:');
+    const pin = window.prompt('Introduce tu PIN de administración para restaurar la competición:');
     if (pin === null) return;
     if (!/^\d{6}$/.test(pin.trim())) {
         alert('El PIN debe contener exactamente seis dígitos.');
@@ -7478,7 +7478,7 @@ async function geoPuzzleGuardar() {
     if (!eventoId) { alert('Elige el evento al que pertenece el puzzle.'); return; }
     if (!geoPuzzleEstado.piezas.length) { alert('El puzzle está vacío. Añade una selección al puzzle.'); return; }
 
-    const pin = window.prompt('Introduce tu PIN de superadministrador para guardar el puzzle:');
+    const pin = window.prompt('Introduce tu PIN de administración para guardar el puzzle:');
     if (pin === null) return;
     if (!/^\d{6}$/.test(pin.trim())) { alert('El PIN debe contener exactamente seis dígitos.'); return; }
     if (!window.confirm(`Se guardarán ${geoPuzzleEstado.piezas.length} pieza(s) y se crearán/reutilizarán sus ubicaciones participantes. ¿Continuar?`)) return;
@@ -7514,7 +7514,7 @@ async function geoPuzzleSortear() {
     const eventoId = sel ? sel.value : geoPuzzleEstado.eventoId;
     if (!eventoId) { alert('Elige el evento del puzzle.'); return; }
 
-    const pin = window.prompt('Introduce tu PIN de superadministrador para sortear las piezas:');
+    const pin = window.prompt('Introduce tu PIN de administración para sortear las piezas:');
     if (pin === null) return;
     if (!/^\d{6}$/.test(pin.trim())) { alert('El PIN debe contener exactamente seis dígitos.'); return; }
     if (!window.confirm('Se repartirán aleatoriamente las piezas del puzzle de este evento. ¿Continuar?')) return;

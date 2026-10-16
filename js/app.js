@@ -3250,9 +3250,13 @@ async function enviarWebhookMake(payload) {
             signal: controller.signal
         });
         clearTimeout(timeoutId);
-        return { ok: respuesta.ok, status: respuesta.status };
+        if (!respuesta.ok) {
+            console.error(`Error HTTP en Make: ${respuesta.status} ${respuesta.statusText}`);
+            return { ok: false, motivo: "error_http", status: respuesta.status };
+        }
+        return { ok: true, status: respuesta.status };
     } catch (error) {
-        console.error("Error crítico en webhook Make/WhatsApp:", error);
+        console.error("Error de red en webhook Make:", error);
         return { ok: false, motivo: error.name === "AbortError" ? "timeout" : "error_red" };
     }
 }
@@ -3347,7 +3351,7 @@ async function regenerarPinYEnviarWhatsApp(userId) {
         } else if (envio.motivo === 'sin_webhook') {
             alert(`✅ PIN regenerado: ${nuevoPin}\n⚠️ No hay webhook de Make configurado; no se pudo enviar por WhatsApp.`);
         } else {
-            alert(`✅ PIN regenerado: ${nuevoPin}\n⚠️ No se pudo enviar por WhatsApp.`);
+            alert(`✅ PIN regenerado: ${nuevoPin}\n⚠️ Error de envío: ${envio.status || envio.motivo}. Revisa la consola.`);
         }
     } catch (error) {
         console.error('Error regenerando el PIN:', error);

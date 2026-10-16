@@ -15,10 +15,12 @@
 body {
     background-color: var(--piedra-oscura) !important;
     background-image: 
-        radial-gradient(circle at 50% 50%, rgba(44, 26, 26, 0.4) 0%, transparent 70%),
-        url('https://www.transparenttextures.com/patterns/dark-leather.png') !important;
+        linear-gradient(rgba(5, 5, 5, 0.8), rgba(5, 5, 5, 0.8)),
+        url("https://images.unsplash.com/photo-1599739291060-4578e775a170?q=80&w=1920") !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
     color: #f3f4f6 !important;
-    overflow-x: hidden;
 }
 
 /* 🕯️ ATMÓSFERA: LUZ DINÁMICA Y POLVO */

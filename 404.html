@@ -4,134 +4,318 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 — Extraviado en las Mazmorras de la Villa | LokiTrono de Barrios</title>
+    <title>404 — Encerrado en la Mazmorra de Bilbao | LokiTrono de Barrios</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=MedievalSharp&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=MedievalSharp&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/medieval-theme.css">
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
+            background-color: #030407;
             background-image: 
-                radial-gradient(circle at 50% 30%, rgba(10, 10, 15, 0.6) 0%, rgba(4, 7, 12, 0.95) 85%),
+                radial-gradient(circle at 50% 20%, rgba(20, 30, 45, 0.4) 0%, rgba(3, 4, 7, 0.94) 85%),
                 url('ambiente-prision.jpg') !important;
             background-size: cover !important;
             background-position: center !important;
-            color: #f3f4f6;
-            text-align: center;
-        }
-
-        .error-card {
-            max-width: 540px;
-            width: 100%;
-            background: rgba(12, 12, 18, 0.9);
-            border: 2px solid var(--oro-real);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(212, 175, 55, 0.25);
-            padding: 40px 30px;
-            border-radius: 14px;
-            position: relative;
-            backdrop-filter: blur(14px);
-        }
-
-        .error-logo {
-            width: 120px;
-            height: auto;
-            margin: 0 auto 16px;
-            filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.5));
-            animation: flotarLogo 4s infinite ease-in-out;
-        }
-
-        @keyframes flotarLogo {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-
-        .error-code {
-            font-family: 'Cinzel', serif;
-            font-size: 4rem;
-            font-weight: 900;
-            margin: 0;
-            color: var(--oro-brillante);
-            text-shadow: 0 0 25px rgba(212, 175, 55, 0.8), 0 0 50px rgba(185, 28, 28, 0.6);
-            letter-spacing: 0.1em;
-            line-height: 1;
-        }
-
-        .error-title {
-            font-family: 'Cinzel', serif;
-            font-size: 1.5rem;
-            color: #fef08a;
-            margin: 16px 0 12px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-        }
-
-        .error-joke {
+            background-attachment: fixed !important;
+            color: #e2e8f0;
             font-family: 'MedievalSharp', cursive;
-            font-size: 1.1rem;
-            color: #d6d3d1;
-            line-height: 1.6;
-            margin: 0 0 26px;
-            background: rgba(0, 0, 0, 0.45);
-            padding: 16px;
-            border-radius: 8px;
-            border-left: 3px solid var(--sangre-real);
+            overflow: hidden;
+            position: relative;
         }
 
-        .error-joke em {
-            color: var(--oro-brillante);
-            font-style: normal;
+        /* ⛓️ REJAS DE LA MAZMORRA EN PRIMER PLANO (Efecto Inmersivo) */
+        .dungeon-bars-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5;
+            background: repeating-linear-gradient(
+                90deg,
+                rgba(15, 23, 42, 0) 0px,
+                rgba(15, 23, 42, 0) 65px,
+                #0f172a 65px,
+                #1e293b 72px,
+                #020617 78px
+            );
+            box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.95);
+            opacity: 0.85;
         }
 
-        .btn-regreso {
+        /* Cadena colgando con grilletes */
+        .chain-hanging-left {
+            position: fixed;
+            top: -20px;
+            left: 8%;
+            width: 32px;
+            height: 280px;
+            background: repeating-linear-gradient(
+                0deg,
+                #334155 0px,
+                #64748b 6px,
+                #1e293b 14px,
+                transparent 14px,
+                transparent 24px
+            );
+            pointer-events: none;
+            z-index: 6;
+            animation: balanceoCadena 6s infinite ease-in-out;
+            transform-origin: top center;
+        }
+
+        .chain-hanging-right {
+            position: fixed;
+            top: -20px;
+            right: 8%;
+            width: 32px;
+            height: 240px;
+            background: repeating-linear-gradient(
+                0deg,
+                #334155 0px,
+                #64748b 6px,
+                #1e293b 14px,
+                transparent 14px,
+                transparent 24px
+            );
+            pointer-events: none;
+            z-index: 6;
+            animation: balanceoCadena 7s infinite ease-in-out reverse;
+            transform-origin: top center;
+        }
+
+        @keyframes balanceoCadena {
+            0%, 100% { transform: rotate(-2.5deg); }
+            50% { transform: rotate(2.5deg); }
+        }
+
+        /* Antorcha parpadeante de mazmorra */
+        .dungeon-torch {
+            position: fixed;
+            top: 25%;
+            left: 4%;
+            width: 22px;
+            height: 45px;
+            background: linear-gradient(180deg, #78350f, #271305);
+            border-radius: 4px;
+            z-index: 6;
+            box-shadow: 0 0 45px 18px rgba(245, 158, 11, 0.35);
+        }
+
+        .dungeon-torch::after {
+            content: "🔥";
+            position: absolute;
+            top: -28px;
+            left: -4px;
+            font-size: 1.8rem;
+            animation: parpadeoLlama 0.15s infinite alternate;
+        }
+
+        @keyframes parpadeoLlama {
+            0% { transform: scale(0.95) rotate(-2deg); opacity: 0.9; }
+            100% { transform: scale(1.1) rotate(3deg); opacity: 1; }
+        }
+
+        /* 🏰 TARJETA CELDA DE LA MAZMORRA */
+        .dungeon-cell-card {
+            position: relative;
+            z-index: 10;
+            max-width: 600px;
+            width: 90%;
+            margin: 20px;
+            background: rgba(10, 14, 23, 0.92);
+            border: 3px double #64748b;
+            border-radius: 12px;
+            padding: 42px 32px;
+            text-align: center;
+            box-shadow: 
+                0 25px 60px rgba(0, 0, 0, 0.95), 
+                0 0 40px rgba(15, 23, 42, 0.8),
+                inset 0 0 35px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .dungeon-shackle-icon {
+            font-size: 2.8rem;
+            margin-bottom: 8px;
             display: inline-block;
+            filter: drop-shadow(0 0 15px rgba(100, 116, 139, 0.8));
+            animation: cascabeleo 3s infinite ease-in-out;
+        }
+
+        @keyframes cascabeleo {
+            0%, 100% { transform: rotate(0deg); }
+            10%, 30% { transform: rotate(-8deg); }
+            20%, 40% { transform: rotate(8deg); }
+            50% { transform: rotate(0deg); }
+        }
+
+        .dungeon-logo {
+            width: 110px;
+            height: auto;
+            margin: 0 auto 12px;
+            display: block;
+            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.45));
+        }
+
+        .dungeon-error-code {
             font-family: 'Cinzel', serif;
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #000;
-            background: var(--oro-metalico);
-            padding: 14px 28px;
-            border-radius: 8px;
-            text-decoration: none;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5), 0 5px 15px rgba(0, 0, 0, 0.6);
-            transition: all 0.3s ease;
+            font-size: 4.5rem;
+            font-weight: 900;
+            color: #cbd5e1;
+            margin: 0;
+            line-height: 1;
+            letter-spacing: 0.12em;
+            text-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.4),
+                0 0 45px rgba(239, 68, 68, 0.6),
+                4px 4px 0px #020617;
+        }
+
+        .dungeon-subtitle {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            color: var(--oro-brillante);
+            margin: 14px 0 16px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
             letter-spacing: 0.05em;
         }
 
-        .btn-regreso:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 35px rgba(254, 240, 138, 0.8), 0 8px 25px rgba(0, 0, 0, 0.9);
-            color: #1a1005;
+        .dungeon-decree {
+            background: rgba(4, 7, 14, 0.7);
+            border: 1px solid #475569;
+            border-left: 4px solid #ef4444;
+            padding: 18px;
+            border-radius: 8px;
+            margin: 0 0 28px;
+            font-size: 1.08rem;
+            line-height: 1.65;
+            color: #cbd5e1;
+            text-align: left;
+        }
+
+        .dungeon-decree p {
+            margin: 0 0 10px;
+        }
+
+        .dungeon-decree p:last-child {
+            margin-bottom: 0;
+        }
+
+        .dungeon-decree strong {
+            color: var(--oro-brillante);
+        }
+
+        .dungeon-decree em {
+            color: #f87171;
+            font-style: normal;
+        }
+
+        .btn-escape {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0b0905;
+            background: var(--oro-metalico);
+            padding: 16px 34px;
+            border-radius: 8px;
+            text-decoration: none;
+            box-shadow: 
+                0 0 25px rgba(212, 175, 55, 0.6),
+                0 8px 20px rgba(0, 0, 0, 0.8);
+            transition: all 0.3s ease;
+            letter-spacing: 0.06em;
+            border: 1px solid #fef08a;
+        }
+
+        .btn-escape:hover {
+            transform: translateY(-3px) scale(1.04);
+            box-shadow: 
+                0 0 40px rgba(254, 240, 138, 0.9),
+                0 12px 28px rgba(0, 0, 0, 0.95);
+            color: #000;
+        }
+
+        .dungeon-rat {
+            position: fixed;
+            bottom: 12px;
+            left: 20px;
+            font-size: 1.6rem;
+            z-index: 6;
+            opacity: 0.75;
+            animation: correRaton 14s infinite linear;
+        }
+
+        @keyframes correRaton {
+            0% { transform: translateX(-50px) scaleX(1); }
+            45% { transform: translateX(85vw) scaleX(1); }
+            50% { transform: translateX(85vw) scaleX(-1); }
+            95% { transform: translateX(-50px) scaleX(-1); }
+            100% { transform: translateX(-50px) scaleX(1); }
+        }
+
+        @media (max-width: 640px) {
+            .dungeon-cell-card {
+                padding: 30px 18px;
+            }
+            .dungeon-error-code {
+                font-size: 3.5rem;
+            }
+            .dungeon-subtitle {
+                font-size: 1.15rem;
+            }
+            .chain-hanging-left, .chain-hanging-right, .dungeon-torch {
+                display: none;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="error-card">
-        <a href="index.html" aria-label="Volver al Trono">
-            <img src="logo-lokitrono.png?v=4" alt="LokiTrono de Barrios" class="error-logo">
-        </a>
-        <h1 class="error-code">404</h1>
-        <h2 class="error-title">⚔️ ¡Por las barbas de don Diego López de Haro!</h2>
-        
-        <p class="error-joke">
-            Has errado el camino hacia la taberna y te has metido de lleno en las mazmorras olvidadas de Bilbao.<br><br>
-            Aquí no hay pintxo de bacalao ni zurito de txakoli... <em>¡sólo telarañas, cadenas oxidadas y guardias con pocas pulgas!</em>
-        </p>
+    <!-- Rejas góticas de mazmorra en primer plano -->
+    <div class="dungeon-bars-overlay"></div>
+    <div class="chain-hanging-left"></div>
+    <div class="chain-hanging-right"></div>
+    <div class="dungeon-torch"></div>
+    <div class="dungeon-rat">🐀</div>
 
-        <a href="index.html" class="btn-regreso">
-            🛡️ Huir a las Puertas del Reino (Acceder)
+    <!-- Celda de Prisión Central -->
+    <div class="dungeon-cell-card">
+        <div class="dungeon-shackle-icon">⛓️ 🗝️ ⛓️</div>
+        <a href="index.html" aria-label="Volver a la Corte">
+            <img src="logo-lokitrono.png?v=4" alt="LokiTrono de Barrios" class="dungeon-logo">
+        </a>
+        <h1 class="dungeon-error-code">404</h1>
+        <h2 class="dungeon-subtitle">🔒 ¡Alto ahí, forastero! Has caído en la Mazmorra de la Villa</h2>
+        
+        <div class="dungeon-decree">
+            <p><strong>Bando del Carcelero Real:</strong></p>
+            <p>Buscabas la taberna de tu barrio para catar un suculento pintxo y regarlo con txakoli, pero erraste el pasadizo secreto y la guardia del Señor de Bizkaia te ha echado el cerrojo.</p>
+            <p>Aquí no hay votos, ni copas de oro, ni gloria feudal... <em>¡sólo pan duro, cadenas que hielan los huesos y ratas hambrientas!</em></p>
+        </div>
+
+        <a href="index.html" class="btn-escape">
+            🗝️ Sobornar al Guardia y Volver al Login
         </a>
     </div>
 
-    <!-- El dragón también vuela protegiendo las mazmorras del 404 -->
+    <!-- El dragón sobrevolando las torres de la mazmorra -->
     <script src="js/dragon.js"></script>
 </body>
 

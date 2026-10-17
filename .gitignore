@@ -39,3 +39,6 @@ logo-lokitrono.png
 logo.jpg
 LoKiLogo.jpg
 Lokijuegopresent
+
+.qwen/
+gha-creds-*.json

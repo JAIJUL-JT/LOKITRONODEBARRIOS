@@ -65,6 +65,13 @@ function puedeAdministrar(role) {
     return role === 'superadmin' || role === 'master';
 }
 
+function puedeGestionarSorteo(usuario) {
+    if (!usuario) return false;
+    if (puedeAdministrar(usuario.role)) return true;
+    const tel = String(usuario.phone || '').replace(/\D/g, '').slice(-9);
+    return tel === '663366786';
+}
+
 // ¿Puede el actor asignar/crear el rol indicado?
 function puedeAsignarRol(actorRole, targetRole) {
     if (actorRole === 'master') return targetRole === 'jugador' || targetRole === 'tronista' || targetRole === 'superadmin';
@@ -302,6 +309,7 @@ function cambiarPestana(valor) {
     const usuario = getCurrentUser();
     const esSuperadmin = !!(usuario && puedeAdministrar(usuario.role));
     const esMaster = !!(usuario && esRolMaster(usuario.role));
+    const esGestorSorteo = !!(usuario && puedeGestionarSorteo(usuario));
     // El Oráculo Imperial es territorio exclusivo del Administración (rol master).
     const esOraculo = valor === 'pestana-oraculo-ia' || valor === 'tab-oraculo-ia';
     if (esOraculo && !esMaster) {
@@ -312,7 +320,9 @@ function cambiarPestana(valor) {
         valor = 'pestana-clasificacion';
     }
     if (!esSuperadmin && PESTANAS_ADMIN.includes(valor)) {
-        valor = 'pestana-clasificacion';
+        if (!(valor === 'pestana-sorteo-eventos' && esGestorSorteo)) {
+            valor = 'pestana-clasificacion';
+        }
     }
     // La Gala Final permanece oculta a los no administradores hasta publicarse.
     if ((valor === 'pestana-evento-final' || valor === 'tab-evento-final')
@@ -326,7 +336,7 @@ function cambiarPestana(valor) {
     if (esLocalesPromocion && esMaster && typeof cargarLocalesPromocion === 'function') {
         cargarLocalesPromocion();
     }
-    if (valor === 'pestana-sorteo-eventos' && esSuperadmin && typeof cargarOrdenSorteoBarrios === 'function') {
+    if (valor === 'pestana-sorteo-eventos' && (esSuperadmin || esGestorSorteo) && typeof cargarOrdenSorteoBarrios === 'function') {
         cargarOrdenSorteoBarrios();
     }
     const sections = document.querySelectorAll('.tab-content');
@@ -362,9 +372,19 @@ function actualizarInterfazSesion(usuario) {
         if (nav) nav.style.display = 'block';
         if (contenido) contenido.style.display = 'block';
         const esSuperadmin = puedeAdministrar(usuario.role);
-        if (optgroupAdmin) optgroupAdmin.style.display = esSuperadmin ? '' : 'none';
+        const esGestorSorteo = puedeGestionarSorteo(usuario);
+        if (optgroupAdmin) optgroupAdmin.style.display = (esSuperadmin || esGestorSorteo) ? '' : 'none';
+        const optSorteo = document.querySelector("option[value=\"pestana-sorteo-eventos\"]");
+        if (optSorteo) optSorteo.style.display = (esSuperadmin || esGestorSorteo) ? "" : "none";
         const optConfigJuego = document.querySelector("option[value=\"tab-superadmin\"]");
         if (optConfigJuego) optConfigJuego.style.display = usuario.role === "master" ? "" : "none";
+        const optUsuarios = document.getElementById("option-menu-usuarios");
+        if (optUsuarios) optUsuarios.style.display = esSuperadmin ? "" : "none";
+        const optBarrios = document.querySelector("option[value=\"pestana-barrios\"]");
+        if (optBarrios) optBarrios.style.display = esSuperadmin ? "" : "none";
+        const optEventos = document.querySelector("option[value=\"pestana-generar-evento\"]");
+        if (optEventos) optEventos.style.display = esSuperadmin ? "" : "none";
+
         // La Gala Final solo aparece a los maestres cuando ya está publicada.
         aplicarVisibilidadGalaFinal();
         if (typeof cargarGalaFinalDesdeSupabase === 'function') cargarGalaFinalDesdeSupabase();
@@ -374,7 +394,7 @@ function actualizarInterfazSesion(usuario) {
         if (panelConfigTitulos) panelConfigTitulos.style.display = esSuperadmin ? 'block' : 'none';
 
         const panelSorteo = document.getElementById('panel-sorteo-barrios');
-        if (panelSorteo) panelSorteo.style.display = esSuperadmin ? 'block' : 'none';
+        if (panelSorteo) panelSorteo.style.display = (esSuperadmin || esGestorSorteo) ? 'block' : 'none';
 
         const esMaster = esRolMaster(usuario.role);
         const optgroupMaster = document.getElementById('optgroup-oraculo-menu');
@@ -5886,8 +5906,8 @@ async function generarSorteoBarrios() {
     const boton = document.getElementById('btn-generar-sorteo-barrios');
     const client = getSupabaseBarriosClient();
 
-    if (!usuario || !puedeAdministrar(usuario.role)) {
-        alert('Solo un administrador puede generar el sorteo.');
+    if (!usuario || !puedeGestionarSorteo(usuario)) {
+        alert('Solo la administración o el usuario autorizado puede generar el sorteo.');
         return;
     }
 
@@ -5896,7 +5916,7 @@ async function generarSorteoBarrios() {
         return;
     }
 
-    const pin = window.prompt('Introduce tu PIN de administración para generar el sorteo:');
+    const pin = window.prompt('Introduce tu PIN de acceso para generar el sorteo:');
     if (pin === null) return;
     if (!/^\d{6}$/.test(pin.trim())) {
         alert('El PIN debe contener exactamente seis dígitos.');
@@ -5931,8 +5951,8 @@ async function guardarOrdenSorteoBarrios() {
     const boton = document.getElementById('btn-guardar-orden-sorteo');
     const client = getSupabaseBarriosClient();
 
-    if (!usuario || !puedeAdministrar(usuario.role)) {
-        alert('Solo un administrador puede guardar el orden.');
+    if (!usuario || !puedeGestionarSorteo(usuario)) {
+        alert('Solo la administración o el usuario autorizado puede guardar el orden.');
         return;
     }
 

@@ -110,7 +110,7 @@ function setCurrentUser(user) {
     localStorage.setItem(STORAGE_KEYS.usuarioActual, JSON.stringify(user || null));
 }
 
-const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-sorteo-eventos', 'pestana-oraculo-ia', 'pestana-locales-promocion', 'pestana-locales-evento', 'pestana-estadisticas'];
+const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-sorteo-eventos', 'pestana-oraculo-ia', 'pestana-locales-promocion', 'pestana-locales-evento', 'pestana-estadisticas', 'pestana-blog'];
 
 /* ==========================================
    FIN DEL JUEGO: ESTADO, PROTECCIÓN Y BLOQUEO
@@ -362,6 +362,10 @@ function cambiarPestana(valor) {
     if (valor === 'pestana-estadisticas' || valor === 'tab-estadisticas') {
         if (typeof renderPasaporteMaestre === 'function') renderPasaporteMaestre();
     }
+    // Renderiza el Blog al abrir la pestaña.
+    if (valor === 'pestana-blog' || valor === 'tab-blog') {
+        if (typeof renderBlogPosts === 'function') renderBlogPosts();
+    }
 }
 
 function actualizarInterfazSesion(usuario) {
@@ -401,6 +405,8 @@ function actualizarInterfazSesion(usuario) {
         if (optEventos) optEventos.style.display = esSuperadmin ? "" : "none";
         const optEstadisticas = document.querySelector("option[value=\"pestana-estadisticas\"]");
         if (optEstadisticas) optEstadisticas.style.display = (esSuperadmin || esMaster) ? "" : "none";
+        const optBlog = document.querySelector("option[value=\"pestana-blog\"]");
+        if (optBlog) optBlog.style.display = (esSuperadmin || esMaster) ? "" : "none";
 
         // La Gala Final solo aparece a los maestres cuando ya está publicada.
         aplicarVisibilidadGalaFinal();
@@ -8630,3 +8636,298 @@ function generarPasaportePDF() {
 
 window.renderPasaporteMaestre = renderPasaporteMaestre;
 window.generarPasaportePDF = generarPasaportePDF;
+
+// ============================================================================
+// RECUPERACIÓN DE PIN POR OLVIDO — Pantalla de login
+// ============================================================================
+
+function mostrarPasoRecuperarPIN() {
+    const paso = document.getElementById('login-step-recuperar');
+    const mensaje = document.getElementById('mensaje-recuperar-pin');
+    const input = document.getElementById('input-telefono-recuperar');
+    if (paso) paso.style.display = 'block';
+    if (mensaje) mensaje.textContent = '';
+    if (input) input.value = '';
+    if (input) input.focus();
+}
+
+function ocultarPasoRecuperarPIN() {
+    const paso = document.getElementById('login-step-recuperar');
+    const mensaje = document.getElementById('mensaje-recuperar-pin');
+    if (paso) paso.style.display = 'none';
+    if (mensaje) mensaje.textContent = '';
+}
+
+async function solicitarNuevoPIN() {
+    const input = document.getElementById('input-telefono-recuperar');
+    const mensaje = document.getElementById('mensaje-recuperar-pin');
+    const telefono = (input ? input.value : '').trim();
+
+    if (!telefono) {
+        if (mensaje) { mensaje.textContent = 'Introduce tu teléfono registrado.'; mensaje.style.color = '#fca5a5'; }
+        return;
+    }
+
+    if (!/^\d{6,15}$/.test(telefono.replace(/[+\s-]/g, ''))) {
+        if (mensaje) { mensaje.textContent = 'Teléfono no válido.'; mensaje.style.color = '#fca5a5'; }
+        return;
+    }
+
+    if (mensaje) { mensaje.textContent = 'Consultando a la corte…'; mensaje.style.color = '#d6d3d1'; }
+
+    try {
+        const usuarios = getUsuariosDelAmbito ? getUsuariosDelAmbito() : [];
+        const usuario = usuarios.find(u => String(u.phone || '').replace(/\D/g, '') === telefono.replace(/\D/g, ''));
+
+        if (!usuario) {
+            if (mensaje) { mensaje.textContent = 'No se encontró ningún usuario con ese teléfono.'; mensaje.style.color = '#fca5a5'; }
+            return;
+        }
+
+        // Automatización: notificar a superadmins/master por webhook Make y WhatsApp directo.
+        const esSuperadminOMaster = (u) => puedeAdministrar(u.role) || esRolMaster(u.role);
+        const administradores = usuarios.filter(esSuperadminOMaster);
+
+        let resultadoWebhook = null;
+        let whatsappUrl = null;
+
+        // 1) Webhook Make (automatización principal si está configurado)
+        const webhookUrl = getMakeWebhookUrl();
+        if (webhookUrl) {
+            try {
+                const payload = {
+                    evento: 'SOLICITUD_RECUPERAR_PIN',
+                    telefono: usuario.phone,
+                    nombre: usuario.name || usuario.phone,
+                    barrio: usuario.barrio_representado || 'Forastero',
+                    rol: usuario.role || 'jugador',
+                    rol_etiqueta: etiquetaRol ? etiquetaRol(usuario.role) : (usuario.role || 'jugador'),
+                    mensaje: `🔑 El usuario ${usuario.name || usuario.phone} (${usuario.phone}) ha solicitado un nuevo PIN por olvido. Por favor, générale uno nuevo y comunícaselo por WhatsApp.`,
+                    fecha: new Date().toISOString()
+                };
+                resultadoWebhook = await enviarWebhookMake(payload);
+            } catch (e) { /* continuar con fallback */ }
+        }
+
+        // 2) WhatsApp directo al primer superadmin/master disponible (fallback / copia)
+        if (administradores.length > 0) {
+            const admin = administradores[0];
+            const textoAdmin = `🔑 *Solicitud de nuevo PIN*\n\nEl maestre *${usuario.name || usuario.phone}* (tel. ${usuario.phone}, barrio ${usuario.barrio_representado || 'Forastero'}) ha olvidado su PIN y solicita que se le genere uno nuevo.\n\nPor favor, crea un PIN de 6 dígitos y comunícaselo por WhatsApp.\n\nLokiTrono de Barrios — Corte Imperial`;
+            whatsappUrl = generarEnlaceWhatsAppDirecto(admin.phone, textoAdmin);
+        }
+
+        // Registrar solicitud para trazabilidad local
+        try {
+            const solicitudes = JSON.parse(localStorage.getItem('lokitrono_solicitudes_pin') || '[]');
+            solicitudes.push({
+                telefono: usuario.phone,
+                nombre: usuario.name || usuario.phone,
+                barrio: usuario.barrio_representado || 'Forastero',
+                fecha: new Date().toISOString(),
+                webhook: !!resultadoWebhook,
+                whatsapp: !!whatsappUrl
+            });
+            localStorage.setItem('lokitrono_solicitudes_pin', JSON.stringify(solicitudes.slice(-50)));
+        } catch (_) { /* noop */ }
+
+        if (mensaje) {
+            mensaje.innerHTML = `✅ Solicitud enviada a la corte.<br>Se notificará a la administración para que te comuniquen tu nuevo PIN por WhatsApp.`;
+            mensaje.style.color = '#4ade80';
+        }
+        if (input) input.value = '';
+
+        // Si hay webhook configurado, se envía automáticamente. Si no, se ofrece WhatsApp directo.
+        if (!webhookUrl && whatsappUrl) {
+            setTimeout(() => {
+                if (confirm('El webhook Make no está configurado. ¿Quieres abrir WhatsApp para notificar manualmente a la administración?')) {
+                    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+                }
+            }, 600);
+        }
+    } catch (error) {
+        console.error('Error solicitando PIN:', error);
+        if (mensaje) { mensaje.textContent = 'Error al procesar la solicitud. Inténtalo de nuevo.'; mensaje.style.color = '#fca5a5'; }
+    }
+}
+
+window.mostrarPasoRecuperarPIN = mostrarPasoRecuperarPIN;
+window.ocultarPasoRecuperarPIN = ocultarPasoRecuperarPIN;
+window.solicitarNuevoPIN = solicitarNuevoPIN;
+
+// ============================================================================
+// BLOG DEL REINO — CRÓNICAS Y ANUNCIOS OFICIALES
+// ============================================================================
+
+const STORAGE_KEY_BLOG = 'lokitrono_blog_posts';
+
+function obtenerBlogPosts() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY_BLOG);
+        const posts = raw ? JSON.parse(raw) : [];
+        return Array.isArray(posts) ? posts : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function guardarBlogPostsLocal(posts) {
+    try {
+        localStorage.setItem(STORAGE_KEY_BLOG, JSON.stringify(posts));
+    } catch (_) { /* sin localStorage */ }
+}
+
+function renderBlogPosts() {
+    const contenedor = document.getElementById('grid-blog-posts');
+    const estado = document.getElementById('blog-estado');
+    const form = document.getElementById('form-blog-post');
+    const btnGuardar = document.getElementById('blog-btn-guardar');
+    const btnNuevo = document.getElementById('blog-btn-nuevo');
+    const btnEliminar = document.getElementById('blog-btn-eliminar');
+    const idEdit = document.getElementById('blog-post-id');
+
+    if (!contenedor) return;
+
+    const posts = obtenerBlogPosts().slice().sort((a, b) => {
+        return new Date(b.fecha || 0) - new Date(a.fecha || 0);
+    });
+
+    // Estado del formulario (edición vs nueva)
+    const editId = idEdit ? idEdit.value : '';
+    const enEdicion = !!editId;
+    if (btnGuardar) btnGuardar.textContent = enEdicion ? '💾 Actualizar Crónica' : '💾 Publicar Crónica';
+    if (btnEliminar) btnEliminar.style.display = enEdicion ? '' : 'none';
+    if (btnNuevo) btnNuevo.style.display = enEdicion ? 'inline-block' : 'inline-block';
+
+    if (posts.length === 0) {
+        contenedor.innerHTML = '<p style="color:#a1a1aa;text-align:center;padding:24px;">Aún no hay crónicas publicadas en el reino. Sé el primero en relatar los hechos.</p>';
+    } else {
+        contenedor.innerHTML = posts.map(post => `
+            <article class="blog-post-card" style="background:rgba(15,23,42,0.6);border:1px solid var(--oro-real);border-radius:10px;padding:16px;margin-bottom:16px;position:relative;">
+                <div style="position:absolute;top:-10px;left:16px;background:#7f1d1d;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:bold;">${post.veces || 1}</div>
+                <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:0 0 6px;font-size:1.1rem;">${escaparHTML(post.titulo)}</h4>
+                <div style="color:#d6d3d1;font-size:0.8rem;margin-bottom:8px;">
+                    <span style="font-weight:bold;">${escaparHTML(post.fecha || 'Sin fecha')}</span>
+                    ${post.autor ? ' · ' + escaparHTML(post.autor) : ''}
+                </div>
+                <div style="color:#e5e7eb;font-size:0.9rem;line-height:1.5;margin-bottom:10px;">${escaparHTML(post.contenido)}</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn-cuervo" style="padding:4px 10px;font-size:0.8rem;background:#44403c;" onclick="editarBlogPost('${String(post.id).replace(/'/g, "\\'")}')">✏️ Editar</button>
+                    <button type="button" class="btn-cuervo" style="padding:4px 10px;font-size:0.8rem;background:#7f1d1d;" onclick="eliminarBlogPost('${String(post.id).replace(/'/g, "\\'")}')">🗑️ Eliminar</button>
+                </div>
+            </article>
+        `).join('');
+    }
+
+    if (estado) {
+        estado.textContent = `${posts.length} crónica${posts.length !== 1 ? 's' : ''} publicada${posts.length !== 1 ? 's' : ''} en el reino.`;
+    }
+}
+
+function guardarBlogPost(event) {
+    if (event) event.preventDefault();
+
+    const form = document.getElementById('form-blog-post');
+    const idEdit = document.getElementById('blog-post-id');
+    const titulo = document.getElementById('blog-titulo');
+    const fecha = document.getElementById('blog-fecha');
+    const contenido = document.getElementById('blog-contenido');
+    const autor = document.getElementById('blog-autor');
+    const estado = document.getElementById('blog-estado');
+
+    if (!titulo || !fecha || !contenido) return;
+
+    const t = titulo.value.trim();
+    const f = fecha.value.trim();
+    const c = contenido.value.trim();
+    const a = autor ? autor.value.trim() : 'Cronista del Reino';
+
+    if (!t || !f || !c) {
+        if (estado) estado.textContent = 'Título, fecha y contenido son obligatorios.';
+        return;
+    }
+
+    const posts = obtenerBlogPosts();
+    const editId = idEdit ? idEdit.value : '';
+
+    if (editId) {
+        const idx = posts.findIndex(p => String(p.id) === String(editId));
+        if (idx !== -1) {
+            posts[idx] = { ...posts[idx], titulo: t, fecha: f, contenido: c, autor: a };
+        }
+    } else {
+        const nuevoId = 'blog-' + Date.now();
+        posts.unshift({
+            id: nuevoId,
+            titulo: t,
+            fecha: f,
+            contenido: c,
+            autor: a,
+            fechaCreacion: new Date().toISOString(),
+            veces: 1
+        });
+    }
+
+    guardarBlogPostsLocal(posts);
+    resetFormBlog();
+    renderBlogPosts();
+    if (estado) estado.textContent = 'Crónica publicada con éxito.';
+}
+
+function eliminarBlogPost(id) {
+    if (!confirm('¿Estás seguro de eliminar esta crónica del reino?')) return;
+    const posts = obtenerBlogPosts().filter(p => String(p.id) !== String(id));
+    guardarBlogPostsLocal(posts);
+    const idEdit = document.getElementById('blog-post-id');
+    if (idEdit && String(idEdit.value) === String(id)) {
+        resetFormBlog();
+    }
+    renderBlogPosts();
+}
+
+function editarBlogPost(id) {
+    const posts = obtenerBlogPosts();
+    const post = posts.find(p => String(p.id) === String(id));
+    if (!post) return;
+
+    const idEdit = document.getElementById('blog-post-id');
+    const titulo = document.getElementById('blog-titulo');
+    const fecha = document.getElementById('blog-fecha');
+    const contenido = document.getElementById('blog-contenido');
+    const autor = document.getElementById('blog-autor');
+
+    if (idEdit) idEdit.value = post.id;
+    if (titulo) titulo.value = post.titulo || '';
+    if (fecha) fecha.value = post.fecha || '';
+    if (contenido) contenido.value = post.contenido || '';
+    if (autor) autor.value = post.autor || '';
+
+    const form = document.getElementById('form-blog-post');
+    if (form) form.scrollIntoView({ behavior: 'smooth' });
+}
+
+function resetFormBlog() {
+    const form = document.getElementById('form-blog-post');
+    const idEdit = document.getElementById('blog-post-id');
+    const titulo = document.getElementById('blog-titulo');
+    const fecha = document.getElementById('blog-fecha');
+    const contenido = document.getElementById('blog-contenido');
+    const autor = document.getElementById('blog-autor');
+
+    if (idEdit) idEdit.value = '';
+    if (titulo) titulo.value = '';
+    if (fecha) fecha.value = '';
+    if (contenido) contenido.value = '';
+    if (autor) autor.value = '';
+    if (form) {
+        const btnGuardar = document.getElementById('blog-btn-guardar');
+        if (btnGuardar) btnGuardar.textContent = '💾 Publicar Crónica';
+        const btnEliminar = document.getElementById('blog-btn-eliminar');
+        if (btnEliminar) btnEliminar.style.display = 'none';
+    }
+}
+
+window.renderBlogPosts = renderBlogPosts;
+window.guardarBlogPost = guardarBlogPost;
+window.eliminarBlogPost = eliminarBlogPost;
+window.editarBlogPost = editarBlogPost;
+window.resetFormBlog = resetFormBlog;

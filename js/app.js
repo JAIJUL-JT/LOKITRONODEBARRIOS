@@ -7730,7 +7730,6 @@ function geoInicializar() {
     const btnCargar = document.getElementById('geo-btn-cargar-ciudad');
     const btnAnadir = document.getElementById('geo-btn-anadir-seleccionados');
     const btnBorrar = document.getElementById('geo-btn-borrar-seleccion');
-    const selEvento = document.getElementById('geo-puzzle-evento');
 
     if (selCcaa) selCcaa.addEventListener('change', () => {
         geoRenderSelectProvincias();
@@ -7754,23 +7753,8 @@ function geoInicializar() {
     panel.querySelectorAll('[data-geo-ccaa]').forEach(b =>
         b.addEventListener('click', () => geoAplicarPreset(b.dataset.geoCcaa)));
 
-    const btnPzAnadir = document.getElementById('geo-btn-puzzle-anadir');
-    const btnPzGuardar = document.getElementById('geo-btn-puzzle-guardar');
-    const btnPzSortear = document.getElementById('geo-btn-puzzle-sortear');
-    const btnPzLimpiar = document.getElementById('geo-btn-puzzle-limpiar');
-    if (btnPzAnadir) btnPzAnadir.addEventListener('click', geoPuzzleAnadirSeleccion);
-    if (btnPzGuardar) btnPzGuardar.addEventListener('click', geoPuzzleGuardar);
-    if (btnPzSortear) btnPzSortear.addEventListener('click', geoPuzzleSortear);
-    if (btnPzLimpiar) btnPzLimpiar.addEventListener('click', geoPuzzleLimpiar);
-    if (selEvento) {
-        selEvento.addEventListener('focus', geoPuzzleRenderEventos);
-        selEvento.addEventListener('change', () => geoPuzzleCargar(selEvento.value));
-    }
-
     geoCargarCatalogo();
     if (typeof barrioGeoRefrescar === 'function') barrioGeoRefrescar();
-    geoPuzzleRenderEventos();
-    geoPuzzleRender();
     geoRefrescarSegunActiva();
 }
 

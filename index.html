@@ -796,41 +796,7 @@
                         <p id="geo-pendientes-info" class="geo-columna-resumen"></p>
                         <div id="geo-seleccion" class="geo-seleccion" aria-live="polite"></div>
 
-                        <!-- LOKITRONO: PUZZLE DE UBICACIONES PARTICIPANTES -->
-                        <div class="geo-puzzle">
-                            <h4 class="geo-titulo-columna" style="margin-top:20px;">🧩 Puzzle de ubicaciones participantes</h4>
-                            <p style="color:#d6d3d1;font-size:.9rem;">
-            <!-- SUBSECCIONES DENTRO DE CONFIGURACIÓN DEL JUEGO (solo Superadmin y MASTER) -->
-            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--oro-real);">
-                <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin: 0 0 10px;">🔧 Módulos de Administración del Reino</h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-oraculo-ia')" style="flex:1; min-width: 150px;">🔮 Oráculo Imperial</button>
-                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-locales-promocion')" style="flex:1; min-width: 150px;">🍻 Locales Promocionados</button>
-                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-locales-evento')" style="flex:1; min-width: 150px;">🏛️ Locales del Evento</button>
-                </div>
-                <p style="font-size:0.8rem;color:#a1a1aa;margin-top:8px;">Estos módulos son exclusivos del Superadmin y el MASTER.</p>
-            </div>
 
-                                Cada pieza seleccionada se recorta del mapa y se integra en este puzzle.
-                                Al guardarlo se registran las ubicaciones participantes y podrás sortearlas
-                                dentro del evento elegido.
-                            </p>
-                            <div class="geo-acciones">
-                                <div class="form-group geo-campo" style="flex:1 1 260px;">
-                                    <label for="geo-puzzle-evento">Evento del puzzle:</label>
-                                    <select id="geo-puzzle-evento" class="input-medieval"></select>
-                                </div>
-                                <button type="button" class="btn-cuervo" id="geo-btn-puzzle-anadir">🧩 Añadir selección al puzzle</button>
-                                <button type="button" class="btn-cuervo" id="geo-btn-puzzle-guardar" style="background:#166534;">💾 Guardar puzzle</button>
-                                <button type="button" class="btn-cuervo" id="geo-btn-puzzle-sortear" style="background:#713f12;">🎲 Sortear piezas</button>
-                                <button type="button" class="btn-cuervo" id="geo-btn-puzzle-limpiar" style="background:#7f1d1d;">🧹 Vaciar puzzle</button>
-                            </div>
-                            <p id="geo-puzzle-estado" role="status" aria-live="polite" style="color:#d6d3d1;"></p>
-                            <div id="geo-puzzle-mapa" class="geo-mapa" role="img"
-                                aria-label="Mapa del puzzle con todas las piezas"></div>
-                            <ol id="geo-puzzle-orden" class="geo-puzzle-orden"
-                                aria-label="Orden de las piezas del puzzle"></ol>
-                        </div>
                     </section>
 </section>
 

@@ -3167,7 +3167,8 @@ function descargarICSGalaFinal() {
    ========================================== */
 
 function getSitioPublico() {
-    return (window.LOKI_LEGAL && window.LOKI_LEGAL.sitio) || window.location.origin;
+    const base = (window.LOKI_LEGAL && window.LOKI_LEGAL.sitio) || 'https://lokitronodebarrios.vercel.app';
+    return base.endsWith('/') ? base : `${base}/`;
 }
 
 function generarPinSeisDigitos() {
@@ -3256,12 +3257,11 @@ async function enviarWebhookMake(payload) {
     }
 }
 
-// Mensaje de bienvenida con la dirección pública del juego y el PIN de acceso.
-async function enviarBienvenidaWhatsApp({ phone, name, pin, role }) {
+function construirMensajeBienvenidaTexto({ phone, name, pin, role }) {
     const sitio = getSitioPublico();
     const telefono = normalizarTelefonoWhatsApp(phone) || String(phone || '').trim();
     const nombre = (name || telefono || '').trim() || 'Maestre';
-    const mensaje = [
+    return [
         `🏰 ¡Bienvenido/a a LokiTrono de Barrios, ${nombre}!`,
         '',
         `Ya formas parte de la corte como ${etiquetaRol(role)}.`,
@@ -3271,6 +3271,25 @@ async function enviarBienvenidaWhatsApp({ phone, name, pin, role }) {
         '',
         'Guarda este PIN. Si lo pierdes, pide a la organización que genere uno nuevo.'
     ].join('\n');
+}
+
+function generarEnlaceWhatsAppDirecto(phone, mensaje) {
+    const p = normalizarTelefonoWhatsApp(phone) || String(phone || '').trim();
+    const prefijo = (p.length === 9 && !p.startsWith('34')) ? `34${p}` : p;
+    return `https://wa.me/${prefijo}?text=${encodeURIComponent(mensaje)}`;
+}
+
+function abrirWhatsAppDirecto(phone, mensaje) {
+    const url = generarEnlaceWhatsAppDirecto(phone, mensaje);
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+// Mensaje de bienvenida con la dirección pública del juego y el PIN de acceso.
+async function enviarBienvenidaWhatsApp({ phone, name, pin, role }) {
+    const sitio = getSitioPublico();
+    const telefono = normalizarTelefonoWhatsApp(phone) || String(phone || '').trim();
+    const nombre = (name || telefono || '').trim() || 'Maestre';
+    const mensaje = construirMensajeBienvenidaTexto({ phone, name, pin, role });
 
     return enviarWebhookMake({
         evento: 'BIENVENIDA_USUARIO',
@@ -3469,12 +3488,31 @@ function descargarUsuariosCSV() {
     URL.revokeObjectURL(url);
 }
 
+function abrirWhatsAppUsuario(userId) {
+    const usuarios = getUsuariosDelAmbito();
+    const user = usuarios.find(u => u.id === userId);
+    if (!user) {
+        alert('Usuario no encontrado.');
+        return;
+    }
+    const pinTexto = user.pin_code ? String(user.pin_code) : '(solicitar a la corte)';
+    const mensaje = construirMensajeBienvenidaTexto({
+        phone: user.phone,
+        name: user.name || user.phone,
+        pin: pinTexto,
+        role: user.role
+    });
+    abrirWhatsAppDirecto(user.phone, mensaje);
+}
+
 window.guardarWebhookMakeConfig = guardarWebhookMakeConfig;
 window.probarEnvioWebhookMake = probarEnvioWebhookMake;
 window.regenerarPinYEnviarWhatsApp = regenerarPinYEnviarWhatsApp;
 window.editarPinUsuario = editarPinUsuario;
 window.borrarPinUsuario = borrarPinUsuario;
 window.descargarUsuariosCSV = descargarUsuariosCSV;
+window.abrirWhatsAppUsuario = abrirWhatsAppUsuario;
+window.abrirWhatsAppDirecto = abrirWhatsAppDirecto;
 
 /* ==========================================
    GESTIÓN DE USUARIOS AUTORIZADOS
@@ -3556,8 +3594,9 @@ function renderTablaUsuarios() {
             (!currentUser || puedeGestionarRolDe(currentUser.role, user.role));
         const esMasterActor = !!(currentUser && esRolMaster(currentUser.role));
         const acciones = puedeGestionarFila
-            ? `<button class="btn-cuervo" style="padding:3px 8px;font-size:0.78rem;" onclick="editarUsuario('${user.id}')">✏️</button>
-               <button class="btn-cuervo" style="padding:3px 8px;font-size:0.78rem;background:#7f1d1d;" onclick="eliminarUsuario('${user.id}')">🗑️</button>`
+            ? `<button class="btn-cuervo" style="padding:3px 8px;font-size:0.78rem;" title="Editar usuario" onclick="editarUsuario('${user.id}')">✏️</button>
+               <button class="btn-cuervo" style="padding:3px 8px;font-size:0.78rem;background:#166534;" title="Abrir WhatsApp para enviar mensaje de acceso" onclick="abrirWhatsAppUsuario('${user.id}')">📲</button>
+               <button class="btn-cuervo" style="padding:3px 8px;font-size:0.78rem;background:#7f1d1d;" title="Eliminar usuario" onclick="eliminarUsuario('${user.id}')">🗑️</button>`
             : '-';
 
         let celdaPin;
@@ -3787,15 +3826,18 @@ async function guardarUsuario(event) {
     }
 }
 
-// Envía el mensaje de bienvenida por WhatsApp (vía Make) y avisa al administrador.
+// Envía el mensaje de bienvenida por WhatsApp (vía Make o enlace directo gratuito wa.me) y avisa al administrador.
 async function enviarBienvenidaTrasAlta({ phone, name, pin, role }) {
+    const mensajeTexto = construirMensajeBienvenidaTexto({ phone, name, pin, role });
+    const abrirDirecto = () => abrirWhatsAppDirecto(phone, mensajeTexto);
+
     const resultado = await enviarBienvenidaWhatsApp({ phone, name, pin, role });
     if (resultado.ok) {
-        alert(`✅ Usuario añadido. Se ha enviado la bienvenida por WhatsApp con su PIN (${pin}).`);
-    } else if (resultado.motivo === 'sin_webhook') {
-        alert(`✅ Usuario añadido.\n⚠️ No hay webhook de Make configurado, así que no se pudo enviar la bienvenida automática.\n\nComparte tú el acceso:\n• Web: ${(window.LOKI_LEGAL && window.LOKI_LEGAL.sitio) || window.location.origin}\n• Teléfono: ${phone}\n• PIN: ${pin}`);
+        const abrir = window.confirm(`✅ Usuario añadido con éxito.\nSe ha notificado vía Make.\n\n¿Deseas abrir WhatsApp Web / App ahora para enviarle el mensaje de bienvenida y PIN directamente en 1 clic?`);
+        if (abrir) abrirDirecto();
     } else {
-        alert(`✅ Usuario añadido.\n⚠️ No se pudo enviar la bienvenida por WhatsApp.\n\nComparte tú el acceso:\n• Web: ${(window.LOKI_LEGAL && window.LOKI_LEGAL.sitio) || window.location.origin}\n• Teléfono: ${phone}\n• PIN: ${pin}`);
+        const abrir = window.confirm(`✅ Usuario añadido con éxito (PIN: ${pin}).\n\n¿Deseas abrir WhatsApp ahora para enviarle el mensaje de bienvenida y PIN directamente gratis?`);
+        if (abrir) abrirDirecto();
     }
 }
 

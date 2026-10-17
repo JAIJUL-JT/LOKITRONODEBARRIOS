@@ -170,6 +170,7 @@
                 <optgroup label="👑 Administración" id="optgroup-admin-menu">
                     <option value="pestana-generar-evento" data-tab="tab-generar-evento">🗓️ Eventos (crear/editar)</option>
                     <option value="tab-superadmin" data-tab="tab-superadmin">⚙️ Configuración del Juego</option>
+                    <option value="pestana-estadisticas" data-tab="tab-estadisticas">📊 Estadísticas</option>
                     <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Alta y Control de Usuarios</option>
                     <option value="pestana-barrios" data-tab="tab-barrios">🏰 Gestión de Barrios y Reinos</option>
                     <option value="pestana-sorteo-eventos" data-tab="tab-sorteo-eventos">🎲 Sorteo de eventos</option>
@@ -938,51 +939,6 @@
                             style="color:#d6d3d1;"></p>
                     </section>
 
-                    <!-- LOKITRONO: ESTADÍSTICAS DEL CÓDICE (CAPILARIDAD DE CADA VOTO) -->
-                    <section id="panel-estadisticas-codice" class="panel-card" style="margin-top:30px;">
-                        <h3 style="color:var(--oro-brillante);">📊 Estadísticas del Códice</h3>
-                        <p style="color:#d6d3d1;margin-bottom:10px;">
-                            Ranking y estadísticas que se actualizan <strong>en tiempo real</strong> a medida que
-                            avanzan las votaciones. Incluye el desglose por barrio y por cada tipo de voto
-                            (categorías y subcategorías), con acceso a la capilaridad de cada voto individual.
-                        </p>
-                        <p id="estad-ambito-nota" role="status" style="font-size:0.85rem;color:#fde68a;margin-bottom:14px;"></p>
-
-                        <div id="estad-resumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px;"></div>
-
-                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;">
-                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
-                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">🥇 Ranking Media Ley II por Barrio</h5>
-                                <div style="position:relative;height:220px;"><canvas id="estad-chart-ranking"></canvas></div>
-                            </div>
-                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
-                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">🗳️ Votos Emitidos por Evento</h5>
-                                <div style="position:relative;height:220px;"><canvas id="estad-chart-eventos"></canvas></div>
-                            </div>
-                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
-                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">⚖️ Desglose por Categoría</h5>
-                                <div style="position:relative;height:220px;"><canvas id="estad-chart-criterios"></canvas></div>
-                            </div>
-                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
-                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">⏳ Estado de las Votaciones</h5>
-                                <div style="position:relative;height:220px;"><canvas id="estad-chart-progreso"></canvas></div>
-                            </div>
-                        </div>
-
-                        <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:24px 0 12px;">🧬 Desglose por barrio y tipo de voto</h4>
-                        <div style="overflow-x:auto;">
-                            <table class="leaderboard-table" style="min-width:640px;">
-                                <thead><tr id="estad-capilaridad-head"></tr></thead>
-                                <tbody id="estad-capilaridad-body"></tbody>
-                            </table>
-                        </div>
-
-                        <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:24px 0 12px;">🔍 Capilaridad voto a voto</h4>
-                        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
-                            <button type="button" class="btn-cuervo" onclick="exportarEstadisticasVotosCSV()" style="padding:6px 12px;font-size:0.82rem;background:#166534;">⬇️ Exportar votos detallados (CSV)</button>
-                        </div>
-                        <div id="estad-votos-detalle"></div>
-                    </section>
 
                     <!-- LOKITRONO: GEOGRAFÍA (CIUDADES / DISTRITOS / BARRIOS / CÓDIGOS POSTALES) -->
                     <section id="panel-geografia" class="panel-card" style="margin-top:30px;">
@@ -1097,6 +1053,60 @@
                         </div>
                     </section>
 </section>
+
+
+            <!-- PESTAÑA: Estadísticas del Códice -->
+            <section id="pestana-estadisticas" class="tab-content tema-corte-admin" data-tab="tab-estadisticas" style="display: none;">
+                <div class="panel-card">
+                    <h2>📊 Estadísticas del Códice</h2>
+                    <p>Ranking y estadísticas que se actualizan <strong>en tiempo real</strong> a medida que avanzan las votaciones. Incluye el desglose por barrio y por cada tipo de voto (categorías y subcategorías), con acceso a la capilaridad de cada voto individual.</p>
+                    <section id="panel-estadisticas-codice" class="panel-card" style="margin-top:30px;">
+                        <h3 style="color:var(--oro-brillante);">📊 Estadísticas del Códice</h3>
+                        <p style="color:#d6d3d1;margin-bottom:10px;">
+                            Ranking y estadísticas que se actualizan <strong>en tiempo real</strong> a medida que
+                            avanzan las votaciones. Incluye el desglose por barrio y por cada tipo de voto
+                            (categorías y subcategorías), con acceso a la capilaridad de cada voto individual.
+                        </p>
+                        <p id="estad-ambito-nota" role="status" style="font-size:0.85rem;color:#fde68a;margin-bottom:14px;"></p>
+
+                        <div id="estad-resumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px;"></div>
+
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;">
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">🥇 Ranking Media Ley II por Barrio</h5>
+                                <div style="position:relative;height:220px;"><canvas id="estad-chart-ranking"></canvas></div>
+                            </div>
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">🗳️ Votos Emitidos por Evento</h5>
+                                <div style="position:relative;height:220px;"><canvas id="estad-chart-eventos"></canvas></div>
+                            </div>
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">⚖️ Desglose por Categoría</h5>
+                                <div style="position:relative;height:220px;"><canvas id="estad-chart-criterios"></canvas></div>
+                            </div>
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">⏳ Estado de las Votaciones</h5>
+                                <div style="position:relative;height:220px;"><canvas id="estad-chart-progreso"></canvas></div>
+                            </div>
+                        </div>
+
+                        <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:24px 0 12px;">🧬 Desglose por barrio y tipo de voto</h4>
+                        <div style="overflow-x:auto;">
+                            <table class="leaderboard-table" style="min-width:640px;">
+                                <thead><tr id="estad-capilaridad-head"></tr></thead>
+                                <tbody id="estad-capilaridad-body"></tbody>
+                            </table>
+                        </div>
+
+                        <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:24px 0 12px;">🔍 Capilaridad voto a voto</h4>
+                        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+                            <button type="button" class="btn-cuervo" onclick="exportarEstadisticasVotosCSV()" style="padding:6px 12px;font-size:0.82rem;background:#166534;">⬇️ Exportar votos detallados (CSV)</button>
+                        </div>
+                        <div id="estad-votos-detalle"></div>
+                    </section>
+
+                </div>
+            </section>
 
             <!-- PESTAÑA 3: Control de Usuarios (Añadir, Editar, Borrar, Recuperar Contraseña, Asignar Barrio) -->
             <section id="pestana-usuarios" class="tab-content tema-corte-admin" style="display: none;">

@@ -1027,6 +1027,15 @@ async function guardarVotoBarrioUsuario(event) {
     const selectBarrio = document.getElementById('voto-select-barrio');
     const barrio = (selectBarrio ? String(selectBarrio.value).trim() : '') || evento.barrio || '';
     const values = document.querySelectorAll('#contenedor-inputs-criterios-voto [data-criterio]');
+    // Asegurar que cada criterio tenga un valor válido por defecto (8) sin requerir
+    // interacción previa del usuario: basta con pulsar "Emitir voto".
+    values.forEach(input => {
+        const val = Number(input.value || 0);
+        if (!input.value || Number.isNaN(val) || val < 1 || val > 10) {
+            input.value = 8;
+        }
+    });
+    actualizarResumenesVoto();
     const notas = {};
     values.forEach(input => {
         notas[input.dataset.criterio] = Number(input.value || 0);
@@ -3760,12 +3769,14 @@ async function guardarUsuario(event) {
     }
 
     const esCreacion = !editId;
+    let credencialesUsadas = null;
     const pinAcceso = pinManual || generarPinSeisDigitos();
 
     // Persistencia central en Supabase (si el usuario editado ya procede de allí).
     if (!editId || esUUID(editId)) {
         try {
             const credenciales = await pedirCredencialesSuperadmin();
+            credencialesUsadas = credenciales;
             if (credenciales === null) return;
             const datos = {
                 phone,
@@ -3850,6 +3861,14 @@ async function guardarUsuario(event) {
         await enviarBienvenidaTrasAlta({ phone, name: nombre || phone, pin: pinAcceso, role });
     } else {
         alert('✅ Usuario actualizado.');
+    }
+
+    // Sincronización automática con Supabase tras crear/editar usuario.
+    // (Se eliminó el botón manual de sincronización: ahora es inmediato.)
+    if (credencialesUsadas) {
+        await recargarUsuariosSupabase(credencialesUsadas);
+    } else {
+        await cargarUsuariosDesdeSupabase();
     }
 }
 

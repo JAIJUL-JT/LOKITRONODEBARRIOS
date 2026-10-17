@@ -382,7 +382,7 @@ function actualizarInterfazSesion(usuario) {
         const optSorteo = document.querySelector("option[value=\"pestana-sorteo-eventos\"]");
         if (optSorteo) optSorteo.style.display = (esSuperadmin || esGestorSorteo) ? "" : "none";
         const optConfigJuego = document.querySelector("option[value=\"tab-superadmin\"]");
-        if (optConfigJuego) optConfigJuego.style.display = usuario.role === "master" ? "" : "none";
+        if (optConfigJuego) optConfigJuego.style.display = (esSuperadmin || esMaster) ? "" : "none";
         const optUsuarios = document.getElementById("option-menu-usuarios");
         if (optUsuarios) optUsuarios.style.display = esSuperadmin ? "" : "none";
         const optBarrios = document.querySelector("option[value=\"pestana-barrios\"]");

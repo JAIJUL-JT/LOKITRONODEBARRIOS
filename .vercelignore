@@ -13,6 +13,7 @@ tests/
 
 # Ruido del repositorio: copias, respaldos y duplicados
 *.zip
+*.tar.gz
 *.pptx
 *.backup
 *.backup-*
@@ -22,6 +23,7 @@ index.html.backup*
 move_block.py
 lokitrono-barrio-management-update/
 lokitrono-login-superadmin-fix/
+backups/
 
 # Scripts de parcheo y utilidades (no forman parte del sitio)
 *.py
@@ -30,7 +32,17 @@ sql/
 supabase/
 
 # Recursos y logos antiguos ya no referenciados
-logo-lokitrono.png
 logo.jpg
 LoKiLogo.jpg
 Lokijuegopresent
+# Imágenes de ambiente no usadas (solo se usa ambiente-prision.jpg en 404.html)
+ambiente-batalla.jpg
+ambiente-bodega.jpg
+ambiente-iglesia.jpg
+ambiente-taberna.jpg
+ambiente-horca.jpg
+textura-pergamino.jpg
+fondo-cinematografico.jpg
+fototrono.jpg
+reliquia-pintxo-oro.jpg
+fondo-cripta-oraculo.jpg

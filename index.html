@@ -179,6 +179,7 @@
                     <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Alta y Control de Usuarios</option>
                     <option value="pestana-barrios" data-tab="tab-barrios">🏰 Gestión de Barrios y Reinos</option>
                     <option value="pestana-sorteo-eventos" data-tab="tab-sorteo-eventos">🎲 Sorteo de eventos</option>
+                    <option value="pestana-locales-evento" id="option-menu-locales-evento" data-tab="tab-locales-evento">🏛️ Locales del Evento</option>
                 </optgroup>
             </select>
         </div>
@@ -467,176 +468,6 @@
             </section>
 
             <!-- PESTAÑA SUPERADMIN: Generar y Gestionar Eventos -->
-            <section id="pestana-generar-evento" class="tab-content tema-corte-admin" data-tab="tab-generar-evento" style="display: none;">
-                <div class="panel-card">
-                    <h2 style="font-family: 'Cinzel', serif; color: var(--oro-real);">📅 Generar y Programar Eventos con Votación</h2>
-                    <p style="color: #d6d3d1;">Crea y administra eventos oficiales o de prueba para los distintos barrios del reino, configurando la fecha y hora de inicio y de finalización del evento, el lugar, la descripción y las horas (y fecha de cierre) independientes de votación.</p>
-
-                    <div style="background: rgba(30, 24, 16, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0;">⚙️ Formulario de Generación de Eventos</h3>
-                        <form id="form-evento-admin-dedicated" onsubmit="guardarEventoBarrioDesdePestana(event)">
-                            <input type="hidden" id="evento-dedicated-id-edit">
-                            
-                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                <div class="form-group" style="flex: 1; min-width: 220px;">
-                                    <label style="font-weight: bold; color: var(--oro-real);">Barrio / Reino Host:</label>
-                                    <select id="evento-dedicated-barrio" class="input-medieval" required></select>
-                                </div>
-                                <div class="form-group" style="flex: 2; min-width: 280px;">
-                                    <label style="font-weight: bold; color: var(--oro-real);">Nombre del Evento:</label>
-                                    <input type="text" id="evento-dedicated-nombre" class="input-medieval" placeholder="Ej: Ruta Gastronómica de Deusto" required>
-                                </div>
-                            </div>
-
-                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                <div class="form-group" style="flex: 1; min-width: 200px;">
-                                    <label style="font-weight: bold; color: var(--oro-real);">Fecha del Evento:</label>
-                                    <input type="date" id="evento-dedicated-fecha" class="input-medieval" required>
-                                </div>
-                                <div class="form-group" style="flex: 1; min-width: 200px;">
-                                    <label style="font-weight: bold; color: var(--oro-real);">Lugar / Ubicación:</label>
-                                    <input type="text" id="evento-lugar" class="input-medieval" placeholder="Ej: Plaza Nueva / Tabernas del Casco" required>
-                                </div>
-                                <div class="form-group" style="flex: 1; min-width: 150px;">
-                                    <label style="font-weight: bold; color: var(--oro-real);">Hora de Inicio Evento:</label>
-                                    <input type="time" id="evento-hora" class="input-medieval" value="20:00" required>
-                                </div>
-                            </div>
-
-                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                <div class="form-group" style="flex: 1; min-width: 220px;">
-                                    <label style="font-weight: bold; color: var(--oro-real);">📆 Fecha de Finalización del Evento (opcional):</label>
-                                    <input type="date" id="evento-dedicated-fecha-fin" class="input-medieval">
-                                </div>
-                                <div class="form-group" style="flex: 1; min-width: 220px;">
-                                    <label style="font-weight: bold; color: var(--oro-real);">🌙 Hora de Finalización del Evento (opcional):</label>
-                                    <input type="time" id="evento-dedicated-hora-fin" class="input-medieval">
-                                </div>
-                            </div>
-
-                            <!-- FRANJA HORARIA INDEPENDIENTE DE VOTACIÓN -->
-                            <div style="background: rgba(45, 35, 20, 0.85); padding: 15px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.4); margin: 15px 0;">
-                                <h4 style="color: var(--oro-brillante); margin: 0 0 10px; font-family: 'Cinzel', serif;">🗳️ Configuración del Periodo de Votaciones</h4>
-                                <div class="form-group" style="max-width: 360px; margin-bottom: 12px;">
-                                    <label style="color: var(--oro-real); font-weight: bold;">⚖️ Tipo de Evento:</label>
-                                    <select id="evento-dedicated-tiene-votacion" class="input-medieval" onchange="alternarCamposVotacionEvento()">
-                                        <option value="con">🗳️ Con Votación (se puede puntuar)</option>
-                                        <option value="sin">📜 Sin Votación (solo informativo)</option>
-                                    </select>
-                                </div>
-                                <div id="evento-dedicated-votacion-campos" style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
-                                        <label style="color: #4ade80; font-weight: bold;">🟢 Hora Inicio Votación:</label>
-                                        <input type="time" id="evento-dedicated-votacion-inicio" class="input-medieval" value="20:30" required>
-                                    </div>
-                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
-                                        <label style="color: #f87171; font-weight: bold;">🔴 Hora Cierre Votación:</label>
-                                        <input type="time" id="evento-dedicated-votacion-fin" class="input-medieval" value="23:30" required>
-                                    </div>
-                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
-                                        <label style="color: #f87171; font-weight: bold;">📆 Fecha Cierre Votación (opcional):</label>
-                                        <input type="date" id="evento-dedicated-votacion-fecha-fin" class="input-medieval">
-                                    </div>
-                                </div>
-                                <p style="font-size: 0.78rem; color: #a1a1aa; margin: 8px 0 0;">
-                                    ℹ️ Al expirar el tiempo de cierre o alcanzarse el último minuto (<=60s), se mostrará automáticamente el reloj de cuenta atrás con la alerta de último minuto a los usuarios.
-                                </p>
-                            </div>
-
-                            <div class="form-group">
-                                <label style="font-weight: bold; color: var(--oro-real);">Detalles / Descripción del Evento:</label>
-                                <textarea id="evento-dedicated-desc" class="input-medieval" rows="3" placeholder="Información sobre los festines, tabernas participantes o normas del evento..."></textarea>
-                            </div>
-
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button type="submit" id="btn-guardar-evento-dedicated" class="btn-cuervo" style="flex: 2; background: #15803d;">✨ Generar / Guardar Evento</button>
-                                <button type="button" id="btn-cancelar-evento-dedicated" class="btn-cuervo" style="display: none; flex: 1; background: #44403c;" onclick="resetFormEventoDedicated()">Cancelar Edición</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- LISTADO DE EVENTOS EXISTENTES CON ACCIONES SUPERADMIN -->
-                    <div>
-                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">📜 Listado de Eventos Generados en el Reino</h3>
-                        <div id="lista-eventos-generados-admin" class="grid-cards"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- PESTAÑA 2B: Consejo Real del Superadmin -->
-            <section id="tab-superadmin" class="tab-content tema-corte-admin" data-tab="tab-superadmin" style="display: none;">
-                <div class="panel-card">
-                    <h2>👑 Consejo Real del Superadmin</h2>
-
-                    <!-- CIERRE Y PROTECCIÓN DEL JUEGO (EXCLUSIVO DE ADMINISTRACIÓN) -->
-                    <div id="panel-fin-juego"
-                        style="display:none; margin-top: 20px; background: rgba(69, 26, 3, 0.6); border: 2px solid #f59e0b; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #fbbf24; margin-top: 0; font-family: 'Cinzel', serif;">🏁 Cierre y Protección del Juego</h3>
-                        <p id="fin-juego-estado" style="font-size: 0.9rem; color: #fde68a; margin: 6px 0;">El juego está en curso.</p>
-                        <p style="font-size: 0.82rem; color: #fcd34d; margin: 8px 0;">
-                            Al finalizar, la competición queda <strong>sellada</strong>: nadie podrá modificar eventos, votos, barrios ni usuarios.
-                            Solo un <strong style="color: var(--oro-brillante);">Administrador</strong> puede reabrirla.
-                        </p>
-                        <button type="button" id="btn-finalizar-juego" class="btn-cuervo" style="background:#b45309;">
-                            🏁 FINALIZAR JUEGO
-                        </button>
-                    </div>
-
-
-                    <!-- PANEL DE CONFIGURACIÓN INTEGRACIÓN MAKE.COM & WHATSAPP AUTOMÁTICO -->
-                    <div id="seccion-configuracion-make"
-                        style="margin-top: 25px; background: rgba(15, 23, 42, 0.95); border: 2px solid var(--oro-real); padding: 20px; border-radius: 8px;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                            <h3 style="color: var(--oro-brillante); margin: 0; font-family: 'Cinzel', serif;">⚡
-                                Integración Make.com & Envío Automático por WhatsApp</h3>
-                            <span id="badge-make-webhook-status"
-                                style="font-size: 0.85rem; padding: 4px 10px; border-radius: 20px; background: #eab308; color: #000; font-weight: bold;">🟡
-                                No Configurado</span>
-                        </div>
-                        <p style="font-size: 0.85rem; color: #d6d3d1; margin-top: 8px;">Configura la URL de tu Webhook
-                            receptor en Make.com para disparar el envío automático de mensajes de bienvenida por
-                            WhatsApp con el PIN de 6 dígitos y notificaciones a los administradores del Reino.</p>
-
-                        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
-                            <input type="url" id="input-make-webhook-url" class="input-medieval"
-                                placeholder="https://hook.eu1.make.com/tu-webhook-id"
-                                style="flex: 1; min-width: 250px;">
-                            <button type="button" onclick="guardarWebhookMakeConfig()" class="btn-cuervo">💾 Guardar
-                                Webhook</button>
-                            <button type="button" onclick="probarEnvioWebhookMake()" class="btn-cuervo"
-                                style="background: #166534;">🧪 Probar Envío WhatsApp</button>
-                        </div>
-                        <p id="make-webhook-test-status"
-                            style="font-size: 0.85rem; color: #93c5fd; margin-top: 8px; margin-bottom: 0;"></p>
-                    </div>
-
-                    <div style="margin-top: 25px;">
-                        <h3 id="titulo-repositorio-central" style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">📊 Repositorio Central de Votos Reales</h3>
-                        <table class="leaderboard-table repositorio-table">
-                            <thead>
-                                <tr>
-                                    <th>Maestre</th>
-                                    <th>Barrio</th>
-                                    <th>Casa</th>
-                                    <th>Notas</th>
-                                    <th>Fecha</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="repositorio-votos-body">
-                                <tr>
-                                    <td colspan="6" style="text-align: center; color: #d6d3d1;">Sin votos registrados en el repositorio central.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div style="margin-top: 15px;">
-                            <button type="button" class="btn-cuervo" onclick="exportarRepositorioCSV()">📤 Exportar Repositorio CSV</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
                     <!-- LOKITRONO: EL SORTEO TIENE SU PROPIA PESTAÑA (#pestana-sorteo-eventos) -->
 
                     <!-- LOKITRONO: RESTAURAR COMPETICIÓN (ZONA DE PELIGRO) -->
@@ -805,6 +636,213 @@
                         </div>
                     </section>
 
+            <section id="pestana-generar-evento" class="tab-content tema-corte-admin" data-tab="tab-generar-evento" style="display: none;">
+                <div class="panel-card">
+                    <h2 style="font-family: 'Cinzel', serif; color: var(--oro-real);">📅 Generar y Programar Eventos con Votación</h2>
+                    <p style="color: #d6d3d1;">Crea y administra eventos oficiales o de prueba para los distintos barrios del reino, configurando la fecha y hora de inicio y de finalización del evento, el lugar, la descripción y las horas (y fecha de cierre) independientes de votación.</p>
+
+                    <div style="background: rgba(30, 24, 16, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0;">⚙️ Formulario de Generación de Eventos</h3>
+                        <form id="form-evento-admin-dedicated" onsubmit="guardarEventoBarrioDesdePestana(event)">
+                            <input type="hidden" id="evento-dedicated-id-edit">
+                            
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 220px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Barrio / Reino Host:</label>
+                                    <select id="evento-dedicated-barrio" class="input-medieval" required></select>
+                                </div>
+                                <div class="form-group" style="flex: 2; min-width: 280px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Nombre del Evento:</label>
+                                    <input type="text" id="evento-dedicated-nombre" class="input-medieval" placeholder="Ej: Ruta Gastronómica de Deusto" required>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Fecha del Evento:</label>
+                                    <input type="date" id="evento-dedicated-fecha" class="input-medieval" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Lugar / Ubicación:</label>
+                                    <input type="text" id="evento-lugar" class="input-medieval" placeholder="Ej: Plaza Nueva / Tabernas del Casco" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 150px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Hora de Inicio Evento:</label>
+                                    <input type="time" id="evento-hora" class="input-medieval" value="20:00" required>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 220px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">📆 Fecha de Finalización del Evento (opcional):</label>
+                                    <input type="date" id="evento-dedicated-fecha-fin" class="input-medieval">
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 220px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">🌙 Hora de Finalización del Evento (opcional):</label>
+                                    <input type="time" id="evento-dedicated-hora-fin" class="input-medieval">
+                                </div>
+                            </div>
+
+                            <!-- FRANJA HORARIA INDEPENDIENTE DE VOTACIÓN -->
+                            <div style="background: rgba(45, 35, 20, 0.85); padding: 15px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.4); margin: 15px 0;">
+                                <h4 style="color: var(--oro-brillante); margin: 0 0 10px; font-family: 'Cinzel', serif;">🗳️ Configuración del Periodo de Votaciones</h4>
+                                <div class="form-group" style="max-width: 360px; margin-bottom: 12px;">
+                                    <label style="color: var(--oro-real); font-weight: bold;">⚖️ Tipo de Evento:</label>
+                                    <select id="evento-dedicated-tiene-votacion" class="input-medieval" onchange="alternarCamposVotacionEvento()">
+                                        <option value="con">🗳️ Con Votación (se puede puntuar)</option>
+                                        <option value="sin">📜 Sin Votación (solo informativo)</option>
+                                    </select>
+                                </div>
+                                <div id="evento-dedicated-votacion-campos" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                        <label style="color: #4ade80; font-weight: bold;">🟢 Hora Inicio Votación:</label>
+                                        <input type="time" id="evento-dedicated-votacion-inicio" class="input-medieval" value="20:30" required>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                        <label style="color: #f87171; font-weight: bold;">🔴 Hora Cierre Votación:</label>
+                                        <input type="time" id="evento-dedicated-votacion-fin" class="input-medieval" value="23:30" required>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                        <label style="color: #f87171; font-weight: bold;">📆 Fecha Cierre Votación (opcional):</label>
+                                        <input type="date" id="evento-dedicated-votacion-fecha-fin" class="input-medieval">
+                                    </div>
+                                </div>
+                                <p style="font-size: 0.78rem; color: #a1a1aa; margin: 8px 0 0;">
+                                    ℹ️ Al expirar el tiempo de cierre o alcanzarse el último minuto (<=60s), se mostrará automáticamente el reloj de cuenta atrás con la alerta de último minuto a los usuarios.
+                                </p>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="font-weight: bold; color: var(--oro-real);">Detalles / Descripción del Evento:</label>
+                                <textarea id="evento-dedicated-desc" class="input-medieval" rows="3" placeholder="Información sobre los festines, tabernas participantes o normas del evento..."></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button type="submit" id="btn-guardar-evento-dedicated" class="btn-cuervo" style="flex: 2; background: #15803d;">✨ Generar / Guardar Evento</button>
+                                <button type="button" id="btn-cancelar-evento-dedicated" class="btn-cuervo" style="display: none; flex: 1; background: #44403c;" onclick="resetFormEventoDedicated()">Cancelar Edición</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- LISTADO DE EVENTOS EXISTENTES CON ACCIONES SUPERADMIN -->
+                    <div>
+                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">📜 Listado de Eventos Generados en el Reino</h3>
+                        <div id="lista-eventos-generados-admin" class="grid-cards"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PESTAÑA 2B: Consejo Real del Superadmin -->
+            <section id="tab-superadmin" class="tab-content tema-corte-admin" data-tab="tab-superadmin" style="display: none;">
+                <div class="panel-card">
+                    <h2>👑 Consejo Real del Superadmin</h2>
+
+                    <!-- CIERRE Y PROTECCIÓN DEL JUEGO (EXCLUSIVO DE ADMINISTRACIÓN) -->
+                    <div id="panel-fin-juego"
+                        style="display:none; margin-top: 20px; background: rgba(69, 26, 3, 0.6); border: 2px solid #f59e0b; border-radius: 8px; padding: 20px;">
+                        <h3 style="color: #fbbf24; margin-top: 0; font-family: 'Cinzel', serif;">🏁 Cierre y Protección del Juego</h3>
+                        <p id="fin-juego-estado" style="font-size: 0.9rem; color: #fde68a; margin: 6px 0;">El juego está en curso.</p>
+                        <p style="font-size: 0.82rem; color: #fcd34d; margin: 8px 0;">
+                            Al finalizar, la competición queda <strong>sellada</strong>: nadie podrá modificar eventos, votos, barrios ni usuarios.
+                            Solo un <strong style="color: var(--oro-brillante);">Administrador</strong> puede reabrirla.
+                        </p>
+                        <button type="button" id="btn-finalizar-juego" class="btn-cuervo" style="background:#b45309;">
+                            🏁 FINALIZAR JUEGO
+                        </button>
+                    </div>
+
+
+                    <!-- PANEL DE CONFIGURACIÓN INTEGRACIÓN MAKE.COM & WHATSAPP AUTOMÁTICO -->
+                    <div id="seccion-configuracion-make"
+                        style="margin-top: 25px; background: rgba(15, 23, 42, 0.95); border: 2px solid var(--oro-real); padding: 20px; border-radius: 8px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <h3 style="color: var(--oro-brillante); margin: 0; font-family: 'Cinzel', serif;">⚡
+                                Integración Make.com & Envío Automático por WhatsApp</h3>
+                            <span id="badge-make-webhook-status"
+                                style="font-size: 0.85rem; padding: 4px 10px; border-radius: 20px; background: #eab308; color: #000; font-weight: bold;">🟡
+                                No Configurado</span>
+                        </div>
+                        <p style="font-size: 0.85rem; color: #d6d3d1; margin-top: 8px;">Configura la URL de tu Webhook
+                            receptor en Make.com para disparar el envío automático de mensajes de bienvenida por
+                            WhatsApp con el PIN de 6 dígitos y notificaciones a los administradores del Reino.</p>
+
+                        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                            <input type="url" id="input-make-webhook-url" class="input-medieval"
+                                placeholder="https://hook.eu1.make.com/tu-webhook-id"
+                                style="flex: 1; min-width: 250px;">
+                            <button type="button" onclick="guardarWebhookMakeConfig()" class="btn-cuervo">💾 Guardar
+                                Webhook</button>
+                            <button type="button" onclick="probarEnvioWebhookMake()" class="btn-cuervo"
+                                style="background: #166534;">🧪 Probar Envío WhatsApp</button>
+                        </div>
+                        <p id="make-webhook-test-status"
+                            style="font-size: 0.85rem; color: #93c5fd; margin-top: 8px; margin-bottom: 0;"></p>
+                    </div>
+
+                    <div style="margin-top: 25px;">
+                        <h3 id="titulo-repositorio-central" style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">📊 Repositorio Central de Votos Reales</h3>
+                        <table class="leaderboard-table repositorio-table">
+                            <thead>
+                                <tr>
+                                    <th>Maestre</th>
+                                    <th>Barrio</th>
+                                    <th>Casa</th>
+                                    <th>Notas</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="repositorio-votos-body">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: #d6d3d1;">Sin votos registrados en el repositorio central.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 15px;">
+                            <button type="button" class="btn-cuervo" onclick="exportarRepositorioCSV()">📤 Exportar Repositorio CSV</button>
+                        </div>
+                    </div>
+                </div>
+            
+<!-- PANEL CONFIG TÍTULOS (solo visible para superadmin) -->
+                    <div id="panel-config-titulos-usuarios" style="display:none; margin:24px 0; background:rgba(20,16,5,0.9); border:1px solid var(--oro-real); border-radius:8px; padding:18px;">
+                        <h3 style="color:var(--oro-brillante);margin-top:0;font-family:'Cinzel',serif;">⚙️ Configuración de Títulos del Reino</h3>
+                        <p style="font-size:0.82rem;color:#d6d3d1;">Personaliza cómo se llaman los rangos de los usuarios en la corte.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">⚔️ Jugador (masculino):</label>
+                                <input type="text" id="titulo-config-jugador_masculino" class="input-medieval" placeholder="Lord">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">⚔️ Jugador (femenino):</label>
+                                <input type="text" id="titulo-config-jugador_femenino" class="input-medieval" placeholder="Lady">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">👑 Lokitronista (masculino):</label>
+                                <input type="text" id="titulo-config-tronista_masculino" class="input-medieval" placeholder="Lokitronista Lord">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">👑 Lokitronista (femenino):</label>
+                                <input type="text" id="titulo-config-tronista_femenino" class="input-medieval" placeholder="Lokitronista Lady">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">🏰 Superadmin (masculino):</label>
+                                <input type="text" id="titulo-config-superadmin_masculino" class="input-medieval" placeholder="Gran Maestre">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.82rem;">🏰 Superadmin (femenino):</label>
+                                <input type="text" id="titulo-config-superadmin_femenino" class="input-medieval" placeholder="Gran Maestra">
+                            </div>
+                        </div>
+                                <p style="font-size:0.78rem;color:#a1a1aa;margin-bottom:10px;">💎 Consejeros del Lokitrono (605676002, 663366786) siempre tendrán título Consejero/a del Lokitrono, independientemente de la configuración.</p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <button type="button" class="btn-cuervo" onclick="guardarTitulosConfig()">💾 Guardar Títulos</button>
+                            <button type="button" class="btn-cuervo" style="background:#44403c;" onclick="guardarTitulosConfig({});renderTablaUsuarios();renderListaTronistas();alert('✅ Títulos restablecidos a valores por defecto.');">↺ Restablecer Predeterminados</button>
+                        </div>
+                    </div>
+</section>
+
             <!-- PESTAÑA 3: Control de Usuarios (Añadir, Editar, Borrar, Recuperar Contraseña, Asignar Barrio) -->
             <section id="pestana-usuarios" class="tab-content tema-corte-admin" style="display: none;">
                 <div class="panel-card">
@@ -882,43 +920,6 @@
                             style="display: none; background: #44403c;" onclick="resetFormUsuario()">Cancelar
                             Edición</button>
                     </form>
-
-                    <!-- PANEL CONFIG TÍTULOS (solo visible para superadmin) -->
-                    <div id="panel-config-titulos-usuarios" style="display:none; margin:24px 0; background:rgba(20,16,5,0.9); border:1px solid var(--oro-real); border-radius:8px; padding:18px;">
-                        <h3 style="color:var(--oro-brillante);margin-top:0;font-family:'Cinzel',serif;">⚙️ Configuración de Títulos del Reino</h3>
-                        <p style="font-size:0.82rem;color:#d6d3d1;">Personaliza cómo se llaman los rangos de los usuarios en la corte.</p>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">⚔️ Jugador (masculino):</label>
-                                <input type="text" id="titulo-config-jugador_masculino" class="input-medieval" placeholder="Lord">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">⚔️ Jugador (femenino):</label>
-                                <input type="text" id="titulo-config-jugador_femenino" class="input-medieval" placeholder="Lady">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">👑 Lokitronista (masculino):</label>
-                                <input type="text" id="titulo-config-tronista_masculino" class="input-medieval" placeholder="Lokitronista Lord">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">👑 Lokitronista (femenino):</label>
-                                <input type="text" id="titulo-config-tronista_femenino" class="input-medieval" placeholder="Lokitronista Lady">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">🏰 Superadmin (masculino):</label>
-                                <input type="text" id="titulo-config-superadmin_masculino" class="input-medieval" placeholder="Gran Maestre">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size:0.82rem;">🏰 Superadmin (femenino):</label>
-                                <input type="text" id="titulo-config-superadmin_femenino" class="input-medieval" placeholder="Gran Maestra">
-                            </div>
-                        </div>
-                                <p style="font-size:0.78rem;color:#a1a1aa;margin-bottom:10px;">💎 Consejeros del Lokitrono (605676002, 663366786) siempre tendrán título Consejero/a del Lokitrono, independientemente de la configuración.</p>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                            <button type="button" class="btn-cuervo" onclick="guardarTitulosConfig()">💾 Guardar Títulos</button>
-                            <button type="button" class="btn-cuervo" style="background:#44403c;" onclick="guardarTitulosConfig({});renderTablaUsuarios();renderListaTronistas();alert('✅ Títulos restablecidos a valores por defecto.');">↺ Restablecer Predeterminados</button>
-                        </div>
-                    </div>
 
                     <div id="acciones-credenciales-pin" style="display: none; margin-top: 20px;">
                         <button type="button" class="btn-cuervo" style="background: #166534;" onclick="descargarUsuariosCSV()">⬇️ Descargar credenciales (CSV)</button>
@@ -1198,6 +1199,27 @@
                                     style="margin-top: 6px; background:#44403c;">➕ Añadir enlace</button>
                             </div>
 
+                            <div class="form-group" style="margin-top: 14px;">
+                                <label>Explicaciones / descripción del local</label>
+                                <textarea id="local-explicaciones" class="input-medieval" rows="3"
+                                    placeholder="Detalles del local, especialidades, ambiente..."></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 18px; flex-wrap: wrap; margin: 14px 0; align-items: center; background: rgba(20,20,30,0.4); padding: 14px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.25);">
+                                <div class="form-group" style="flex: 2 1 300px;">
+                                    <label>Pintxo vinculado al local (nombre)</label>
+                                    <input type="text" id="local-pintxo-nombre" class="input-medieval"
+                                        placeholder="Ej: Gilda de anchoa">
+                                </div>
+                                <div class="form-group" style="flex: 1 1 220px;">
+                                    <label>Imagen del pintxo (URL)</label>
+                                    <input type="text" id="local-pintxo-imagen" class="input-medieval"
+                                        placeholder="https://…/pintxo.jpg">
+                                </div>
+                                <img id="local-pintxo-preview" alt="Vista previa pintxo"
+                                    style="width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 2px solid var(--oro-real); display: none;">
+                            </div>
+
                             <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
                                 <div class="form-group" style="flex: 2 1 320px;">
                                     <label for="local-foto-url">Foto del local (URL)</label>
@@ -1237,8 +1259,27 @@
                 </div>
             </section>
 
+            <!-- PESTAÑA: Locales del evento (Solo Superadmin y MASTER) -->
+            <section id="pestana-locales-evento" class="tab-content tema-corte-admin" data-tab="tab-locales-evento" style="display: none;">
+                <div class="panel-card">
+                    <div class="leaderboard-header" style="text-align: center; margin-bottom: 20px;">
+                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🏛️ LOCALES DEL EVENTO 🏛️</h2>
+                        <p style="color: #d6d3d1;">
+                            Gestión de locales vinculados a cada evento del torneo. Disponible exclusivamente para
+                            <strong>Superadmin</strong> y <strong>MASTER</strong>. Permite asociar pintxos con sus
+                            imágenes a los locales donde se celebran las justas.
+                        </p>
+                    </div>
+                    <div id="panel-locales-evento" style="background: rgba(10,10,10,0.55); border: 1px solid #44403c; border-radius: 10px; padding: 18px; margin-bottom: 26px;">
+                        <h3 style="color: var(--oro-brillante); margin-bottom: 12px;">📋 Locales asociados al evento activo</h3>
+                        <div id="grid-locales-evento" class="grid-locales-evento"></div>
+                        <p id="locales-evento-estado" role="status" aria-live="polite" style="color: #d6d3d1; margin-top: 12px;"></p>
+                    </div>
+                </div>
+            </section>
+
             <!-- PESTAÑA: Oráculo Imperial e Integración de Modelos de IA (Groq) -->
-            <section id="pestana-oraculo-ia" class="tab-content tema-oraculo" data-tab="tab-oraculo-ia" style="display: none;">
+            <section id="pestana-oraculo-ia" class="tab-content tema-oraculo" data-tab="tab-oraculo-ia" style="display: none; background-image: url('fondo-cripta-oraculo.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
                 <div class="leaderboard-container" style="background: rgba(10, 10, 15, 0.95); border: 2px solid var(--oro-real); padding: 25px; border-radius: 12px;">
                     <div class="leaderboard-header" style="text-align: center; margin-bottom: 25px;">
                         <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🔮 ORÁCULO IMPERIAL & MODELOS DE IA 🔮</h2>

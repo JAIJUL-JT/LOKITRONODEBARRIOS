@@ -110,7 +110,7 @@ function setCurrentUser(user) {
     localStorage.setItem(STORAGE_KEYS.usuarioActual, JSON.stringify(user || null));
 }
 
-const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-sorteo-eventos', 'pestana-oraculo-ia', 'pestana-locales-promocion'];
+const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-sorteo-eventos', 'pestana-oraculo-ia', 'pestana-locales-promocion', 'pestana-locales-evento'];
 
 /* ==========================================
    FIN DEL JUEGO: ESTADO, PROTECCIÓN Y BLOQUEO
@@ -319,6 +319,11 @@ function cambiarPestana(valor) {
     if (esLocalesPromocion && !esMaster) {
         valor = 'pestana-clasificacion';
     }
+    // Locales del evento: exclusivo de Superadmin y MASTER.
+    const esLocalesEvento = valor === 'pestana-locales-evento' || valor === 'tab-locales-evento';
+    if (esLocalesEvento && !(esSuperadmin || esMaster)) {
+        valor = 'pestana-clasificacion';
+    }
     if (!esSuperadmin && PESTANAS_ADMIN.includes(valor)) {
         if (!(valor === 'pestana-sorteo-eventos' && esGestorSorteo)) {
             valor = 'pestana-clasificacion';
@@ -401,6 +406,8 @@ function actualizarInterfazSesion(usuario) {
         if (optgroupMaster) optgroupMaster.style.display = esMaster ? '' : 'none';
         const optgroupLocales = document.getElementById('optgroup-locales-menu');
         if (optgroupLocales) optgroupLocales.style.display = esMaster ? '' : 'none';
+        const optLocalesEvento = document.getElementById("option-menu-locales-evento");
+        if (optLocalesEvento) optLocalesEvento.style.display = (esSuperadmin || esMaster) ? "" : "none";
         const grupoPin = document.getElementById('group-usuario-pin');
         if (grupoPin) grupoPin.style.display = esMaster ? 'block' : 'none';
         const accionesCredenciales = document.getElementById('acciones-credenciales-pin');

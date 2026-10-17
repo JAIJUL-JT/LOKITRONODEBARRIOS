@@ -357,6 +357,11 @@ function cambiarPestana(valor) {
     });
     const selector = document.getElementById('select-seccion-corte');
     if (selector && selector.value !== valor) selector.value = valor;
+
+    // Renderiza el pasaporte del maestre al abrir Estadísticas.
+    if (valor === 'pestana-estadisticas' || valor === 'tab-estadisticas') {
+        if (typeof renderPasaporteMaestre === 'function') renderPasaporteMaestre();
+    }
 }
 
 function actualizarInterfazSesion(usuario) {
@@ -1106,6 +1111,8 @@ async function guardarVotoBarrioUsuario(event) {
     if (formulario) formulario.reset();
     cerrarPanelPuntuacion();
     mostrarMensajeVoto('exito', `¡Voto recibido y registrado! Tu puntuación para ${barrio} ya cuenta en el Códice de la Villa.`);
+    // Actualiza el pasaporte del maestre con el nuevo sello.
+    if (typeof renderPasaporteMaestre === 'function') renderPasaporteMaestre();
 }
 
 const CRITERIOS_VERSION = 2;
@@ -8319,3 +8326,307 @@ function crearParticulasPolvo() {
 document.addEventListener('DOMContentLoaded', () => {
     crearParticulasPolvo();
 });
+
+// ============================================================================
+// PASAPORTE DEL MAESTRE — Sellos de votación por evento
+// ============================================================================
+
+function obtenerPasaporteUsuario(userId) {
+    const votos = getVotosDelAmbito().filter(v => String(v.maestre_id || '') === String(userId));
+    const eventos = getEventosDelAmbito();
+    const sellos = {};
+    votos.forEach(v => {
+        const evt = eventos.find(e => String(e.id) === String(v.evento_id));
+        const clave = String(v.evento_id || '');
+        if (!sellos[clave]) {
+            sellos[clave] = {
+                evento_id: clave,
+                nombre: v.evento_nombre || (evt && evt.nombre) || 'Evento sin nombre',
+                barrio: v.barrio || v.casa_visitada || '',
+                fecha: v.fecha_juicio || '',
+                notas: {
+                    festin: Number(v.nota_festin || 0),
+                    caminos: Number(v.nota_caminos || 0),
+                    espiritu: Number(v.nota_espiritu || 0)
+                },
+                veces: 0
+            };
+        }
+        sellos[clave].veces++;
+    });
+    return Object.values(sellos).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+}
+
+function selloEventoHTML(sello) {
+    const final = (sello.notas.festin * 0.50) + (sello.notas.caminos * 0.20) + (sello.notas.espiritu * 0.30);
+    const sellado = sello.veces > 0 ? '✅' : '⬜';
+    return `
+        <article class="sello-evento" style="background:rgba(15,23,42,0.7);border:2px solid var(--oro-real);border-radius:10px;padding:12px;text-align:center;position:relative;">
+            <div style="position:absolute;top:-10px;right:-10px;background:#7f1d1d;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:bold;">${sello.veces}</div>
+            <div style="font-size:1.8rem;margin-bottom:8px;">${sellado}</div>
+            <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:0 0 6px;font-size:0.95rem;">${escaparHTML(sello.nombre)}</h4>
+            <div style="color:#d6d3d1;font-size:0.78rem;margin-bottom:8px;">${escaparHTML(sello.barrio)}</div>
+            <div style="color:#a1a1aa;font-size:0.7rem;margin-bottom:8px;">${sello.fecha ? new Date(sello.fecha).toLocaleDateString('es-ES') : '—'}</div>
+            <div style="display:flex;gap:4px;justify-content:center;font-size:0.65rem;color:#fca5a5;">
+                <span>🍽️ ${sello.notas.festin}</span>
+                <span>🚌 ${sello.notas.caminos}</span>
+                <span>🎉 ${sello.notas.espiritu}</span>
+            </div>
+            <div style="margin-top:6px;font-weight:bold;color:var(--oro-brillante);font-size:0.85rem;">Nota Final: ${final.toFixed(2)}</div>
+        </article>
+    `;
+}
+
+function renderPasaporteMaestre() {
+    const resumen = document.getElementById('pasaporte-resumen');
+    const grid = document.getElementById('pasaporte-grid');
+    const mensaje = document.getElementById('pasaporte-mensaje');
+    const user = getCurrentUser();
+
+    if (!resumen || !grid) return;
+
+    const usuarios = getUsuariosDelAmbito();
+    const eventosConVotacion = getEventosConVotacionDelAmbito();
+    const totalEventos = eventosConVotacion.length;
+
+    if (!user) {
+        resumen.innerHTML = '<p style="color:#d6d3d1;">Inicia sesión para ver tu pasaporte.</p>';
+        grid.innerHTML = '';
+        if (mensaje) mensaje.textContent = '';
+        return;
+    }
+
+    const userId = String(user.phone || user.id || '');
+    const sellos = obtenerPasaporteUsuario(userId);
+    const totalVotos = sellos.reduce((sum, s) => sum + s.veces, 0);
+    const eventosSellados = sellos.length;
+
+    // Resumen del usuario conectado
+    resumen.innerHTML = `
+        <div style="background:rgba(20,20,30,0.6);border:1px solid var(--oro-real);border-radius:8px;padding:14px;margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <div>
+                    <div style="color:#d6d3d1;font-size:0.8rem;">Maestre</div>
+                    <div style="color:var(--oro-brillante);font-family:'Cinzel',serif;font-weight:bold;font-size:1.1rem;">${escaparHTML(user.name || user.phone || 'Sin nombre')}</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="color:#d6d3d1;font-size:0.8rem;">Total de votos</div>
+                    <div style="color:#4ade80;font-family:'Cinzel',serif;font-weight:bold;font-size:1.5rem;">${totalVotos}</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="color:#d6d3d1;font-size:0.8rem;">Eventos sellados</div>
+                    <div style="color:#fbbf24;font-family:'Cinzel',serif;font-weight:bold;font-size:1.5rem;">${eventosSellados} / ${totalEventos}</div>
+                </div>
+            </div>
+            <div style="margin-top:10px;height:6px;background:rgba(212,175,55,0.2);border-radius:3px;overflow:hidden;">
+                <div style="height:100%;width:${totalEventos > 0 ? Math.round((eventosSellados / totalEventos) * 100) : 0}%;background:linear-gradient(90deg,var(--oro-real),var(--oro-brillante));border-radius:3px;"></div>
+            </div>
+        </div>
+    `;
+
+    // Si es admin, mostrar pasaportes de todos los usuarios
+    const esAdmin = user && puedeAdministrar(user.role);
+    if (esAdmin) {
+        let html = `<h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin-top:6px;">📋 Pasaportes de todos los Maestres</h4>`;
+        html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">`;
+        usuarios.forEach(u => {
+            const uid = String(u.phone || u.id || '');
+            const s = obtenerPasaporteUsuario(uid);
+            const tv = s.reduce((sum, x) => sum + x.veces, 0);
+            html += `
+                <article style="background:rgba(15,23,42,0.5);border:1px solid rgba(212,175,55,0.25);border-radius:8px;padding:10px;">
+                    <div style="color:#d6d3d1;font-size:0.75rem;margin-bottom:4px;">${escaparHTML(u.name || u.phone)}</div>
+                    <div style="color:var(--oro-brillante);font-weight:bold;font-size:0.9rem;">${tv} votos · ${s.length}/${totalEventos} sellos</div>
+                    <div style="font-size:0.7rem;color:#a1a1aa;margin-top:4px;">${escaparHTML(u.role || 'jugador')} · ${escaparHTML(u.barrio_representado || 'Forastero')}</div>
+                </article>
+            `;
+        });
+        html += `</div>`;
+        grid.innerHTML = html;
+    } else {
+        // Usuario normal: mostrar sus propios sellos
+        if (sellos.length === 0) {
+            grid.innerHTML = `<p style="color:#a1a1aa;grid-column:1/-1;text-align:center;padding:24px;">Aún no tienes sellos en tu pasaporte. ¡Participa en las votaciones para sellarlo!</p>`;
+        } else {
+            grid.innerHTML = sellos.map(selloEventoHTML).join('');
+        }
+    }
+
+    if (mensaje) mensaje.textContent = esAdmin ? 'Vista de administración: pasaportes de todos los usuarios.' : 'Tu pasaporte se actualiza automáticamente al votar.';
+}
+
+function generarPasaportePDF() {
+    const user = getCurrentUser();
+    if (!user) {
+        alert('Debes iniciar sesión para generar el pasaporte.');
+        return;
+    }
+
+    const userId = String(user.phone || user.id || '');
+    const sellos = obtenerPasaporteUsuario(userId);
+    const totalVotos = sellos.reduce((sum, s) => sum + s.veces, 0);
+    const eventosConVotacion = getEventosConVotacionDelAmbito();
+    const totalEventos = eventosConVotacion.length;
+
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF) {
+        alert('La librería de PDF no está disponible.');
+        return;
+    }
+
+    const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const oro = '#d4af37';
+    const oroOscuro = '#b8860b';
+    const negro = '#0a0a0a';
+
+    // Fondo pergamino
+    pdf.setFillColor('#f3e9d2');
+    pdf.rect(0, 0, pageW, pageH, 'F');
+
+    // Borde ornamental dorado
+    pdf.setDrawColor(oroOscuro);
+    pdf.setLineWidth(3);
+    pdf.rect(12, 12, pageW - 24, pageH - 24, 'S');
+    pdf.setLineWidth(1);
+    pdf.rect(16, 16, pageW - 32, pageH - 32, 'S');
+
+    // Esquinas decorativas (esquinas simples)
+    pdf.setFillColor(oroOscuro);
+    pdf.circle(22, 22, 3, 'F');
+    pdf.circle(pageW - 22, 22, 3, 'F');
+    pdf.circle(22, pageH - 22, 3, 'F');
+    pdf.circle(pageW - 22, pageH - 22, 3, 'F');
+
+    // Título
+    pdf.setTextColor(oroOscuro);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(24);
+    pdf.text('PASAPORTE DEL MAESTRE', pageW / 2, 34, { align: 'center' });
+
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'italic');
+    pdf.setTextColor('#5a4a2a');
+    pdf.text('LokiTrono de Barrios — Juego del Pintxo de Bilbao', pageW / 2, 46, { align: 'center' });
+    pdf.text('Códice de la Villa — Sellos de Votación', pageW / 2, 56, { align: 'center' });
+
+    // Línea separadora
+    pdf.setDrawColor(oroOscuro);
+    pdf.setLineWidth(0.7);
+    pdf.line(40, 64, pageW - 40, 64);
+
+    // Datos del maestre
+    let y = 76;
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(13);
+    pdf.setTextColor(oroOscuro);
+    pdf.text('Maestre:', 20, y);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.setTextColor(negro);
+    pdf.text(user.name || user.phone || 'Sin nombre', 60, y);
+    y += 8;
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(13);
+    pdf.setTextColor(oroOscuro);
+    pdf.text('Teléfono:', 20, y);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.setTextColor(negro);
+    pdf.text(user.phone || '—', 60, y);
+    y += 12;
+
+    // Resumen
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(13);
+    pdf.setTextColor(oroOscuro);
+    pdf.text(`Votos emitidos: ${totalVotos}`, 20, y);
+    pdf.text(`Eventos sellados: ${sellos.length} / ${totalEventos}`, 110, y);
+    y += 12;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.setTextColor('#5a4a2a');
+    pdf.text('Cada sello certifica que el maestre participó en la votación del evento correspondiente.', 20, y);
+    y += 14;
+
+    // Sellos de eventos
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.setTextColor(oroOscuro);
+    pdf.text('Sellos de Votación', 20, y);
+    y += 10;
+
+    if (sellos.length === 0) {
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(11);
+        pdf.setTextColor('#5a4a2a');
+        pdf.text('Aún no tienes sellos en tu pasaporte.', 20, y);
+    } else {
+        sellos.forEach((sello, idx) => {
+            // Verificar espacio en la página
+            if (y > pageH - 60) {
+                pdf.addPage();
+                // Repetir borde en nueva página
+                pdf.setFillColor('#f3e9d2');
+                pdf.rect(0, 0, pageW, pageH, 'F');
+                pdf.setDrawColor(oroOscuro);
+                pdf.setLineWidth(3);
+                pdf.rect(12, 12, pageW - 24, pageH - 24, 'S');
+                pdf.setLineWidth(1);
+                pdf.rect(16, 16, pageW - 32, pageH - 32, 'S');
+                y = 30;
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(13);
+                pdf.setTextColor(oroOscuro);
+                pdf.text('Pasaporte del Maestre (continuación)', pageW / 2, y, { align: 'center' });
+                y += 14;
+            }
+
+            const final = (sello.notas.festin * 0.50) + (sello.notas.caminos * 0.20) + (sello.notas.espiritu * 0.30);
+            const fechaStr = sello.fecha ? new Date(sello.fecha).toLocaleDateString('es-ES') : '—';
+
+            // Sello circular
+            pdf.setFillColor(oro);
+            pdf.circle(30, y - 2, 8, 'F');
+            pdf.setStrokeColor(oroOscuro);
+            pdf.setLineWidth(0.5);
+            pdf.circle(30, y - 2, 8, 'S');
+            pdf.setTextColor(negro);
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(7);
+            pdf.text(sello.veces > 0 ? '✓' : '○', 28, y, { align: 'center' });
+
+            // Texto del sello
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(9.5);
+            pdf.setTextColor(oroOscuro);
+            pdf.text(escaparHTML(sello.nombre).length > 45 ? escaparHTML(sello.nombre).substring(0, 45) + '…' : escaparHTML(sello.nombre), 45, y - 2);
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(8);
+            pdf.setTextColor('#5a4a2a');
+            pdf.text(escaparHTML(sello.barrio) + '  ·  ' + fechaStr, 45, y + 3);
+            pdf.text(`Notas: 🍽️${sello.notas.festin}  🚌${sello.notas.caminos}  🎉${sello.notas.espiritu}  ·  Nota final: ${final.toFixed(2)}`, 45, y + 6);
+
+            y += 14;
+        });
+    }
+
+    // Pie de página
+    pdf.setFont('helvetica', 'italic');
+    pdf.setFontSize(8);
+    pdf.setTextColor('#8a7a5a');
+    const fechaHoy = new Date().toLocaleDateString('es-ES');
+    pdf.text(`Emitido el ${fechaHoy} — LokiTrono de Barrios · Códice de la Villa`, pageW / 2, pageH - 14, { align: 'center' });
+
+    const nombreArchivo = `Pasaporte_${(user.name || 'maestre').replace(/\s+/g, '_')}.pdf`;
+    pdf.save(nombreArchivo);
+}
+
+window.renderPasaporteMaestre = renderPasaporteMaestre;
+window.generarPasaportePDF = generarPasaportePDF;

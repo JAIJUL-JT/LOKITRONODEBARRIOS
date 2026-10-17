@@ -54,6 +54,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <!-- Datos estructurados (schema.org) -->
     <script type="application/ld+json">
@@ -170,6 +171,9 @@
                 <optgroup label="👑 Administración" id="optgroup-admin-menu">
                     <option value="pestana-generar-evento" data-tab="tab-generar-evento">🗓️ Eventos (crear/editar)</option>
                     <option value="tab-superadmin" data-tab="tab-superadmin">⚙️ Configuración del Juego</option>
+                    <option value="pestana-locales-promocion" data-tab="tab-locales-promocion">🍻 Locales Promocionados</option>
+                    <option value="pestana-locales-evento" data-tab="tab-locales-evento">🏛️ Locales del Evento</option>
+                    <option value="pestana-oraculo-ia" data-tab="tab-oraculo-ia">🔮 Oráculo Imperial</option>
                     <option value="pestana-estadisticas" data-tab="tab-estadisticas">📊 Estadísticas</option>
                     <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Alta y Control de Usuarios</option>
                     <option value="pestana-barrios" data-tab="tab-barrios">🏰 Gestión de Barrios y Reinos</option>
@@ -684,241 +688,10 @@
                 <p style="font-size:0.8rem;color:#a1a1aa;margin-top:8px;">Estos módulos son exclusivos del Superadmin y el MASTER.</p>
             </div>
 
-            <section id="pestana-locales-promocion" class="tab-content tema-corte-admin" data-tab="tab-locales-promocion" style="display: none;">
-                <div class="panel-card">
-                    <div class="leaderboard-header" style="text-align: center; margin-bottom: 20px;">
-                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🍻 LOCALES PROMOCIONADOS DE LOS EVENTOS 🍻</h2>
-                        <p style="color: #d6d3d1;">
-                            Sección privada del Trono Mayor: locales donde se celebran los eventos, con su
-                            cuenta atrás (fecha y hora propias), redes sociales y fotografía. Solo se promociona
-                            un local cuando la donación para el mantenimiento del portal está confirmada.
-                        </p>
-                    </div>
-
-                    <div id="panel-gestion-locales" style="background: rgba(10,10,10,0.55); border: 1px solid #44403c; border-radius: 10px; padding: 18px; margin-bottom: 26px;">
-                        <h3 style="color: var(--oro-brillante); margin-bottom: 12px;">✍️ Gestión de locales (Administración)</h3>
-                        <form id="form-local-promocion">
-                            <input type="hidden" id="local-id" value="">
-                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                                <div class="form-group" style="flex: 2 1 260px;">
-                                    <label for="local-nombre">Nombre del local *</label>
-                                    <input type="text" id="local-nombre" class="input-medieval" required
-                                        placeholder="Ej: Taberna El Puerto">
-                                </div>
-                                <div class="form-group" style="flex: 2 1 260px;">
-                                    <label for="local-direccion">Dirección</label>
-                                    <input type="text" id="local-direccion" class="input-medieval"
-                                        placeholder="Calle, número y ciudad">
-                                </div>
-                            </div>
-                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                                <div class="form-group" style="flex: 1 1 200px;">
-                                    <label for="local-fecha-evento">Fecha del evento en el local</label>
-                                    <input type="date" id="local-fecha-evento" class="input-medieval">
-                                </div>
-                                <div class="form-group" style="flex: 1 1 160px;">
-                                    <label for="local-hora-evento">Hora del evento</label>
-                                    <input type="time" id="local-hora-evento" class="input-medieval">
-                                </div>
-                                <div class="form-group" style="flex: 1 1 200px;">
-                                    <label for="local-orden">Orden de aparición</label>
-                                    <input type="number" id="local-orden" class="input-medieval" value="0" min="0">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Redes sociales y web (enlaces etiquetados)</label>
-                                <div id="local-redes-filas"></div>
-                                <button type="button" class="btn-cuervo" id="local-btn-anadir-red"
-                                    style="margin-top: 6px; background:#44403c;">➕ Añadir enlace</button>
-                            </div>
-
-                            <div class="form-group" style="margin-top: 14px;">
-                                <label>Explicaciones / descripción del local</label>
-                                <textarea id="local-explicaciones" class="input-medieval" rows="3"
-                                    placeholder="Detalles del local, especialidades, ambiente..."></textarea>
-                            </div>
-
-                            <div style="display: flex; gap: 18px; flex-wrap: wrap; margin: 14px 0; align-items: center; background: rgba(20,20,30,0.4); padding: 14px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.25);">
-                                <div class="form-group" style="flex: 2 1 300px;">
-                                    <label>Pintxo vinculado al local (nombre)</label>
-                                    <input type="text" id="local-pintxo-nombre" class="input-medieval"
-                                        placeholder="Ej: Gilda de anchoa">
-                                </div>
-                                <div class="form-group" style="flex: 1 1 220px;">
-                                    <label>Imagen del pintxo (URL)</label>
-                                    <input type="text" id="local-pintxo-imagen" class="input-medieval"
-                                        placeholder="https://…/pintxo.jpg">
-                                </div>
-                                <img id="local-pintxo-preview" alt="Vista previa pintxo"
-                                    style="width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 2px solid var(--oro-real); display: none;">
-                            </div>
-
-                            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
-                                <div class="form-group" style="flex: 2 1 320px;">
-                                    <label for="local-foto-url">Foto del local (URL)</label>
-                                    <input type="text" id="local-foto-url" class="input-medieval"
-                                        placeholder="https://…/local.jpg">
-                                </div>
-                                <div class="form-group" style="flex: 1 1 240px;">
-                                    <label for="local-foto-file">… o subir una imagen</label>
-                                    <input type="file" id="local-foto-file" class="input-medieval" accept="image/png,image/jpeg,image/webp,image/gif">
-                                </div>
-                                <img id="local-foto-preview" alt="Vista previa"
-                                    style="width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 2px solid var(--oro-real); display: none;">
-                            </div>
-
-                            <div style="display: flex; gap: 18px; flex-wrap: wrap; margin: 14px 0; align-items: center;">
-                                <label class="geo-check-inline">
-                                    <input type="checkbox" id="local-donacion-confirmada">
-                                    💰 Donación confirmada (mantenimiento del portal)
-                                </label>
-                                <label class="geo-check-inline">
-                                    <input type="checkbox" id="local-activo" checked>
-                                    🗓️ Promoción activa
-                                </label>
-                            </div>
-
-                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                                <button type="submit" class="btn-cuervo" id="local-btn-guardar" style="background:#166534;">💾 Guardar local</button>
-                                <button type="button" class="btn-cuervo" id="local-btn-nuevo">🆕 Nuevo local</button>
-                                <button type="button" class="btn-cuervo" id="local-btn-eliminar" style="background:#7f1d1d; display: none;">🗑️ Eliminar local</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <h3 style="color: var(--oro-brillante); margin-bottom: 14px;">📜 Locales registrados</h3>
-                    <div id="grid-locales-promocion" class="grid-locales-promocion"></div>
-                    <p id="locales-estado" role="status" aria-live="polite" style="color: #d6d3d1; margin-top: 12px;"></p>
-                </div>
-            </section>
 
             <!-- PESTAÑA: Locales del evento (Solo Superadmin y MASTER) -->
-            <section id="pestana-locales-evento" class="tab-content tema-corte-admin" data-tab="tab-locales-evento" style="display: none;">
-                <div class="panel-card">
-                    <div class="leaderboard-header" style="text-align: center; margin-bottom: 20px;">
-                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🏛️ LOCALES DEL EVENTO 🏛️</h2>
-                        <p style="color: #d6d3d1;">
-                            Gestión de locales vinculados a cada evento del torneo. Disponible exclusivamente para
-                            <strong>Superadmin</strong> y <strong>MASTER</strong>. Permite asociar pintxos con sus
-                            imágenes a los locales donde se celebran las justas.
-                        </p>
-                    </div>
-                    <div id="panel-locales-evento" style="background: rgba(10,10,10,0.55); border: 1px solid #44403c; border-radius: 10px; padding: 18px; margin-bottom: 26px;">
-                        <h3 style="color: var(--oro-brillante); margin-bottom: 12px;">📋 Locales asociados al evento activo</h3>
-                        <div id="grid-locales-evento" class="grid-locales-evento"></div>
-                        <p id="locales-evento-estado" role="status" aria-live="polite" style="color: #d6d3d1; margin-top: 12px;"></p>
-                    </div>
-                </div>
-            </section>
 
             <!-- PESTAÑA: Oráculo Imperial e Integración de Modelos de IA (Groq) -->
-            <section id="pestana-oraculo-ia" class="tab-content tema-oraculo" data-tab="tab-oraculo-ia" style="display: none; background-image: url('fondo-cripta-oraculo.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-                <div class="leaderboard-container" style="background: rgba(10, 10, 15, 0.95); border: 2px solid var(--oro-real); padding: 25px; border-radius: 12px;">
-                    <div class="leaderboard-header" style="text-align: center; margin-bottom: 25px;">
-                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🔮 ORÁCULO IMPERIAL & MODELOS DE IA 🔮</h2>
-                        <p style="color: #d6d3d1;">Inteligencia Feudal para la Generación de Crónicas, Bandos de Guerra y Recomendaciones de Pintxos</p>
-                    </div>
-
-                    <div class="legal-aviso" role="note" style="margin-top: 0;">
-                        🤖 <strong>Aviso de transparencia (IA):</strong> estás interactuando con un sistema de
-                        inteligencia artificial (Groq, a través del servidor seguro del Reino). Los textos generados son contenido automático, pueden
-                        contener errores y no constituyen asesoramiento profesional. No introduzcas datos personales
-                        sensibles. <a href="legal/aviso-ia.html" target="_blank" rel="noopener">Más información</a>.
-                    </div>
-
-                    <!-- SELECCIÓN DE MODELO DE IA -->
-                    <div style="background: rgba(20, 20, 30, 0.8); border: 1px solid var(--oro-real); padding: 18px; border-radius: 8px; margin-bottom: 25px;">
-                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0;">⚙️ Selección de Modelo de IA & Ajustes</h3>
-                        <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
-                            <div style="flex: 1; min-width: 220px;">
-                                <label style="display: block; font-size: 0.9rem; color: #d6d3d1; margin-bottom: 5px;">Modelo IA Seleccionado:</label>
-                                <select id="select-modelo-oraculo" class="input-medieval" style="width: 100%; margin: 0; background: #000;">
-                                    <option value="openai/gpt-oss-120b" selected>🦙 GPT-OSS 120B (Equilibrado)</option>
-                                    <option value="openai/gpt-oss-20b">⚡ GPT-OSS 20B (Crónicas Rápidas)</option>
-                                    <option value="qwen/qwen3.8-27b">🧠 Qwen 3.8 27B (Razonamiento)</option>
-                                </select>
-                            </div>
-                            <div style="flex: 1; min-width: 260px;">
-                                <p style="font-size: 0.85rem; color: #94a3b8; margin: 0 0 5px 0;">🔒 El Oráculo se conecta a Groq mediante el servidor seguro del Reino. No necesitas introducir ninguna clave: la clave queda protegida en el servidor.</p>
-                            </div>
-                            <div>
-                                <button class="btn-cuervo" onclick="guardarAjustesOraculo()" style="height: 42px;">💾 Guardar Ajustes</button>
-                            </div>
-                        </div>
-                        <p id="oraculo-config-status" style="font-size: 0.85rem; color: #4ade80; margin-top: 10px; margin-bottom: 0; display: none;"></p>
-                    </div>
-
-                    <!-- MÓDULO 1: GENERADOR DE CRÓNICAS FEUDALES -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-                        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid #3b82f6; padding: 20px; border-radius: 8px;">
-                            <h3 style="color: #60a5fa; font-family: 'Cinzel', serif; margin-top: 0;">📜 Generador de Crónicas del Reino</h3>
-                            <p style="font-size: 0.88rem; color: #94a3b8;">El Oráculo analiza la tabla de clasificación actual y los juicios emitidos para redactar una crónica medieval única con el modelo de IA activo.</p>
-                            
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 5px;">Tono de la Crónica:</label>
-                                <select id="select-tono-cronica" class="input-medieval" style="width: 100%; background: #0f172a;">
-                                    <option value="epico">⚔️ Épico Feudal (Poema de Mío Cid)</option>
-                                    <option value="satirico">🎭 Satírico & Tabernero (Coplas de Ciegos)</option>
-                                    <option value="solemne">👑 Bando Real Imperial (Solemne & Oficial)</option>
-                                </select>
-                            </div>
-
-                            <button class="btn-cuervo" onclick="generarCronicaOraculo()" id="btn-generar-cronica" style="width: 100%; background: #2563eb;">✨ Invocación del Oráculo (Generar Crónica)</button>
-                        </div>
-
-                        <!-- MÓDULO 2: RECOMENDADOR IMPERIAL DE PINTXOS -->
-                        <div style="background: rgba(24, 16, 30, 0.8); border: 1px solid #a855f7; padding: 20px; border-radius: 8px;">
-                            <h3 style="color: #c084fc; font-family: 'Cinzel', serif; margin-top: 0;">🍷 Recomendador Imperial de Pintxos</h3>
-                            <p style="font-size: 0.88rem; color: #e9d5ff;">Consulta al Oráculo para obtener una recomendación personalizada según tus gustos, el barrio objetivo y tu espíritu tabernero.</p>
-                            
-                            <div style="margin-bottom: 12px;">
-                                <label style="display: block; font-size: 0.85rem; color: #e2e8f0; margin-bottom: 5px;">Barrio o Casa a Visitar:</label>
-                                <select id="select-barrio-recomendacion" class="input-medieval" style="width: 100%; background: #1e1b4b;">
-                                    <option value="">Sin barrios creados en el Reino</option>
-                                </select>
-                            </div>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; font-size: 0.85rem; color: #e2e8f0; margin-bottom: 5px;">Preferencia o Antojo Feudal:</label>
-                                <input type="text" id="input-antojo-oraculo" placeholder="Ej: Tortilla jugosa, gilda picante o maridaje con txakoli..." class="input-medieval" style="width: 100%;">
-                            </div>
-
-                            <button class="btn-cuervo" onclick="generarRecomendacionOraculo()" id="btn-generar-recomendacion" style="width: 100%; background: #7e22ce;">🍷 Solicitar Recomendación Imperial</button>
-                        </div>
-                    </div>
-
-                    <!-- ÁREA DE RESULTADO DE LA IA -->
-                    <div id="contenedor-resultado-oraculo" style="display: none; margin-top: 25px; background: rgba(5, 5, 10, 0.95); border: 2px solid var(--oro-real); border-radius: 8px; padding: 20px;">
-                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
-                            <span>📜 Dictamen del Oráculo Imperial</span>
-                            <span id="badge-modelo-usado" style="font-size: 0.75rem; background: var(--oro-real); color: #000; padding: 3px 8px; border-radius: 12px; font-weight: bold;">GPT-OSS 120B</span>
-                        </h3>
-                        <div id="salida-oraculo" style="color: #f1f5f9; font-size: 0.98rem; line-height: 1.6; white-space: pre-wrap; font-family: Georgia, serif; background: rgba(15,23,42,0.5); padding: 15px; border-radius: 6px; border-left: 4px solid var(--oro-real);">
-                        </div>
-                    </div>
-
-                    <!-- VISTA DE ADMINISTRACIÓN: LISTADO GENERAL DE PARTICIPANTES Y AUDITORÍA DE VOTOS -->
-                    <div id="seccion-superadmin-participantes"
-                        style="margin-top: 40px; background: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; padding: 20px; border-radius: 8px;">
-                        <h3 style="color: #60a5fa; margin-top: 0; font-family: 'Cinzel', serif;">📊 Listado General de
-                            Participantes y Auditoría de Votos</h3>
-                        <p style="font-size: 0.85rem; color: #93c5fd;">
-                            Consulta el listado de participantes de la competición, la asistencia separada por evento
-                            y los votos detallados emitidos por cada participante.</p>
-
-                        <div id="contenedor-participantes-eventos-body"></div>
-                    </div>
-                </div>
-            </section>
-            <!-- SUBSECCIONES DE CONFIGURACIÓN DEL JUEGO (solo Superadmin y MASTER) -->
-            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--oro-real);">
-                <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin: 0 0 10px;">🔧 Herramientas de Administración del Reino</h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('tab-superadmin')" style="flex:1; min-width: 160px;">👑 Consejo Real</button>
-                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-usuarios')" style="flex:1; min-width: 160px;">👥 Usuarios</button>
-                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-barrios')" style="flex:1; min-width: 160px;">🏰 Barrios</button>
-                </div>
                 <p style="font-size:0.8rem;color:#a1a1aa;margin-top:8px;">Las herramientas de Restaurar, Estadísticas, Geografía y Puzzle están dentro de Configuración del Juego.</p>
             </div>
 
@@ -1105,8 +878,255 @@
                         <div id="estad-votos-detalle"></div>
                     </section>
 
+                    <!-- PASAPORTE DEL MAESTRE -->
+                    <section id="panel-pasaporte-maestre" class="panel-card" style="margin-top:30px;">
+                        <h3 style="color:var(--oro-brillante);">📜 Pasaporte del Maestre — Sellos de Votación</h3>
+                        <p style="color:#d6d3d1;margin-bottom:14px;">
+                            Cada voto emitido sella el pasaporte del maestre en el evento correspondiente.
+                            Al finalizar la competición, descarga tu documento PDF con todos los sellos,
+                            al estilo medieval del Camino de Santiago.
+                        </p>
+
+                        <div id="pasaporte-resumen" style="margin-bottom:18px;"></div>
+
+                        <div id="pasaporte-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-bottom:18px;"></div>
+
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <button type="button" class="btn-cuervo" onclick="generarPasaportePDF()" style="background:#166534;">📄 Descargar Pasaporte PDF</button>
+                            <button type="button" class="btn-cuervo" onclick="renderPasaporteMaestre()" style="background:#44403c;">🔄 Refrescar Sellos</button>
+                        </div>
+                        <p id="pasaporte-mensaje" style="margin-top:10px;font-size:0.85rem;color:#a1a1aa;"></p>
+                    </section>
+
                 </div>
             </section>
+
+            <section id="pestana-locales-promocion" class="tab-content tema-corte-admin" data-tab="tab-locales-promocion" style="display: none;">
+                <div class="panel-card">
+                    <div class="leaderboard-header" style="text-align: center; margin-bottom: 20px;">
+                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🍻 LOCALES PROMOCIONADOS DE LOS EVENTOS 🍻</h2>
+                        <p style="color: #d6d3d1;">
+                            Sección privada del Trono Mayor: locales donde se celebran los eventos, con su
+                            cuenta atrás (fecha y hora propias), redes sociales y fotografía. Solo se promociona
+                            un local cuando la donación para el mantenimiento del portal está confirmada.
+                        </p>
+                    </div>
+
+                    <div id="panel-gestion-locales" style="background: rgba(10,10,10,0.55); border: 1px solid #44403c; border-radius: 10px; padding: 18px; margin-bottom: 26px;">
+                        <h3 style="color: var(--oro-brillante); margin-bottom: 12px;">✍️ Gestión de locales (Administración)</h3>
+                        <form id="form-local-promocion">
+                            <input type="hidden" id="local-id" value="">
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 2 1 260px;">
+                                    <label for="local-nombre">Nombre del local *</label>
+                                    <input type="text" id="local-nombre" class="input-medieval" required
+                                        placeholder="Ej: Taberna El Puerto">
+                                </div>
+                                <div class="form-group" style="flex: 2 1 260px;">
+                                    <label for="local-direccion">Dirección</label>
+                                    <input type="text" id="local-direccion" class="input-medieval"
+                                        placeholder="Calle, número y ciudad">
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1 1 200px;">
+                                    <label for="local-fecha-evento">Fecha del evento en el local</label>
+                                    <input type="date" id="local-fecha-evento" class="input-medieval">
+                                </div>
+                                <div class="form-group" style="flex: 1 1 160px;">
+                                    <label for="local-hora-evento">Hora del evento</label>
+                                    <input type="time" id="local-hora-evento" class="input-medieval">
+                                </div>
+                                <div class="form-group" style="flex: 1 1 200px;">
+                                    <label for="local-orden">Orden de aparición</label>
+                                    <input type="number" id="local-orden" class="input-medieval" value="0" min="0">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Redes sociales y web (enlaces etiquetados)</label>
+                                <div id="local-redes-filas"></div>
+                                <button type="button" class="btn-cuervo" id="local-btn-anadir-red"
+                                    style="margin-top: 6px; background:#44403c;">➕ Añadir enlace</button>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 14px;">
+                                <label>Explicaciones / descripción del local</label>
+                                <textarea id="local-explicaciones" class="input-medieval" rows="3"
+                                    placeholder="Detalles del local, especialidades, ambiente..."></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 18px; flex-wrap: wrap; margin: 14px 0; align-items: center; background: rgba(20,20,30,0.4); padding: 14px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.25);">
+                                <div class="form-group" style="flex: 2 1 300px;">
+                                    <label>Pintxo vinculado al local (nombre)</label>
+                                    <input type="text" id="local-pintxo-nombre" class="input-medieval"
+                                        placeholder="Ej: Gilda de anchoa">
+                                </div>
+                                <div class="form-group" style="flex: 1 1 220px;">
+                                    <label>Imagen del pintxo (URL)</label>
+                                    <input type="text" id="local-pintxo-imagen" class="input-medieval"
+                                        placeholder="https://…/pintxo.jpg">
+                                </div>
+                                <img id="local-pintxo-preview" alt="Vista previa pintxo"
+                                    style="width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 2px solid var(--oro-real); display: none;">
+                            </div>
+
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                                <div class="form-group" style="flex: 2 1 320px;">
+                                    <label for="local-foto-url">Foto del local (URL)</label>
+                                    <input type="text" id="local-foto-url" class="input-medieval"
+                                        placeholder="https://…/local.jpg">
+                                </div>
+                                <div class="form-group" style="flex: 1 1 240px;">
+                                    <label for="local-foto-file">… o subir una imagen</label>
+                                    <input type="file" id="local-foto-file" class="input-medieval" accept="image/png,image/jpeg,image/webp,image/gif">
+                                </div>
+                                <img id="local-foto-preview" alt="Vista previa"
+                                    style="width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 2px solid var(--oro-real); display: none;">
+                            </div>
+
+                            <div style="display: flex; gap: 18px; flex-wrap: wrap; margin: 14px 0; align-items: center;">
+                                <label class="geo-check-inline">
+                                    <input type="checkbox" id="local-donacion-confirmada">
+                                    💰 Donación confirmada (mantenimiento del portal)
+                                </label>
+                                <label class="geo-check-inline">
+                                    <input type="checkbox" id="local-activo" checked>
+                                    🗓️ Promoción activa
+                                </label>
+                            </div>
+
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <button type="submit" class="btn-cuervo" id="local-btn-guardar" style="background:#166534;">💾 Guardar local</button>
+                                <button type="button" class="btn-cuervo" id="local-btn-nuevo">🆕 Nuevo local</button>
+                                <button type="button" class="btn-cuervo" id="local-btn-eliminar" style="background:#7f1d1d; display: none;">🗑️ Eliminar local</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <h3 style="color: var(--oro-brillante); margin-bottom: 14px;">📜 Locales registrados</h3>
+                    <div id="grid-locales-promocion" class="grid-locales-promocion"></div>
+                    <p id="locales-estado" role="status" aria-live="polite" style="color: #d6d3d1; margin-top: 12px;"></p>
+                </div>
+            </section>
+
+            <section id="pestana-locales-evento" class="tab-content tema-corte-admin" data-tab="tab-locales-evento" style="display: none;">
+                <div class="panel-card">
+                    <div class="leaderboard-header" style="text-align: center; margin-bottom: 20px;">
+                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🏛️ LOCALES DEL EVENTO 🏛️</h2>
+                        <p style="color: #d6d3d1;">
+                            Gestión de locales vinculados a cada evento del torneo. Disponible exclusivamente para
+                            <strong>Superadmin</strong> y <strong>MASTER</strong>. Permite asociar pintxos con sus
+                            imágenes a los locales donde se celebran las justas.
+                        </p>
+                    </div>
+                    <div id="panel-locales-evento" style="background: rgba(10,10,10,0.55); border: 1px solid #44403c; border-radius: 10px; padding: 18px; margin-bottom: 26px;">
+                        <h3 style="color: var(--oro-brillante); margin-bottom: 12px;">📋 Locales asociados al evento activo</h3>
+                        <div id="grid-locales-evento" class="grid-locales-evento"></div>
+                        <p id="locales-evento-estado" role="status" aria-live="polite" style="color: #d6d3d1; margin-top: 12px;"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="pestana-oraculo-ia" class="tab-content tema-oraculo" data-tab="tab-oraculo-ia" style="display: none; background-image: url('fondo-cripta-oraculo.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+                <div class="leaderboard-container" style="background: rgba(10, 10, 15, 0.95); border: 2px solid var(--oro-real); padding: 25px; border-radius: 12px;">
+                    <div class="leaderboard-header" style="text-align: center; margin-bottom: 25px;">
+                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🔮 ORÁCULO IMPERIAL & MODELOS DE IA 🔮</h2>
+                        <p style="color: #d6d3d1;">Inteligencia Feudal para la Generación de Crónicas, Bandos de Guerra y Recomendaciones de Pintxos</p>
+                    </div>
+
+                    <div class="legal-aviso" role="note" style="margin-top: 0;">
+                        🤖 <strong>Aviso de transparencia (IA):</strong> estás interactuando con un sistema de
+                        inteligencia artificial (Groq, a través del servidor seguro del Reino). Los textos generados son contenido automático, pueden
+                        contener errores y no constituyen asesoramiento profesional. No introduzcas datos personales
+                        sensibles. <a href="legal/aviso-ia.html" target="_blank" rel="noopener">Más información</a>.
+                    </div>
+
+                    <!-- SELECCIÓN DE MODELO DE IA -->
+                    <div style="background: rgba(20, 20, 30, 0.8); border: 1px solid var(--oro-real); padding: 18px; border-radius: 8px; margin-bottom: 25px;">
+                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0;">⚙️ Selección de Modelo de IA & Ajustes</h3>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                            <div style="flex: 1; min-width: 220px;">
+                                <label style="display: block; font-size: 0.9rem; color: #d6d3d1; margin-bottom: 5px;">Modelo IA Seleccionado:</label>
+                                <select id="select-modelo-oraculo" class="input-medieval" style="width: 100%; margin: 0; background: #000;">
+                                    <option value="openai/gpt-oss-120b" selected>🦙 GPT-OSS 120B (Equilibrado)</option>
+                                    <option value="openai/gpt-oss-20b">⚡ GPT-OSS 20B (Crónicas Rápidas)</option>
+                                    <option value="qwen/qwen3.8-27b">🧠 Qwen 3.8 27B (Razonamiento)</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1; min-width: 260px;">
+                                <p style="font-size: 0.85rem; color: #94a3b8; margin: 0 0 5px 0;">🔒 El Oráculo se conecta a Groq mediante el servidor seguro del Reino. No necesitas introducir ninguna clave: la clave queda protegida en el servidor.</p>
+                            </div>
+                            <div>
+                                <button class="btn-cuervo" onclick="guardarAjustesOraculo()" style="height: 42px;">💾 Guardar Ajustes</button>
+                            </div>
+                        </div>
+                        <p id="oraculo-config-status" style="font-size: 0.85rem; color: #4ade80; margin-top: 10px; margin-bottom: 0; display: none;"></p>
+                    </div>
+
+                    <!-- MÓDULO 1: GENERADOR DE CRÓNICAS FEUDALES -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid #3b82f6; padding: 20px; border-radius: 8px;">
+                            <h3 style="color: #60a5fa; font-family: 'Cinzel', serif; margin-top: 0;">📜 Generador de Crónicas del Reino</h3>
+                            <p style="font-size: 0.88rem; color: #94a3b8;">El Oráculo analiza la tabla de clasificación actual y los juicios emitidos para redactar una crónica medieval única con el modelo de IA activo.</p>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 5px;">Tono de la Crónica:</label>
+                                <select id="select-tono-cronica" class="input-medieval" style="width: 100%; background: #0f172a;">
+                                    <option value="epico">⚔️ Épico Feudal (Poema de Mío Cid)</option>
+                                    <option value="satirico">🎭 Satírico & Tabernero (Coplas de Ciegos)</option>
+                                    <option value="solemne">👑 Bando Real Imperial (Solemne & Oficial)</option>
+                                </select>
+                            </div>
+
+                            <button class="btn-cuervo" onclick="generarCronicaOraculo()" id="btn-generar-cronica" style="width: 100%; background: #2563eb;">✨ Invocación del Oráculo (Generar Crónica)</button>
+                        </div>
+
+                        <!-- MÓDULO 2: RECOMENDADOR IMPERIAL DE PINTXOS -->
+                        <div style="background: rgba(24, 16, 30, 0.8); border: 1px solid #a855f7; padding: 20px; border-radius: 8px;">
+                            <h3 style="color: #c084fc; font-family: 'Cinzel', serif; margin-top: 0;">🍷 Recomendador Imperial de Pintxos</h3>
+                            <p style="font-size: 0.88rem; color: #e9d5ff;">Consulta al Oráculo para obtener una recomendación personalizada según tus gustos, el barrio objetivo y tu espíritu tabernero.</p>
+                            
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; font-size: 0.85rem; color: #e2e8f0; margin-bottom: 5px;">Barrio o Casa a Visitar:</label>
+                                <select id="select-barrio-recomendacion" class="input-medieval" style="width: 100%; background: #1e1b4b;">
+                                    <option value="">Sin barrios creados en el Reino</option>
+                                </select>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-size: 0.85rem; color: #e2e8f0; margin-bottom: 5px;">Preferencia o Antojo Feudal:</label>
+                                <input type="text" id="input-antojo-oraculo" placeholder="Ej: Tortilla jugosa, gilda picante o maridaje con txakoli..." class="input-medieval" style="width: 100%;">
+                            </div>
+
+                            <button class="btn-cuervo" onclick="generarRecomendacionOraculo()" id="btn-generar-recomendacion" style="width: 100%; background: #7e22ce;">🍷 Solicitar Recomendación Imperial</button>
+                        </div>
+                    </div>
+
+                    <!-- ÁREA DE RESULTADO DE LA IA -->
+                    <div id="contenedor-resultado-oraculo" style="display: none; margin-top: 25px; background: rgba(5, 5, 10, 0.95); border: 2px solid var(--oro-real); border-radius: 8px; padding: 20px;">
+                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
+                            <span>📜 Dictamen del Oráculo Imperial</span>
+                            <span id="badge-modelo-usado" style="font-size: 0.75rem; background: var(--oro-real); color: #000; padding: 3px 8px; border-radius: 12px; font-weight: bold;">GPT-OSS 120B</span>
+                        </h3>
+                        <div id="salida-oraculo" style="color: #f1f5f9; font-size: 0.98rem; line-height: 1.6; white-space: pre-wrap; font-family: Georgia, serif; background: rgba(15,23,42,0.5); padding: 15px; border-radius: 6px; border-left: 4px solid var(--oro-real);">
+                        </div>
+                    </div>
+
+                    <!-- VISTA DE ADMINISTRACIÓN: LISTADO GENERAL DE PARTICIPANTES Y AUDITORÍA DE VOTOS -->
+                    <div id="seccion-superadmin-participantes"
+                        style="margin-top: 40px; background: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; padding: 20px; border-radius: 8px;">
+                        <h3 style="color: #60a5fa; margin-top: 0; font-family: 'Cinzel', serif;">📊 Listado General de
+                            Participantes y Auditoría de Votos</h3>
+                        <p style="font-size: 0.85rem; color: #93c5fd;">
+                            Consulta el listado de participantes de la competición, la asistencia separada por evento
+                            y los votos detallados emitidos por cada participante.</p>
+
+                        <div id="contenedor-participantes-eventos-body"></div>
+                    </div>
+                </div>
+            </section>
+
 
             <!-- PESTAÑA 3: Control de Usuarios (Añadir, Editar, Borrar, Recuperar Contraseña, Asignar Barrio) -->
             <section id="pestana-usuarios" class="tab-content tema-corte-admin" style="display: none;">

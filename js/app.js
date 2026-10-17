@@ -401,13 +401,6 @@ function actualizarInterfazSesion(usuario) {
         const panelSorteo = document.getElementById('panel-sorteo-barrios');
         if (panelSorteo) panelSorteo.style.display = (esSuperadmin || esGestorSorteo) ? 'block' : 'none';
 
-        const esMaster = esRolMaster(usuario.role);
-        const optgroupMaster = document.getElementById('optgroup-oraculo-menu');
-        if (optgroupMaster) optgroupMaster.style.display = esMaster ? '' : 'none';
-        const optgroupLocales = document.getElementById('optgroup-locales-menu');
-        if (optgroupLocales) optgroupLocales.style.display = esMaster ? '' : 'none';
-        const optLocalesEvento = document.getElementById("option-menu-locales-evento");
-        if (optLocalesEvento) optLocalesEvento.style.display = (esSuperadmin || esMaster) ? "" : "none";
         const grupoPin = document.getElementById('group-usuario-pin');
         if (grupoPin) grupoPin.style.display = esMaster ? 'block' : 'none';
         const accionesCredenciales = document.getElementById('acciones-credenciales-pin');

@@ -110,7 +110,7 @@ function setCurrentUser(user) {
     localStorage.setItem(STORAGE_KEYS.usuarioActual, JSON.stringify(user || null));
 }
 
-const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-sorteo-eventos', 'pestana-oraculo-ia', 'pestana-locales-promocion', 'pestana-locales-evento', 'pestana-estadisticas', 'pestana-blog'];
+const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-sorteo-eventos', 'pestana-oraculo-ia', 'pestana-locales-promocion', 'pestana-locales-evento', 'pestana-estadisticas', 'pestana-blog', 'pestana-restaurar', 'pestana-geografia'];
 
 /* ==========================================
    FIN DEL JUEGO: ESTADO, PROTECCIÓN Y BLOQUEO
@@ -403,6 +403,10 @@ function actualizarInterfazSesion(usuario) {
         if (optBarrios) optBarrios.style.display = esSuperadmin ? "" : "none";
         const optEventos = document.querySelector("option[value=\"pestana-generar-evento\"]");
         if (optEventos) optEventos.style.display = esSuperadmin ? "" : "none";
+        const optRestaurar = document.querySelector("option[value=\"pestana-restaurar\"]");
+        if (optRestaurar) optRestaurar.style.display = esSuperadmin ? "" : "none";
+        const optGeografia = document.querySelector("option[value=\"pestana-geografia\"]");
+        if (optGeografia) optGeografia.style.display = esSuperadmin ? "" : "none";
         // La Gala Final solo aparece a los maestres cuando ya está publicada.
         aplicarVisibilidadGalaFinal();
         if (typeof cargarGalaFinalDesdeSupabase === 'function') cargarGalaFinalDesdeSupabase();

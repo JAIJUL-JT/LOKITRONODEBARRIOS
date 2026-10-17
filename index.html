@@ -185,6 +185,8 @@
                     <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Alta y Control de Usuarios</option>
                     <option value="pestana-barrios" data-tab="tab-barrios">🏰 Gestión de Barrios y Reinos</option>
                     <option value="pestana-sorteo-eventos" data-tab="tab-sorteo-eventos">🎲 Sorteo de eventos</option>
+                    <option value="pestana-restaurar" data-tab="tab-restaurar">☠️ Restaurar Competición</option>
+                    <option value="pestana-geografia" data-tab="tab-geografia">🌍 Ciudades y Distritos</option>
                 </optgroup>
             </select>
         </div>
@@ -684,16 +686,7 @@
                             <button type="button" class="btn-cuervo" style="background:#44403c;" onclick="guardarTitulosConfig({});renderTablaUsuarios();renderListaTronistas();alert('✅ Títulos restablecidos a valores por defecto.');">↺ Restablecer Predeterminados</button>
                         </div>
                     </div>
-            <!-- SUBSECCIONES DENTRO DE CONFIGURACIÓN DEL JUEGO (solo Superadmin y MASTER) -->
-            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--oro-real);">
-                <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin: 0 0 10px;">🔧 Módulos de Administración del Reino</h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-oraculo-ia')" style="flex:1; min-width: 150px;">🔮 Oráculo Imperial</button>
-                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-locales-promocion')" style="flex:1; min-width: 150px;">🍻 Locales Promocionados</button>
-                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-locales-evento')" style="flex:1; min-width: 150px;">🏛️ Locales del Evento</button>
-                </div>
-                <p style="font-size:0.8rem;color:#a1a1aa;margin-top:8px;">Estos módulos son exclusivos del Superadmin y el MASTER.</p>
-            </div>
+
 
 
             <!-- PESTAÑA: Locales del evento (Solo Superadmin y MASTER) -->
@@ -702,7 +695,7 @@
                 <p style="font-size:0.8rem;color:#a1a1aa;margin-top:8px;">Las herramientas de Restaurar, Estadísticas, Geografía y Puzzle están dentro de Configuración del Juego.</p>
             </div>
 
-                    <section id="panel-restaurar" class="panel-card" style="margin-top:30px;border:2px solid #7f1d1d;">
+                    <section id="pestana-restaurar" class="tab-content tema-corte-admin" data-tab="tab-restaurar" style="display: none;">
                         <h3 style="color:#fca5a5;">☠️ Restaurar competición</h3>
                         <p style="color:#d6d3d1;">
                             Devuelve el juego a su estado inicial: elimina <strong>votos, eventos,
@@ -721,7 +714,7 @@
 
 
                     <!-- LOKITRONO: GEOGRAFÍA (CIUDADES / DISTRITOS / BARRIOS / CÓDIGOS POSTALES) -->
-                    <section id="panel-geografia" class="panel-card" style="margin-top:30px;">
+                    <section id="pestana-geografia" class="tab-content tema-corte-admin" data-tab="tab-geografia" style="display: none;">
                         <h3 style="color:var(--oro-brillante);">🌍 Ciudades, distritos, barrios y códigos postales</h3>
                         <p style="color:#d6d3d1;">
                             Elige por <strong>comunidad autónoma</strong>, <strong>provincia</strong>

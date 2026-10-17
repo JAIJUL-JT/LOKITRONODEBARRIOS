@@ -403,11 +403,6 @@ function actualizarInterfazSesion(usuario) {
         if (optBarrios) optBarrios.style.display = esSuperadmin ? "" : "none";
         const optEventos = document.querySelector("option[value=\"pestana-generar-evento\"]");
         if (optEventos) optEventos.style.display = esSuperadmin ? "" : "none";
-        const optEstadisticas = document.querySelector("option[value=\"pestana-estadisticas\"]");
-        if (optEstadisticas) optEstadisticas.style.display = (esSuperadmin || esMaster) ? "" : "none";
-        const optBlog = document.querySelector("option[value=\"pestana-blog\"]");
-        if (optBlog) optBlog.style.display = (esSuperadmin || esMaster) ? "" : "none";
-
         // La Gala Final solo aparece a los maestres cuando ya está publicada.
         aplicarVisibilidadGalaFinal();
         if (typeof cargarGalaFinalDesdeSupabase === 'function') cargarGalaFinalDesdeSupabase();

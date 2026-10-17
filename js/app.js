@@ -5436,9 +5436,27 @@ function mostrarNotificacionGlobal(mensaje, tipo = 'info') {
 }
 
 // Detecta el cierre de la votación de un evento y avisa a todos los usuarios y
-// roles. La primera pasada solo memoriza el estado actual (sin avisar) para no
-// generar avisos masivos al cargar la página.
-const eventosCerradosNotificados = new Set();
+// roles. El aviso de evento concluido solo se muestra una vez por evento (se
+// persiste en localStorage para no repetirlo al recargar la página).
+const LS_EVENTOS_CERRADOS = 'lokitrono_eventos_cerrados_notificados';
+
+function obtenerEventosCerradosNotificados() {
+    try {
+        const raw = localStorage.getItem(LS_EVENTOS_CERRADOS);
+        return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch (_) {
+        return new Set();
+    }
+}
+
+function guardarEventoCerradoNotificado(idEvento) {
+    try {
+        const set = obtenerEventosCerradosNotificados();
+        set.add(`real:${idEvento}`);
+        localStorage.setItem(LS_EVENTOS_CERRADOS, JSON.stringify([...set]));
+    } catch (_) { /* sin localStorage disponible */ }
+}
+
 let cierresVotacionInicializados = false;
 
 function detectarCierresVotacion() {
@@ -5450,22 +5468,32 @@ function detectarCierresVotacion() {
         } catch (_) { /* evento inválido: se ignora */ }
     });
 
+    const yaNotificados = obtenerEventosCerradosNotificados();
+
     if (!cierresVotacionInicializados) {
-        finalizados.forEach(e => eventosCerradosNotificados.add(`real:${e.id}`));
+        finalizados.forEach(e => yaNotificados.add(`real:${e.id}`));
+        guardarTodosNotificados(yaNotificados);
         cierresVotacionInicializados = true;
         return;
     }
 
     finalizados.forEach(e => {
         const clave = `real:${e.id}`;
-        if (!eventosCerradosNotificados.has(clave)) {
-            eventosCerradosNotificados.add(clave);
+        if (!yaNotificados.has(clave)) {
+            yaNotificados.add(clave);
+            guardarEventoCerradoNotificado(e.id);
             mostrarNotificacionGlobal(
                 `🏁 Votación cerrada: ${e.nombre || e.barrio || 'evento'}. El ranking y las estadísticas se han actualizado al instante.`,
                 'aviso'
             );
         }
     });
+}
+
+function guardarTodosNotificados(set) {
+    try {
+        localStorage.setItem(LS_EVENTOS_CERRADOS, JSON.stringify([...set]));
+    } catch (_) { /* sin localStorage disponible */ }
 }
 
 

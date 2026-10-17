@@ -445,13 +445,15 @@
                         <!-- Título principal del mes activo -->
                         <h3 id="cal-titulo-mes" style="text-align: center; color: var(--oro-brillante); font-family: 'Cinzel', serif; font-size: 1.6rem; margin: 15px 0; letter-spacing: 2px;"></h3>
 
-                        <!-- Cabecera de los días de la semana -->
-                        <div class="calendar-grid-header" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-weight: bold; font-family: 'Cinzel', serif; color: var(--oro-real); background: rgba(45, 35, 20, 0.8); padding: 10px 0; border-radius: 6px; margin-bottom: 8px;">
-                            <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
-                        </div>
+                        <!-- Cabecera de los días de la semana y rejilla dinámica de días (deslizable en móvil) -->
+                        <div class="calendario-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 18px; min-width: 100%;">
+                            <div class="calendar-grid-header" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-weight: bold; font-family: 'Cinzel', serif; color: var(--oro-real); background: rgba(45, 35, 20, 0.8); padding: 10px 0; border-radius: 6px; margin-bottom: 8px; min-width: 520px;">
+                                <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+                            </div>
 
-                        <!-- Rejilla dinámica de días -->
-                        <div id="cal-grid-dias" class="calendar-grid-body" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;">
+                            <!-- Rejilla dinámica de días -->
+                            <div id="cal-grid-dias" class="calendar-grid-body" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; min-width: 520px;">
+                            </div>
                         </div>
                     </div>
 

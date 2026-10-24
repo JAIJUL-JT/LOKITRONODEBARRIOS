@@ -435,6 +435,7 @@ function actualizarInterfazSesion(usuario) {
 
         cambiarPestana('pestana-clasificacion');
         if (typeof aplicarFinDeJuegoUI === 'function') aplicarFinDeJuegoUI();
+        if (typeof renderBannerVotacionAbierta === 'function') renderBannerVotacionAbierta(usuario);
 
         // Nombre de la edición bajo la portada y guías de primer uso.
         if (typeof aplicarNombreJuego === 'function') aplicarNombreJuego();
@@ -442,6 +443,8 @@ function actualizarInterfazSesion(usuario) {
         if (typeof iniciarGuiasPrimerUso === 'function') iniciarGuiasPrimerUso(usuario);
     } else {
         detenerAutoRefreshUsuarios();
+        const bannerVot = document.getElementById('banner-votacion-abierta');
+        if (bannerVot) bannerVot.style.display = 'none';
         const panelSorteo = document.getElementById('panel-sorteo-barrios');
         if (panelSorteo) panelSorteo.style.display = 'none';
 
@@ -2300,6 +2303,42 @@ function obtenerEstadoVotacionEvento(evento) {
         fechaInicio,
         fechaFin
     };
+}
+
+// Eventos cuya ventana de votación está ABIERTA ahora (entre inicio y fin, sin cerrar manualmente).
+function obtenerEventosVotacionAbierta() {
+    return getEventosDelAmbito().filter(e => {
+        if (e.tiene_votacion === false) return false;
+        try {
+            return obtenerEstadoVotacionEvento(e).estado === 'ABIERTA';
+        } catch (error) {
+            return false;
+        }
+    });
+}
+
+// Banner permanente de votación abierta para maestres y lokitronistas (tronistas).
+function renderBannerVotacionAbierta(usuario) {
+    const banner = document.getElementById('banner-votacion-abierta');
+    const texto = document.getElementById('banner-votacion-abierta-texto');
+    if (!banner || !texto) return;
+
+    const esMaster = !!(usuario && esRolMaster(usuario.role));
+    const esTronista = !!(usuario && usuario.role === 'tronista');
+    if (!esMaster && !esTronista) {
+        banner.style.display = 'none';
+        return;
+    }
+
+    const abiertos = obtenerEventosVotacionAbierta();
+    if (abiertos.length === 0) {
+        banner.style.display = 'none';
+        return;
+    }
+
+    const partes = abiertos.map(e => `VOTACIÓN ABIERTA PARA ${e.barrio || 'Reino'}`);
+    texto.textContent = '🗳️ ' + partes.join('   |   ');
+    banner.style.display = 'block';
 }
 
 function renderEventos() {
@@ -5743,8 +5782,8 @@ function cargarDatosSemilla() {
 
     // Superadmins predeterminados
     const superadmins = [
-        { id: 'user-julio-01', phone: '605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '123456', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu', gender: 'M' },
-        { id: 'user-julio-02', phone: '+34605676002', name: 'Maestre Julio', role: 'superadmin', pin_code: '123456', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu', gender: 'M' },
+        { id: 'user-julio-01', phone: '605676002', name: 'Maestre Julio', role: 'master', pin_code: '123456', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu', gender: 'M' },
+        { id: 'user-julio-02', phone: '+34605676002', name: 'Maestre Julio', role: 'master', pin_code: '123456', barrio_representado: 'Indautxu', barrio_asignado: 'Indautxu', gender: 'M' },
         { id: 'user-superadmin-01', phone: '123456789', name: 'Superadmin Bilbao', role: 'superadmin', pin_code: '123456', barrio_representado: 'Casco Viejo', barrio_asignado: 'Casco Viejo', gender: 'M' },
         { id: 'user-superadmin-02', phone: 'admin', name: 'Superadmin Sistema', role: 'superadmin', pin_code: '123456', barrio_representado: 'Casco Viejo', barrio_asignado: 'Casco Viejo', gender: 'M' },
         { id: 'user-soraya', phone: '456123456', name: 'SORAYA', role: 'superadmin', pin_code: '123456', barrio_representado: 'Deusto', barrio_asignado: 'Deusto', gender: 'F' },
@@ -8220,6 +8259,8 @@ function actualizarRelojJusta() {
         String(mins).padStart(2, '0') + ':' + 
         String(segs).padStart(2, '0');
     clockEl.style.color = "#fff";
+
+    if (typeof renderBannerVotacionAbierta === 'function') renderBannerVotacionAbierta(getCurrentUser());
 }
 
 function lanzarEfectosJusta() {

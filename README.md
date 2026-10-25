@@ -1,5 +1,14 @@
 # 🏰 El Trono del Pintxo — Juego de Barrios de Bilbao
 
+---
+
+## 🛠️ Mejoras UI recientes
+
+- **Toggle PIN visible / oculto**: ahora el botón 👁️ en la pantalla de acceso muestra u oculta el PIN de 6 dígitos y cambia su emoji entre 👁️ y 🙈, facilitando la introducción del código.
+- **Dos dragones animados**: se han añadido dos dragones en la cabecera — el original rojo y uno nuevo azul — que flotan suavemente con una animación CSS. Añaden un toque lúdico al tema medieval del sitio.
+
+---
+
 > *La contienda gastronómica feudal entre las ocho grandes Casas de Bilbao.*
 
 Este proyecto implementa la arquitectura feudal integral para conectar **GitHub + Supabase + Vercel + Make**, permitiendo a los usuarios (Maestres) catar pintxos, sellar su pasaporte feudal, emitir juicios con la **Ley II de Bilbao** y automatizar notificaciones, pases VIP y bandos semanales.

@@ -16,6 +16,73 @@
     canvas.style.pointerEvents = 'none';
     canvas.style.zIndex = '9998'; // Justo bajo modales y alertas, sobre el fondo
     document.body.appendChild(canvas);
+// Duplicate canvas for a second dragon with blue tint
+const canvasBlue = canvas.cloneNode(true);
+canvasBlue.id = 'dragon-canvas-blue';
+canvasBlue.style.filter = 'hue-rotate(200deg) saturate(1.5)';
+canvasBlue.style.zIndex = '9997'; // behind the red one
+document.body.appendChild(canvasBlue);
+// Reuse same animation logic for both canvases
+const ctxBlue = canvasBlue.getContext('2d');
+function drawBoth() {
+  // draw original red dragon
+  ctx.clearRect(0, 0, width, height);
+  drawDragon();
+  // draw blue dragon copy
+  ctxBlue.clearRect(0, 0, width, height);
+  // reuse same draw logic but with blue context
+  (function drawDragonBlue(){
+    // draw same as drawDragon but on blue context
+    // we can call drawDragon but it uses ctx variable; duplicate code minimally
+    // For simplicity, re-use the same draw steps with ctxBlue
+    ctxBlue.save();
+    ctxBlue.translate(dragon.x, dragon.y);
+    ctxBlue.scale(dragon.scale, dragon.scale);
+    ctxBlue.rotate(dragon.angle);
+    const wingFlap = Math.sin(dragon.wingCycle);
+    const wingSpan = 75 + wingFlap * 20;
+    const wingYOffset = wingFlap * 25;
+    // draw wings (same as original)
+    function drawWingBlue(side){
+      ctxBlue.save();
+      ctxBlue.scale(1, side);
+      ctxBlue.beginPath();
+      ctxBlue.moveTo(-10,0);
+      ctxBlue.quadraticCurveTo(5, wingSpan*0.7, 40, wingSpan+wingYOffset);
+      ctxBlue.lineTo(45, wingSpan+wingYOffset+8);
+      ctxBlue.quadraticCurveTo(15, wingSpan*0.8, -10, wingSpan*0.65);
+      ctxBlue.quadraticCurveTo(-30, wingSpan*0.5, -45, wingSpan*0.35);
+      ctxBlue.quadraticCurveTo(-50, wingSpan*0.2, -40,5);
+      ctxBlue.closePath();
+      const wingGrad = ctxBlue.createRadialGradient(0, wingSpan*0.5,5,0,wingSpan*0.5,wingSpan);
+      wingGrad.addColorStop(0,'#7f1d1d');
+      wingGrad.addColorStop(0.5,'#450a0a');
+      wingGrad.addColorStop(1,'#18181b');
+      ctxBlue.fillStyle = wingGrad;
+      ctxBlue.fill();
+      ctxBlue.strokeStyle='#27272a';
+      ctxBlue.lineWidth=2.5;
+      ctxBlue.beginPath();
+      ctxBlue.moveTo(-10,0);
+      ctxBlue.lineTo(40, wingSpan+wingYOffset);
+      ctxBlue.moveTo(10, wingSpan*0.45);
+      ctxBlue.lineTo(-10, wingSpan*0.65);
+      ctxBlue.moveTo(5, wingSpan*0.35);
+      ctxBlue.lineTo(-45, wingSpan*0.35);
+      ctxBlue.stroke();
+      ctxBlue.restore();
+    }
+    drawWingBlue(1);
+    drawWingBlue(-1);
+    // body placeholder (simple circle)
+    ctxBlue.fillStyle = '#1e3a8a'; // blue body
+    ctxBlue.beginPath();
+    ctxBlue.arc(0,0,30,0,Math.PI*2);
+    ctxBlue.fill();
+    ctxBlue.restore();
+  })();
+})();
+
 
     const ctx = canvas.getContext('2d');
     let width = (canvas.width = window.innerWidth);

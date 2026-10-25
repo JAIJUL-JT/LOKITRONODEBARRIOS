@@ -10,6 +10,18 @@
     "theme_color": "#d4af37",
     "icons": [
         {
+            "src": "/juego-de-barrios-logo-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/juego-de-barrios-logo-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
             "src": "/juego-de-barrios-logo.png",
             "sizes": "1024x1024",
             "type": "image/png",

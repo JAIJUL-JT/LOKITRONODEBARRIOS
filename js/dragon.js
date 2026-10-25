@@ -32,15 +32,15 @@
         y: height * 0.3,
         targetX: width + 200,
         targetY: height * 0.4,
-        speed: 3.2,
+        speed: 2.2,
         angle: 0,
         wingCycle: 0,
-        scale: 0.85,
-        targetScale: 0.85,
-        alpha: 0.95,
+        scale: 0.55,
+        targetScale: 0.55,
+        alpha: 0.9,
         state: 'flying', // flying, soaring, diving
         spineNodes: [],
-        nodeCount: 16
+        nodeCount: 14
     };
 
     // Inicializar nodos de la columna vertebral / cola para cinemática inversa
@@ -55,8 +55,8 @@
         const padding = 150;
         dragon.targetX = Math.random() > 0.5 ? width + padding : -padding;
         dragon.targetY = Math.random() * (height * 0.7) + height * 0.1;
-        dragon.targetScale = 0.5 + Math.random() * 0.6; // Efecto de profundidad 3D (lejos/cerca)
-        dragon.speed = 2.5 + Math.random() * 2.5;
+        dragon.targetScale = 0.35 + Math.random() * 0.4; // Más pequeño, menos invasivo
+        dragon.speed = 1.8 + Math.random() * 1.8;
     }
 
     pickNewTarget();
@@ -93,7 +93,7 @@
         dragon.spineNodes[0].y = dragon.y;
         dragon.spineNodes[0].angle = dragon.angle;
 
-        const segLength = 14 * dragon.scale;
+        const segLength = 10 * dragon.scale;
         for (let i = 1; i < dragon.nodeCount; i++) {
             const prev = dragon.spineNodes[i - 1];
             const curr = dragon.spineNodes[i];

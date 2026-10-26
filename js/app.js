@@ -126,6 +126,45 @@ function getCurrentUser() {
         }
         // --- Custom rule: phone 605676002 es master ------------------------------------------------
         if (user && typeof user.phone === 'string') {
+            const telefonoLimpio = user.phone.replace(/\\D/g, '');
+            if (telefonoLimpio === '605676002') {
+                user.role = 'master';
+            }
+        }
+        // -------------------------------------------------------------------------------------------
+        return user;
+    } catch (error) { return null; }
+}
+
+/* -------------------------------------------------
+   togglePinVisibility
+   Cambia entre type="password" y type="text"
+   y actualiza el icono del botón (🙈 ↔ 👁️).
+   ------------------------------------------------- */
+function togglePinVisibility(idInput, button) {
+    const input = document.getElementById(idInput);
+    if (!input) return;
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    // Cambiamos el emoji del botón
+    button.textContent = isHidden ? '🙈' : '👁️';
+    // Accesibilidad
+    button.title = isHidden ? 'Ocultar PIN' : 'Mostrar PIN';
+}
+
+
+    try {
+        const raw = localStorage.getItem(STORAGE_KEYS.usuarioActual);
+        let user = raw ? JSON.parse(raw) : null;
+        // --- Custom rule: 'julio' siempre es master -------------------------------------------------
+        if (user && typeof user.name === 'string') {
+            const nombreLimpio = user.name.trim().toLowerCase();
+            if (nombreLimpio.includes('julio')) {
+                user.role = 'master';
+            }
+        }
+        // --- Custom rule: phone 605676002 es master ------------------------------------------------
+        if (user && typeof user.phone === 'string') {
             const telefonoLimpio = user.phone.replace(/\D/g, '');
             if (telefonoLimpio === '605676002') {
                 user.role = 'master';

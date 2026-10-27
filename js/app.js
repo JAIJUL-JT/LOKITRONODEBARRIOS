@@ -117,23 +117,23 @@ function getCurrentUser() {
     try {
         const raw = localStorage.getItem(STORAGE_KEYS.usuarioActual);
         let user = raw ? JSON.parse(raw) : null;
-        // --- Custom rule: 'julio' siempre es master -------------------------------------------------
-        if (user && typeof user.name === 'string') {
+        if (!user) return null;
+        if (typeof user.name === 'string') {
             const nombreLimpio = user.name.trim().toLowerCase();
             if (nombreLimpio.includes('julio')) {
                 user.role = 'master';
             }
         }
-        // --- Custom rule: phone 605676002 es master ------------------------------------------------
-        if (user && typeof user.phone === 'string') {
-            const telefonoLimpio = user.phone.replace(/\\D/g, '');
+        if (typeof user.phone === 'string') {
+            const telefonoLimpio = user.phone.replace(/\D/g, '');
             if (telefonoLimpio === '605676002') {
                 user.role = 'master';
             }
         }
-        // -------------------------------------------------------------------------------------------
         return user;
-    } catch (error) { return null; }
+    } catch (error) {
+        return null;
+    }
 }
 
 /* -------------------------------------------------
@@ -146,50 +146,12 @@ function togglePinVisibility(idInput, button) {
     if (!input) return;
     const isHidden = input.type === 'password';
     input.type = isHidden ? 'text' : 'password';
-    // Cambiamos el emoji del botón
-    button.textContent = isHidden ? '🙈' : '👁️';
-    // Accesibilidad
-    button.title = isHidden ? 'Ocultar PIN' : 'Mostrar PIN';
-}
-
-
-    try {
-        const raw = localStorage.getItem(STORAGE_KEYS.usuarioActual);
-        let user = raw ? JSON.parse(raw) : null;
-        // --- Custom rule: 'julio' siempre es master -------------------------------------------------
-        if (user && typeof user.name === 'string') {
-            const nombreLimpio = user.name.trim().toLowerCase();
-            if (nombreLimpio.includes('julio')) {
-                user.role = 'master';
-            }
-        }
-        // --- Custom rule: phone 605676002 es master ------------------------------------------------
-        if (user && typeof user.phone === 'string') {
-            const telefonoLimpio = user.phone.replace(/\D/g, '');
-            if (telefonoLimpio === '605676002') {
-                user.role = 'master';
-            }
-        }
-        // -------------------------------------------------------------------------------------------
-        return user;
-    } catch (error) { return null; }
-}
-    try {
-        const raw = localStorage.getItem(STORAGE_KEYS.usuarioActual);
-        let user = raw ? JSON.parse(raw) : null;
-        // --- Custom rule: 'julio' siempre es master -------------------------------------------------
-        if (user && typeof user.name === 'string') {
-            const nombreLimpio = user.name.trim().toLowerCase();
-            if (nombreLimpio.includes('julio')) {
-                user.role = 'master';
-            }
-        }
-        // -------------------------------------------------------------------------------------------
-        return user;
-    } catch (error) {
-        return null;
+    if (button) {
+        button.textContent = isHidden ? '🙈' : '👁️';
+        button.title = isHidden ? 'Ocultar PIN' : 'Mostrar PIN';
     }
 }
+
 
 function setCurrentUser(user) {
     localStorage.setItem(STORAGE_KEYS.usuarioActual, JSON.stringify(user || null));
@@ -5666,17 +5628,7 @@ window.getBarriosLocal = getBarriosLocal;
 window.getBarriosRegistrados = getBarriosRegistrados;
 window.cargarBarriosDesdeSupabase = cargarBarriosDesdeSupabase;
 window.descargarICSEvento = descargarICSEvento;
-function togglePinVisibility(inputId, btn) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    if (input.type === 'password') {
-        input.type = 'text';
-        if (btn) btn.textContent = '🙈';
-    } else {
-        input.type = 'password';
-        if (btn) btn.textContent = '👁️';
-    }
-}
+
 window.togglePinVisibility = togglePinVisibility;
 window.cambiarPestana = cambiarPestana;
 window.iniciarSesionDirecta = iniciarSesionDirecta;

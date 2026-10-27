@@ -17,12 +17,6 @@
     canvas.style.zIndex = '9998'; // Justo bajo modales y alertas, sobre el fondo
     document.body.appendChild(canvas);
 // Duplicate canvas for a second dragon with blue tint
-const canvasBlue = canvas.cloneNode(true);
-canvasBlue.id = 'dragon-canvas-blue';
-canvasBlue.style.filter = 'hue-rotate(200deg) saturate(1.5)';
-canvasBlue.style.zIndex = '9997'; // behind the red one
-document.body.appendChild(canvasBlue);
-// Reuse same animation logic for both canvase
 
     const ctx = canvas.getContext('2d');
     let width = (canvas.width = window.innerWidth);

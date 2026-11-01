@@ -2112,7 +2112,13 @@ function getTodosLosEventos() {
                 : '',
             desc: row.descripcion || '',
             cerrado_manualmente: Boolean(row.cerrado_manualmente),
-            tiene_votacion: row.tiene_votacion !== false
+            tiene_votacion: row.tiene_votacion !== false,
+            logo_url: row.logo_url || '',
+            pintxo_plebeyo_url: row.pintxo_plebeyo_url || '',
+            pintxo_real_url: row.pintxo_real_url || '',
+            pocima_url: row.pocima_url || '',
+            elixir_url: row.elixir_url || '',
+            foto_local_url: row.foto_local_url || ''
         });
     });
 
@@ -2498,7 +2504,9 @@ function renderEventos() {
                 </p>`}
 
                 ${evt.desc ? `<p style="font-size: 0.85rem; color: #a1a1aa; font-style: italic; margin-bottom: 10px;">"${evt.desc}"</p>` : ''}
-                
+
+                ${construirGaleriaMediaEvento(evt)}
+
                 ${resumenResultadosHTML}
 
                 <button onclick='descargarICSEvento(${JSON.stringify(evt)})' class="btn-cuervo" style="padding: 6px 12px; font-size: 0.85rem; background: #15803d; width: 100%; margin-top: 4px;">
@@ -2693,7 +2701,13 @@ async function guardarEventoEnSupabase(evento) {
         fecha_fin_votacion: evento.fecha_fin_votacion ? String(evento.fecha_fin_votacion).slice(0, 10) : null,
         desc: evento.desc || evento.descripcion || '',
         tiene_votacion: evento.tiene_votacion !== false,
-        cerrado_manualmente: Boolean(evento.cerrado_manualmente)
+        cerrado_manualmente: Boolean(evento.cerrado_manualmente),
+        logo_url: evento.logo_url || null,
+        pintxo_plebeyo_url: evento.pintxo_plebeyo_url || null,
+        pintxo_real_url: evento.pintxo_real_url || null,
+        pocima_url: evento.pocima_url || null,
+        elixir_url: evento.elixir_url || null,
+        foto_local_url: evento.foto_local_url || null
     };
 
     const { data, error } = await client.rpc('guardar_evento_superadmin', {
@@ -2942,6 +2956,184 @@ function poblarSelectBarriosEvento() {
 }
 
 
+/* ============================================================================
+ * IMÁGENES DEL EVENTO (Supabase Storage: bucket `eventos-media`)
+ * ========================================================================== */
+const EVENTO_MEDIA_CAMPOS = ['logo', 'pintxo_plebeyo', 'pintxo_real', 'pocima', 'elixir', 'foto_local'];
+const EVENTO_MEDIA_ETIQUETAS = {
+    logo: 'Logotipo del evento',
+    pintxo_plebeyo: 'Pintxo plebeyo',
+    pintxo_real: 'Pintxo real',
+    pocima: 'Pócima',
+    elixir: 'Elixir',
+    foto_local: 'Foto del local'
+};
+const eventoMediaSubidas = {};
+
+function eventoMediaElementos(campo) {
+    return {
+        file: document.getElementById(`evento-media-${campo}-file`),
+        url: document.getElementById(`evento-media-${campo}-url`),
+        preview: document.getElementById(`evento-media-${campo}-preview`)
+    };
+}
+
+function actualizarPreviewMediaEvento(campo) {
+    const { url, preview } = eventoMediaElementos(campo);
+    if (!preview) return;
+    const valor = (url && url.value ? url.value : '').trim();
+    preview.innerHTML = '';
+    if (!valor) {
+        const vacio = document.createElement('span');
+        vacio.className = 'evento-media-vacio';
+        vacio.textContent = 'Sin imagen';
+        preview.appendChild(vacio);
+        return;
+    }
+    const img = document.createElement('img');
+    img.src = valor;
+    img.alt = `Vista previa: ${EVENTO_MEDIA_ETIQUETAS[campo] || campo}`;
+    img.loading = 'lazy';
+    preview.appendChild(img);
+}
+
+async function subirMediaEvento(campo, file) {
+    const { url, preview } = eventoMediaElementos(campo);
+    const estado = document.getElementById('evento-media-estado');
+    if (!file || !url) return;
+
+    const etiqueta = EVENTO_MEDIA_ETIQUETAS[campo] || campo;
+    const mostrarEstado = (texto, color) => {
+        if (!estado) return;
+        estado.style.color = color;
+        estado.textContent = texto;
+    };
+
+    const client = getSupabaseBarriosClient();
+    if (!client) {
+        mostrarEstado('Supabase no está disponible para subir imágenes.', '#f87171');
+        return;
+    }
+
+    if (!/^image\//.test(file.type || '')) {
+        mostrarEstado(`«${file.name}» no es una imagen válida.`, '#f87171');
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        mostrarEstado(`«${file.name}» supera el máximo de 5 MB.`, '#f87171');
+        return;
+    }
+
+    if (preview) preview.innerHTML = '<span class="evento-media-vacio">Subiendo…</span>';
+    mostrarEstado(`Subiendo ${etiqueta.toLowerCase()}…`, '#fbbf24');
+
+    const tarea = (async () => {
+        const limpio = String(file.name || 'imagen').replace(/[^a-z0-9._-]/gi, '_');
+        const nombre = `eventos/${Date.now()}_${campo}_${limpio}`;
+        const { error } = await client.storage.from('eventos-media').upload(nombre, file, {
+            upsert: false,
+            cacheControl: '31536000',
+            contentType: file.type || undefined
+        });
+        if (error) throw error;
+        const { data } = client.storage.from('eventos-media').getPublicUrl(nombre);
+        const publicUrl = data && data.publicUrl ? data.publicUrl : '';
+        if (!publicUrl) throw new Error('No se obtuvo la URL pública de la imagen.');
+        url.value = publicUrl;
+        actualizarPreviewMediaEvento(campo);
+        mostrarEstado(`${etiqueta} subida correctamente.`, '#4ade80');
+        return publicUrl;
+    })();
+
+    eventoMediaSubidas[campo] = tarea;
+
+    try {
+        await tarea;
+    } catch (error) {
+        console.error(`Error al subir ${campo}:`, error);
+        url.value = '';
+        actualizarPreviewMediaEvento(campo);
+        mostrarEstado(`No se pudo subir ${etiqueta.toLowerCase()}: ${error.message || 'error desconocido'}`, '#f87171');
+    } finally {
+        delete eventoMediaSubidas[campo];
+    }
+}
+
+async function esperarSubidasMediaEvento() {
+    const tareas = Object.values(eventoMediaSubidas).filter(Boolean);
+    if (!tareas.length) return;
+    const estado = document.getElementById('evento-media-estado');
+    if (estado) {
+        estado.style.color = '#fbbf24';
+        estado.textContent = 'Esperando a que finalicen las subidas de imágenes…';
+    }
+    await Promise.allSettled(tareas);
+}
+
+function quitarMediaEvento(campo) {
+    const { file, url } = eventoMediaElementos(campo);
+    if (file) file.value = '';
+    if (url) url.value = '';
+    actualizarPreviewMediaEvento(campo);
+}
+
+function resetMediaEventos() {
+    EVENTO_MEDIA_CAMPOS.forEach(quitarMediaEvento);
+    const estado = document.getElementById('evento-media-estado');
+    if (estado) estado.textContent = '';
+}
+
+function leerMediaEvento() {
+    const datos = {};
+    EVENTO_MEDIA_CAMPOS.forEach(campo => {
+        const { url } = eventoMediaElementos(campo);
+        datos[`${campo}_url`] = (url && url.value ? url.value.trim() : '');
+    });
+    return datos;
+}
+
+function aplicarMediaEventoFormulario(evt) {
+    EVENTO_MEDIA_CAMPOS.forEach(campo => {
+        const { file, url } = eventoMediaElementos(campo);
+        if (file) file.value = '';
+        if (url) url.value = (evt && evt[`${campo}_url`]) || '';
+        actualizarPreviewMediaEvento(campo);
+    });
+}
+
+function construirGaleriaMediaEvento(evt) {
+    if (!evt) return '';
+    const medios = EVENTO_MEDIA_CAMPOS.filter(campo => evt[`${campo}_url`]);
+    if (!medios.length) return '';
+    return '<div class="evento-media-galeria">' + medios.map(campo => {
+        const url = String(evt[`${campo}_url`]).replace(/"/g, '&quot;');
+        const etiqueta = EVENTO_MEDIA_ETIQUETAS[campo] || campo;
+        return `<a href="${url}" target="_blank" rel="noopener" title="${etiqueta}"><img src="${url}" alt="${etiqueta}" loading="lazy"></a>`;
+    }).join('') + '</div>';
+}
+
+function inicializarMediaEventos() {
+    const form = document.getElementById('form-evento-admin-dedicated');
+    if (!form || form.dataset.mediaInit === '1') return;
+    form.dataset.mediaInit = '1';
+    EVENTO_MEDIA_CAMPOS.forEach(campo => {
+        const { file } = eventoMediaElementos(campo);
+        if (file) {
+            file.addEventListener('change', () => subirMediaEvento(campo, file.files && file.files[0]));
+        }
+        actualizarPreviewMediaEvento(campo);
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarMediaEventos);
+} else {
+    inicializarMediaEventos();
+}
+
+window.quitarMediaEvento = quitarMediaEvento;
+
 async function guardarEventoBarrioDesdePestana(event) {
     if (event) event.preventDefault();
 
@@ -2997,6 +3189,8 @@ async function guardarEventoBarrioDesdePestana(event) {
         return;
     }
 
+    await esperarSubidasMediaEvento();
+
     const evento = {
         id: editId || `evt-custom-${Date.now()}`,
         nombre,
@@ -3013,7 +3207,8 @@ async function guardarEventoBarrioDesdePestana(event) {
         tiene_votacion: tieneVotacion,
         cerrado_manualmente: editId
             ? Boolean(getEventosDelAmbito().find(e => String(e.id) === String(editId))?.cerrado_manualmente)
-            : false
+            : false,
+        ...leerMediaEvento()
     };
 
     try {
@@ -3057,6 +3252,7 @@ function resetFormEventoDedicated() {
     const selector = document.getElementById('evento-dedicated-tiene-votacion');
     if (selector) selector.value = 'con';
     alternarCamposVotacionEvento();
+    resetMediaEventos();
 }
 
 function editarEventoBarrioDesdePestana(eventoId) {
@@ -3079,6 +3275,7 @@ function editarEventoBarrioDesdePestana(eventoId) {
     const selectorVotacion = document.getElementById('evento-dedicated-tiene-votacion');
     if (selectorVotacion) selectorVotacion.value = evt.tiene_votacion === false ? 'sin' : 'con';
     alternarCamposVotacionEvento();
+    aplicarMediaEventoFormulario(evt);
 
     const btnGuardar = document.getElementById('btn-guardar-evento-dedicated');
     const btnCancelar = document.getElementById('btn-cancelar-evento-dedicated');
@@ -3117,6 +3314,7 @@ function renderEventosGeneradosPestanaAdmin() {
                     : `<p style="font-size: 0.82rem; color: #a1a1aa; margin-bottom: 10px;">
                     🗳️ <strong>Tipo:</strong> Con votación · ⏰ ${estadoVot.horaInicio} a ${estadoVot.horaFin} hs (${estadoVot.texto})
                 </p>`}
+                ${construirGaleriaMediaEvento(evt)}
                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                     <button onclick="editarEventoBarrioDesdePestana('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: #2563eb; flex: 1;">✏️ Editar</button>
                     ${evt.tiene_votacion === false ? '' : `<button onclick="toggleCerrarVotacionEvento('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: ${evt.cerrado_manualmente ? '#166534' : '#d97706'}; flex: 1.2;">

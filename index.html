@@ -46,8 +46,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/medieval-theme.css">
+    <link rel="stylesheet" href="css/style.css?v=20261101">
+    <link rel="stylesheet" href="css/medieval-theme.css?v=20261101">
 
     <link rel="stylesheet" href="css/legal.css">
     <!-- Leaflet: mapas interactivos de ciudades/distritos/barrios -->
@@ -110,7 +110,7 @@
     <script src="js/legal-config.js"></script>
     <script src="js/analytics.js" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261025" defer></script>
+    <script src="js/app.js?v=20261101" defer></script>
     <script src="js/dragon.js?v=20261101" defer></script>
 </head>
 
@@ -580,6 +580,59 @@
                             <div class="form-group">
                                 <label style="font-weight: bold; color: var(--oro-real);">Detalles / Descripción del Evento:</label>
                                 <textarea id="evento-dedicated-desc" class="input-medieval" rows="3" placeholder="Información sobre los festines, tabernas participantes o normas del evento..."></textarea>
+                            </div>
+
+                            <!-- IMÁGENES DEL EVENTO -->
+                            <div style="background: rgba(45, 35, 20, 0.85); padding: 15px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.4); margin: 15px 0;">
+                                <h4 style="color: var(--oro-brillante); margin: 0 0 6px; font-family: 'Cinzel', serif;">🎨 Imágenes del Evento</h4>
+                                <p style="font-size: 0.78rem; color: #a1a1aa; margin: 0 0 12px;">
+                                    Logotipo, pintxos, pócima, elixir y foto del local. Formatos PNG, JPG, WebP o GIF · máximo 5 MB por imagen.
+                                </p>
+                                <div class="evento-media-grid">
+                                    <div class="evento-media-item">
+                                        <label for="evento-media-logo-file">🛡️ Logotipo del evento</label>
+                                        <input type="file" id="evento-media-logo-file" class="input-medieval evento-media-file" data-media="logo" accept="image/png,image/jpeg,image/webp,image/gif">
+                                        <input type="hidden" id="evento-media-logo-url">
+                                        <div class="evento-media-preview" id="evento-media-logo-preview"><span class="evento-media-vacio">Sin imagen</span></div>
+                                        <button type="button" class="btn-cuervo evento-media-quitar" onclick="quitarMediaEvento('logo')">✕ Quitar</button>
+                                    </div>
+                                    <div class="evento-media-item">
+                                        <label for="evento-media-pintxo_plebeyo-file">🍢 Pintxo plebeyo</label>
+                                        <input type="file" id="evento-media-pintxo_plebeyo-file" class="input-medieval evento-media-file" data-media="pintxo_plebeyo" accept="image/png,image/jpeg,image/webp,image/gif">
+                                        <input type="hidden" id="evento-media-pintxo_plebeyo-url">
+                                        <div class="evento-media-preview" id="evento-media-pintxo_plebeyo-preview"><span class="evento-media-vacio">Sin imagen</span></div>
+                                        <button type="button" class="btn-cuervo evento-media-quitar" onclick="quitarMediaEvento('pintxo_plebeyo')">✕ Quitar</button>
+                                    </div>
+                                    <div class="evento-media-item">
+                                        <label for="evento-media-pintxo_real-file">👑 Pintxo real</label>
+                                        <input type="file" id="evento-media-pintxo_real-file" class="input-medieval evento-media-file" data-media="pintxo_real" accept="image/png,image/jpeg,image/webp,image/gif">
+                                        <input type="hidden" id="evento-media-pintxo_real-url">
+                                        <div class="evento-media-preview" id="evento-media-pintxo_real-preview"><span class="evento-media-vacio">Sin imagen</span></div>
+                                        <button type="button" class="btn-cuervo evento-media-quitar" onclick="quitarMediaEvento('pintxo_real')">✕ Quitar</button>
+                                    </div>
+                                    <div class="evento-media-item">
+                                        <label for="evento-media-pocima-file">🧪 Pócima</label>
+                                        <input type="file" id="evento-media-pocima-file" class="input-medieval evento-media-file" data-media="pocima" accept="image/png,image/jpeg,image/webp,image/gif">
+                                        <input type="hidden" id="evento-media-pocima-url">
+                                        <div class="evento-media-preview" id="evento-media-pocima-preview"><span class="evento-media-vacio">Sin imagen</span></div>
+                                        <button type="button" class="btn-cuervo evento-media-quitar" onclick="quitarMediaEvento('pocima')">✕ Quitar</button>
+                                    </div>
+                                    <div class="evento-media-item">
+                                        <label for="evento-media-elixir-file">🍷 Elixir</label>
+                                        <input type="file" id="evento-media-elixir-file" class="input-medieval evento-media-file" data-media="elixir" accept="image/png,image/jpeg,image/webp,image/gif">
+                                        <input type="hidden" id="evento-media-elixir-url">
+                                        <div class="evento-media-preview" id="evento-media-elixir-preview"><span class="evento-media-vacio">Sin imagen</span></div>
+                                        <button type="button" class="btn-cuervo evento-media-quitar" onclick="quitarMediaEvento('elixir')">✕ Quitar</button>
+                                    </div>
+                                    <div class="evento-media-item">
+                                        <label for="evento-media-foto_local-file">🏠 Foto del local</label>
+                                        <input type="file" id="evento-media-foto_local-file" class="input-medieval evento-media-file" data-media="foto_local" accept="image/png,image/jpeg,image/webp,image/gif">
+                                        <input type="hidden" id="evento-media-foto_local-url">
+                                        <div class="evento-media-preview" id="evento-media-foto_local-preview"><span class="evento-media-vacio">Sin imagen</span></div>
+                                        <button type="button" class="btn-cuervo evento-media-quitar" onclick="quitarMediaEvento('foto_local')">✕ Quitar</button>
+                                    </div>
+                                </div>
+                                <p id="evento-media-estado" style="font-size: 0.8rem; color: #4ade80; margin: 10px 0 0;"></p>
                             </div>
 
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">

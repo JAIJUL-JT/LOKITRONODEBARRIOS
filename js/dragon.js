@@ -52,6 +52,8 @@
             wingFlap: 0,
             flapCooldown: Math.random() * 3,
             flapBurst: 0,
+            fireCooldown: 1.5 + Math.random() * 4,
+            fireBurst: 0,
             tailPhase: Math.random() * Math.PI * 2,
             bobPhase: opts.phase,
             baseScale: opts.baseScale,
@@ -109,6 +111,73 @@
     resize();
     window.addEventListener('resize', resize);
 
+    // 🔥 BOCANADAS DE FUEGO
+    const fireParticles = [];
+    const MAX_FIRE_PARTICLES = 360;
+
+    function bocaMundial(d) {
+        const lx = 88;
+        const ly = -16;
+        const a = d.angle + d.pitch;
+        const cos = Math.cos(a);
+        const sin = Math.sin(a);
+        return {
+            x: d.x + (lx * cos - ly * sin) * d.scale,
+            y: d.y + (lx * sin + ly * cos) * d.scale,
+            angle: a
+        };
+    }
+
+    function emitirFuego(d) {
+        if (fireParticles.length >= MAX_FIRE_PARTICLES) return;
+        const boca = bocaMundial(d);
+        const angulo = boca.angle + (Math.random() - 0.5) * 0.44;
+        const velocidad = 170 + Math.random() * 230;
+        const vida = 0.65 + Math.random() * 0.35;
+        fireParticles.push({
+            x: boca.x + Math.cos(angulo) * 6 * d.scale,
+            y: boca.y + Math.sin(angulo) * 6 * d.scale,
+            vx: Math.cos(angulo) * velocidad,
+            vy: Math.sin(angulo) * velocidad - 25,
+            life: vida,
+            initial: vida,
+            size: (2.6 + Math.random() * 4.2) * d.scale,
+            hue: 22 + Math.random() * 26
+        });
+    }
+
+    function actualizarFuego(dt) {
+        for (let i = fireParticles.length - 1; i >= 0; i--) {
+            const p = fireParticles[i];
+            const frenado = Math.max(0, 1 - 2.2 * dt);
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vx *= frenado;
+            p.vy = p.vy * frenado - 55 * dt;
+            p.life -= dt;
+            if (p.life <= 0) fireParticles.splice(i, 1);
+        }
+    }
+
+    function dibujarFuego(context) {
+        if (fireParticles.length === 0) return;
+        context.save();
+        context.globalCompositeOperation = 'lighter';
+        for (const p of fireParticles) {
+            const t = Math.max(0, p.life / p.initial);
+            const radio = p.size * (1 + (1 - t) * 2.3);
+            const grad = context.createRadialGradient(p.x, p.y, 0, p.x, p.y, radio);
+            grad.addColorStop(0, `hsla(${p.hue + 22}, 100%, 80%, ${0.6 * t})`);
+            grad.addColorStop(0.45, `hsla(${p.hue}, 100%, 55%, ${0.42 * t})`);
+            grad.addColorStop(1, `hsla(${p.hue - 12}, 100%, 40%, 0)`);
+            context.fillStyle = grad;
+            context.beginPath();
+            context.arc(p.x, p.y, radio, 0, Math.PI * 2);
+            context.fill();
+        }
+        context.restore();
+    }
+
     function updateDragon(d, dt, now) {
         // Planeo predominante con ráfagas de aleteo ocasionales.
         d.flapCooldown -= dt;
@@ -141,6 +210,17 @@
 
         d.tailPhase += dt * 1.6;
         d.pitch = Math.sin(d.tailPhase * 0.65) * 0.035 + d.wingFlap * 0.025;
+
+        // Una bocanada de fuego cada cierto tiempo.
+        d.fireCooldown -= dt;
+        if (d.fireCooldown <= 0) {
+            d.fireBurst = 0.7 + Math.random() * 0.4;
+            d.fireCooldown = 5 + Math.random() * 5;
+        }
+        if (d.fireBurst > 0) {
+            d.fireBurst -= dt;
+            for (let i = 0; i < 2; i++) emitirFuego(d);
+        }
     }
 
     function drawWing(context, d, far) {
@@ -344,6 +424,8 @@
             updateDragon(d, dt, now);
             drawDragon(ctx, d);
         }
+        actualizarFuego(dt);
+        dibujarFuego(ctx);
         requestAnimationFrame(animate);
     }
 

@@ -408,8 +408,9 @@ function cambiarPestana(valor) {
     const selector = document.getElementById('select-seccion-corte');
     if (selector && selector.value !== valor) selector.value = valor;
 
-    // Renderiza el pasaporte del maestre al abrir Estadísticas.
+    // Renderiza las estadísticas y el pasaporte del maestre al abrir la pestaña.
     if (valor === 'pestana-estadisticas' || valor === 'tab-estadisticas') {
+        if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
         if (typeof renderPasaporteMaestre === 'function') renderPasaporteMaestre();
     }
     // Renderiza el Blog al abrir la pestaña.
@@ -450,6 +451,8 @@ function actualizarInterfazSesion(usuario) {
         if (optConfigJuego) optConfigJuego.style.display = (esSuperadmin || esMaster) ? "" : "none";
         const optUsuarios = document.getElementById("option-menu-usuarios");
         if (optUsuarios) optUsuarios.style.display = esSuperadmin ? "" : "none";
+        const optEstadisticas = document.getElementById("option-menu-estadisticas");
+        if (optEstadisticas) optEstadisticas.style.display = esSuperadmin ? "" : "none";
         const optBarrios = document.querySelector("option[value=\"pestana-barrios\"]");
         if (optBarrios) optBarrios.style.display = esSuperadmin ? "" : "none";
         const optEventos = document.querySelector("option[value=\"pestana-generar-evento\"]");
@@ -5551,17 +5554,123 @@ function calcularEstadisticasPorBarrio() {
     return { barrios, votos, raices, hojas, mediaGlobal, filas };
 }
 
+// Clave estable para cruzar los votos (que guardan el teléfono del maestre)
+// con el listado de usuarios autorizados.
+function claveTelefonoEstadistica(valor) {
+    const digitos = String(valor ?? '').replace(/\D/g, '');
+    return digitos ? digitos.slice(-9) : '';
+}
+
+function etiquetaGeneroEstadistica(valor) {
+    const texto = String(valor ?? '').trim().toUpperCase();
+    if (texto === 'F' || texto.startsWith('FEM')) return 'Femenino';
+    if (texto === 'M' || texto.startsWith('MASC')) return 'Masculino';
+    return 'Sin especificar';
+}
+
+function porcentajeEstadistica(parte, total) {
+    if (!total) return 0;
+    return (Number(parte) || 0) * 100 / total;
+}
+
+function formatearPorcentajeEstadistica(valor) {
+    return `${Number(valor || 0).toFixed(1)}%`;
+}
+
+// Cruza usuarios autorizados y votos para obtener el desglose por género.
+function calcularEstadisticasGenero(usuarios, votos) {
+    const porTelefono = new Map();
+    const porId = new Map();
+    (usuarios || []).forEach(u => {
+        const tel = claveTelefonoEstadistica(u.phone);
+        if (tel) porTelefono.set(tel, u);
+        if (u.id !== undefined && u.id !== null) porId.set(String(u.id), u);
+    });
+
+    const filas = new Map();
+    const filaDe = genero => {
+        if (!filas.has(genero)) filas.set(genero, { genero, usuarios: 0, votos: 0, suma: 0 });
+        return filas.get(genero);
+    };
+    ['Masculino', 'Femenino'].forEach(filaDe);
+    (usuarios || []).forEach(u => {
+        filaDe(etiquetaGeneroEstadistica(u.gender ?? u.genero)).usuarios += 1;
+    });
+
+    (votos || []).forEach(v => {
+        const tel = claveTelefonoEstadistica(v.maestre_id);
+        const usuario = (tel && porTelefono.get(tel)) || porId.get(String(v.maestre_id ?? ''));
+        const fila = filaDe(usuario ? etiquetaGeneroEstadistica(usuario.gender ?? usuario.genero) : 'Sin especificar');
+        fila.votos += 1;
+        fila.suma += calcularNotaLeyII(v.nota_festin, v.nota_caminos, v.nota_espiritu);
+    });
+
+    const totalUsuarios = (usuarios || []).length;
+    const totalVotos = (votos || []).length;
+    const resultado = [...filas.values()]
+        .filter(f => f.usuarios > 0 || f.votos > 0)
+        .map(f => ({
+            genero: f.genero,
+            usuarios: f.usuarios,
+            votos: f.votos,
+            pctUsuarios: porcentajeEstadistica(f.usuarios, totalUsuarios),
+            pctVotos: porcentajeEstadistica(f.votos, totalVotos),
+            media: f.votos ? f.suma / f.votos : 0
+        }));
+    const orden = { Masculino: 0, Femenino: 1, 'Sin especificar': 2 };
+    resultado.sort((a, b) => (orden[a.genero] ?? 9) - (orden[b.genero] ?? 9));
+    return { filas: resultado, totalUsuarios, totalVotos };
+}
+
+// Reparte los usuarios autorizados por el barrio que representan.
+function calcularUsuariosPorBarrio(usuarios, barrios) {
+    const conteo = new Map();
+    (barrios || []).forEach(b => conteo.set(b, 0));
+    (usuarios || []).forEach(u => {
+        const barrio = (u.barrio_representado || u.barrio_asignado || 'Forastero');
+        conteo.set(barrio, (conteo.get(barrio) || 0) + 1);
+    });
+    return conteo;
+}
+
+let ultimaCargaUsuariosEstadisticas = 0;
+let cargandoUsuariosEstadisticas = false;
+
+// Los administradores reciben el listado completo de usuarios por token. Se
+// refresca como máximo cada 30 s para no repetir peticiones en cada render.
+function asegurarUsuariosParaEstadisticas() {
+    const usuario = getCurrentUser();
+    if (!usuario || !puedeAdministrar(usuario.role) || !usuario.token) return;
+    if (cargandoUsuariosEstadisticas || Date.now() - ultimaCargaUsuariosEstadisticas < 30000) return;
+    cargandoUsuariosEstadisticas = true;
+    ultimaCargaUsuariosEstadisticas = Date.now();
+    Promise.resolve(refrescarUsuariosPorToken(true))
+        .then(actualizado => {
+            cargandoUsuariosEstadisticas = false;
+            if (actualizado) renderEstadisticasCodice();
+        })
+        .catch(() => { cargandoUsuariosEstadisticas = false; });
+}
+
 // Renderiza el panel completo de Estadísticas del Códice.
 function renderEstadisticasCodice() {
     if (!document.getElementById('panel-estadisticas-codice')) return;
 
-    const { votos, raices, hojas, filas } = calcularEstadisticasPorBarrio();
+    asegurarUsuariosParaEstadisticas();
+
+    const { barrios, votos, raices, hojas, filas, mediaGlobal } = calcularEstadisticasPorBarrio();
+    const usuarios = getUsuariosDelAmbito();
+    const totalUsuarios = usuarios.length;
+    const generoStats = calcularEstadisticasGenero(usuarios, votos);
+    const usuariosPorBarrio = calcularUsuariosPorBarrio(usuarios, barrios);
+    const votantesUnicos = new Set(votos.map(v =>
+        claveTelefonoEstadistica(v.maestre_id) || String(v.maestre_id || ''))).size;
+    const participacion = porcentajeEstadistica(votantesUnicos, totalUsuarios);
     const eventosConVot = getEventosConVotacionDelAmbito();
     const cerrados = eventosConVot.filter(e => {
         try { return obtenerEstadoVotacionEvento(e).estado === 'FINALIZADA'; } catch (_) { return false; }
     }).length;
     const pendientes = eventosConVot.length - cerrados;
-    const completa = competicionVotacionCompleta();
 
     const nota = document.getElementById('estad-ambito-nota');
     if (nota) {
@@ -5579,10 +5688,12 @@ function renderEstadisticasCodice() {
         resumen.innerHTML =
             tarjeta('Barrios', filas.length, '#facc15') +
             tarjeta('Votos', votos.length, '#4ade80') +
+            tarjeta('Usuarios', totalUsuarios, '#a855f7') +
+            tarjeta('Participación', formatearPorcentajeEstadistica(participacion), '#38bdf8') +
+            tarjeta('Media global', Number(mediaGlobal || 0).toFixed(2), '#f59e0b') +
             tarjeta('Eventos c/ votación', eventosConVot.length, '#60a5fa') +
             tarjeta('Cerradas', cerrados, '#22c55e') +
-            tarjeta('Pendientes', pendientes, pendientes > 0 ? '#f87171' : '#22c55e') +
-            tarjeta('Campeón', completa ? 'Proclamado' : 'Por proclamar', completa ? '#facc15' : '#a16207');
+            tarjeta('Pendientes', pendientes, pendientes > 0 ? '#f87171' : '#22c55e');
     }
 
     createOrUpdateChart('estad-chart-ranking', 'bar', {
@@ -5643,6 +5754,161 @@ function renderEstadisticasCodice() {
         responsive: true,
         maintainAspectRatio: false
     });
+
+    const PALETA_ESTAD = ['#facc15', '#3b82f6', '#22c55e', '#ef4444', '#a855f7',
+        '#06b6d4', '#f97316', '#84cc16', '#e11d48', '#8b5cf6', '#14b8a6', '#eab308'];
+    const pctDe = (parte, total) => formatearPorcentajeEstadistica(porcentajeEstadistica(parte, total));
+    const barriosConVotos = filas.filter(f => f.total > 0);
+
+    createOrUpdateChart('estad-chart-barrios-pct', 'doughnut', {
+        labels: barriosConVotos.map(f => `${f.barrio} (${pctDe(f.total, votos.length)})`),
+        datasets: [{
+            data: barriosConVotos.map(f => f.total),
+            backgroundColor: barriosConVotos.map((_, i) => PALETA_ESTAD[i % PALETA_ESTAD.length]),
+            borderColor: '#0f172a',
+            borderWidth: 2
+        }]
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { color: '#e5e7eb', boxWidth: 12, padding: 8, font: { size: 10 } } },
+            tooltip: {
+                callbacks: {
+                    label: ctx => {
+                        const f = barriosConVotos[ctx.dataIndex];
+                        return f ? `${f.barrio}: ${f.total} votos (${pctDe(f.total, votos.length)})` : '';
+                    }
+                }
+            }
+        }
+    });
+
+    const generosConVotos = generoStats.filas.filter(f => f.votos > 0);
+    createOrUpdateChart('estad-chart-genero-pct', 'doughnut', {
+        labels: generosConVotos.map(f => `${f.genero} (${pctDe(f.votos, votos.length)})`),
+        datasets: [{
+            data: generosConVotos.map(f => f.votos),
+            backgroundColor: generosConVotos.map((f, i) => f.genero === 'Femenino' ? '#e11d48'
+                : f.genero === 'Masculino' ? '#3b82f6' : PALETA_ESTAD[i % PALETA_ESTAD.length]),
+            borderColor: '#0f172a',
+            borderWidth: 2
+        }]
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { color: '#e5e7eb', boxWidth: 12, padding: 8, font: { size: 10 } } },
+            tooltip: {
+                callbacks: {
+                    label: ctx => {
+                        const f = generosConVotos[ctx.dataIndex];
+                        return f ? `${f.genero}: ${f.votos} votos (${pctDe(f.votos, votos.length)})` : '';
+                    }
+                }
+            }
+        }
+    });
+
+    createOrUpdateChart('estad-chart-genero-barras', 'bar', {
+        labels: generoStats.filas.map(f => f.genero),
+        datasets: [
+            {
+                label: 'Usuarios',
+                data: generoStats.filas.map(f => f.usuarios),
+                backgroundColor: '#facc15'
+            },
+            {
+                label: 'Votos',
+                data: generoStats.filas.map(f => f.votos),
+                backgroundColor: '#3b82f6'
+            }
+        ]
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { labels: { color: '#e5e7eb' } },
+            tooltip: {
+                callbacks: {
+                    label: ctx => {
+                        const f = generoStats.filas[ctx.dataIndex];
+                        if (!f) return `${ctx.dataset.label}: ${ctx.parsed.y}`;
+                        const pct = ctx.dataset.label === 'Usuarios' ? f.pctUsuarios : f.pctVotos;
+                        return `${ctx.dataset.label}: ${ctx.parsed.y} (${formatearPorcentajeEstadistica(pct)})`;
+                    }
+                }
+            }
+        },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(255,255,255,0.08)' } } }
+    });
+
+    const filasTablaBarrio = filas.map(f => ({
+        barrio: f.barrio,
+        votos: f.total,
+        usuarios: usuariosPorBarrio.get(f.barrio) || 0,
+        media: f.notaFinal
+    }));
+    const usuariosForastero = usuariosPorBarrio.get('Forastero') || 0;
+    if (usuariosForastero > 0) {
+        filasTablaBarrio.push({ barrio: 'Forastero', votos: 0, usuarios: usuariosForastero, media: null });
+    }
+
+    createOrUpdateChart('estad-chart-usuarios-barrio', 'bar', {
+        labels: filasTablaBarrio.map(f => f.barrio),
+        datasets: [{
+            label: 'Usuarios',
+            data: filasTablaBarrio.map(f => f.usuarios),
+            backgroundColor: filasTablaBarrio.map((_, i) => PALETA_ESTAD[i % PALETA_ESTAD.length])
+        }]
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    });
+
+    const headBarrios = document.getElementById('estad-tabla-barrios-head');
+    if (headBarrios) {
+        headBarrios.innerHTML = '<th>Barrio</th><th>Votos</th><th>% Votos</th>' +
+            '<th>Usuarios</th><th>% Usuarios</th><th>Media Ley II</th>';
+    }
+    const bodyBarrios = document.getElementById('estad-tabla-barrios-body');
+    if (bodyBarrios) {
+        if (!filasTablaBarrio.length) {
+            bodyBarrios.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#a1a1aa;padding:16px;">Sin datos de barrios todavía.</td></tr>';
+        } else {
+            bodyBarrios.innerHTML = filasTablaBarrio.map(f => `<tr>
+                <td><strong>${escaparHTML(f.barrio)}</strong></td>
+                <td>${f.votos}</td>
+                <td>${pctDe(f.votos, votos.length)}</td>
+                <td>${f.usuarios}</td>
+                <td>${pctDe(f.usuarios, totalUsuarios)}</td>
+                <td><strong style="color:var(--oro-brillante);">${f.media === null ? '—' : Number(f.media).toFixed(2)}</strong></td>
+            </tr>`).join('');
+        }
+    }
+
+    const headGenero = document.getElementById('estad-tabla-genero-head');
+    if (headGenero) {
+        headGenero.innerHTML = '<th>Género</th><th>Usuarios</th><th>% Usuarios</th>' +
+            '<th>Votos</th><th>% Votos</th><th>Media Ley II</th>';
+    }
+    const bodyGenero = document.getElementById('estad-tabla-genero-body');
+    if (bodyGenero) {
+        if (!generoStats.filas.length) {
+            bodyGenero.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#a1a1aa;padding:16px;">Sin datos de género todavía.</td></tr>';
+        } else {
+            bodyGenero.innerHTML = generoStats.filas.map(f => `<tr>
+                <td><strong>${escaparHTML(f.genero)}</strong></td>
+                <td>${f.usuarios}</td>
+                <td>${formatearPorcentajeEstadistica(f.pctUsuarios)}</td>
+                <td>${f.votos}</td>
+                <td>${formatearPorcentajeEstadistica(f.pctVotos)}</td>
+                <td><strong style="color:var(--oro-brillante);">${Number(f.media).toFixed(2)}</strong></td>
+            </tr>`).join('');
+        }
+    }
 
     const head = document.getElementById('estad-capilaridad-head');
     if (head) {
@@ -5705,8 +5971,96 @@ function renderEstadisticasCodice() {
     }
 }
 
+// Exporta un CSV con el resumen numérico y porcentual de las estadísticas
+// (resumen general, barrios, género y eventos). Exclusivo de administradores.
+function exportarEstadisticasResumenCSV() {
+    const usuario = getCurrentUser();
+    if (!usuario || !puedeAdministrar(usuario.role)) {
+        alert('No tienes permiso para descargar las estadísticas.');
+        return;
+    }
+
+    const { barrios, votos, filas, mediaGlobal } = calcularEstadisticasPorBarrio();
+    const usuarios = getUsuariosDelAmbito();
+    const totalUsuarios = usuarios.length;
+    const generoStats = calcularEstadisticasGenero(usuarios, votos);
+    const usuariosPorBarrio = calcularUsuariosPorBarrio(usuarios, barrios);
+    const votantesUnicos = new Set(votos.map(v =>
+        claveTelefonoEstadistica(v.maestre_id) || String(v.maestre_id || ''))).size;
+    const eventos = getEventosDelAmbito().slice().sort((a, b) =>
+        `${a.fecha || ''}`.localeCompare(`${b.fecha || ''}`));
+    const pct = (parte, total) => formatearPorcentajeEstadistica(porcentajeEstadistica(parte, total));
+    const esc = valor => `"${String(valor ?? '').replace(/"/g, '""')}"`;
+    const lineas = [
+        ['ESTADÍSTICAS DEL CÓDICE'],
+        ['Generado', new Date().toLocaleString('es-ES')],
+        [],
+        ['RESUMEN GENERAL'],
+        ['Métrica', 'Valor'],
+        ['Barrios', filas.length],
+        ['Votos', votos.length],
+        ['Usuarios', totalUsuarios],
+        ['Participación', pct(votantesUnicos, totalUsuarios)],
+        ['Media global', Number(mediaGlobal || 0).toFixed(2)],
+        ['Eventos con votación', getEventosConVotacionDelAmbito().length],
+        [],
+        ['BARRIOS'],
+        ['Barrio', 'Votos', '% Votos', 'Usuarios', '% Usuarios', 'Media Ley II']
+    ];
+    filas.forEach(f => {
+        lineas.push([
+            f.barrio,
+            f.total,
+            pct(f.total, votos.length),
+            usuariosPorBarrio.get(f.barrio) || 0,
+            pct(usuariosPorBarrio.get(f.barrio) || 0, totalUsuarios),
+            Number(f.notaFinal).toFixed(2)
+        ]);
+    });
+    const forastero = usuariosPorBarrio.get('Forastero') || 0;
+    if (forastero > 0) {
+        lineas.push(['Forastero', 0, pct(0, votos.length), forastero,
+            pct(forastero, totalUsuarios), '']);
+    }
+
+    lineas.push([], ['GÉNERO'],
+        ['Género', 'Usuarios', '% Usuarios', 'Votos', '% Votos', 'Media Ley II']);
+    generoStats.filas.forEach(f => {
+        lineas.push([
+            f.genero,
+            f.usuarios,
+            formatearPorcentajeEstadistica(f.pctUsuarios),
+            f.votos,
+            formatearPorcentajeEstadistica(f.pctVotos),
+            Number(f.media).toFixed(2)
+        ]);
+    });
+
+    lineas.push([], ['EVENTOS'], ['Evento', 'Barrio', 'Votos', '% Votos']);
+    eventos.forEach(e => {
+        const total = votos.filter(v => String(v.evento_id || '') === String(e.id)).length;
+        lineas.push([e.nombre || '', e.barrio || '', total, pct(total, votos.length)]);
+    });
+
+    const csv = '\ufeff' + lineas.map(fila => fila.map(esc).join(';')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = `estadisticas_resumen_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    URL.revokeObjectURL(url);
+}
+
 // Exporta a CSV la capilaridad completa de cada voto (todas sus notas).
 function exportarEstadisticasVotosCSV() {
+    const usuario = getCurrentUser();
+    if (!usuario || !puedeAdministrar(usuario.role)) {
+        alert('No tienes permiso para descargar las estadísticas.');
+        return;
+    }
     const { votos, raices, hojas } = calcularEstadisticasPorBarrio();
     if (!votos.length) {
         alert('No hay votos que exportar en este ámbito.');

@@ -110,7 +110,7 @@
     <script src="js/legal-config.js"></script>
     <script src="js/analytics.js" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261101" defer></script>
+    <script src="js/app.js?v=20261102" defer></script>
     <script src="js/dragon.js?v=20261101" defer></script>
 </head>
 
@@ -188,6 +188,7 @@
                 <optgroup label="👑 Administración" id="optgroup-admin-menu">
                     <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Gestión Usuarios</option>
                     <option value="pestana-barrios" data-tab="tab-barrios">🏰 Gestión ubicaciones</option>
+                    <option value="pestana-estadisticas" id="option-menu-estadisticas" data-tab="tab-estadisticas">📊 Estadísticas</option>
                     <option value="pestana-generar-evento" data-tab="tab-generar-evento">🗓️ Eventos</option>
                     <option value="tab-superadmin" data-tab="tab-superadmin">⚙️ Configuración</option>
                     <option value="pestana-marketing" data-tab="tab-marketing" id="option-menu-marketing" style="display:none;">📣 Marketing (Promocionar Locales)</option>
@@ -890,6 +891,10 @@
                         </p>
                         <p id="estad-ambito-nota" role="status" style="font-size:0.85rem;color:#fde68a;margin-bottom:14px;"></p>
 
+                        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+                            <button type="button" class="btn-cuervo" onclick="exportarEstadisticasResumenCSV()" style="padding:6px 12px;font-size:0.82rem;background:#166534;">⬇️ Descargar estadísticas (CSV)</button>
+                        </div>
+
                         <div id="estad-resumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px;"></div>
 
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;">
@@ -909,6 +914,42 @@
                                 <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">⏳ Estado de las Votaciones</h5>
                                 <div style="position:relative;height:220px;"><canvas id="estad-chart-progreso"></canvas></div>
                             </div>
+                        </div>
+
+                        <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:24px 0 12px;">📈 Distribución numérica y porcentual</h4>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;">
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">🥧 % de Votos por Barrio</h5>
+                                <div style="position:relative;height:240px;"><canvas id="estad-chart-barrios-pct"></canvas></div>
+                            </div>
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">🥧 % de Votos por Género</h5>
+                                <div style="position:relative;height:240px;"><canvas id="estad-chart-genero-pct"></canvas></div>
+                            </div>
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">⚧ Usuarios y Votos por Género</h5>
+                                <div style="position:relative;height:240px;"><canvas id="estad-chart-genero-barras"></canvas></div>
+                            </div>
+                            <div style="background:rgba(15,23,42,0.9);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:15px;">
+                                <h5 style="color:var(--oro-brillante);margin:0 0 10px;font-size:0.9rem;text-align:center;">👥 Usuarios por Barrio</h5>
+                                <div style="position:relative;height:240px;"><canvas id="estad-chart-usuarios-barrio"></canvas></div>
+                            </div>
+                        </div>
+
+                        <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:24px 0 12px;">📋 Desglose numérico y porcentual por barrio</h4>
+                        <div style="overflow-x:auto;">
+                            <table class="leaderboard-table" style="min-width:640px;">
+                                <thead><tr id="estad-tabla-barrios-head"></tr></thead>
+                                <tbody id="estad-tabla-barrios-body"></tbody>
+                            </table>
+                        </div>
+
+                        <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:24px 0 12px;">⚧ Desglose numérico y porcentual por género</h4>
+                        <div style="overflow-x:auto;">
+                            <table class="leaderboard-table" style="min-width:640px;">
+                                <thead><tr id="estad-tabla-genero-head"></tr></thead>
+                                <tbody id="estad-tabla-genero-body"></tbody>
+                            </table>
                         </div>
 
                         <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:24px 0 12px;">🧬 Desglose por barrio y tipo de voto</h4>

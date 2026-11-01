@@ -19,6 +19,16 @@
     }
 
     function cargarVercel(cfg) {
+        // Sólo inyectamos los scripts de Vercel cuando no estamos en localhost (desarrollo)
+        var esLocalhost = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        if (cfg.vercelAnalytics && !esLocalhost) {
+            // Usamos la URL absoluta del dominio Vercel para evitar problemas de ruta relativa en local
+            inyectar('https://lokitronodebarrios.vercel.app/_vercel/insights/script.js');
+        }
+        if (cfg.vercelSpeedInsights && !esLocalhost) {
+            inyectar('https://lokitronodebarrios.vercel.app/_vercel/speed-insights/script.js');
+        }
+    }
         if (cfg.vercelAnalytics) {
             inyectar('/_vercel/insights/script.js');
         }

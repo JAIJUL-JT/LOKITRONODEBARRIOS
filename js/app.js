@@ -4711,7 +4711,9 @@ function editarBarrio(id) {
     }
     campoEmblema.value = casa.emblema || '🏰';
 
-    if (typeof barrioGeoSetDesde === 'function') barrioGeoSetDesde(casa);
+    if (typeof barrioGeoSetDesde === 'function' && document.getElementById('barrio-geo-ccaa')) {
+        barrioGeoSetDesde(casa);
+    }
 
     if (botonGuardar) botonGuardar.textContent = '💾 Guardar Cambios';
     if (botonCancelar) botonCancelar.style.display = 'inline-block';
@@ -4774,12 +4776,22 @@ async function guardarBarrio(event) {
         return;
     }
 
-    const ubicacion = (typeof barrioGeoUbicacion === 'function')
+    const casaActual = idEdit
+        ? casasCache.find(c => String(c.id) === String(idEdit))
+        : null;
+    const hayCascadaGeo = Boolean(document.getElementById('barrio-geo-ccaa'));
+    const ubicacion = (hayCascadaGeo && typeof barrioGeoUbicacion === 'function')
         ? barrioGeoUbicacion()
-        : { ciudad_id: null, distrito_id: null, barrio_id: null, codigo_postal: null, ruta: '' };
+        : {
+            ciudad_id: casaActual?.ciudad_id || null,
+            distrito_id: casaActual?.distrito_id || null,
+            barrio_id: casaActual?.barrio_id || null,
+            codigo_postal: casaActual?.codigo_postal || null,
+            ruta: ''
+        };
     const imagenFicha = ubicacion.ciudad_id
         ? geoFichaMiniatura({ nombre, color: '#d4af37', emblema })
-        : null;
+        : (casaActual?.imagen_url || null);
 
     const boton = document.getElementById('btn-guardar-barrio');
     const textoOriginal = boton?.textContent || '➕ Añadir Nuevo Barrio';

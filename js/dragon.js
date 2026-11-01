@@ -1,7 +1,8 @@
 /**
- * 🐉 DRAGON CINEMATOGRÁFICO DE LOKITRONO
- * Renderiza y anima dos dragones (rojo + azul) con física de vuelo,
- * aleteo orgánico, estela de brasas y bocanadas de fuego.
+ * 🐉 DRAGONES DE LOKITRONO — VUELO REALISTA
+ * Dos dragones (rojo + azul) en silueta atmosférica, con planeo, aleteo
+ * ocasional, inclinación suave y cola ondulante. Física independiente.
+ * Visible en todas las pantallas que carguen este script.
  */
 
 (function () {
@@ -16,335 +17,341 @@
     canvas.style.zIndex = '9998';
     document.body.appendChild(canvas);
 
-    const canvasBlue = canvas.cloneNode(false);
-    canvasBlue.id = 'dragon-canvas-blue';
-    canvasBlue.style.filter = 'hue-rotate(200deg) saturate(1.6) brightness(1.1)';
-    canvasBlue.style.zIndex = '9997';
-    canvasBlue.style.pointerEvents = 'none';
-    document.body.appendChild(canvasBlue);
-
     const ctx = canvas.getContext('2d');
-    const ctxBlue = canvasBlue.getContext('2d');
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-    canvasBlue.width = width;
-    canvasBlue.height = height;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
 
-    window.addEventListener('resize', () => {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-        canvasBlue.width = width;
-        canvasBlue.height = height;
-    });
-
-    // Estado del Dragón
-    const dragon = {
-        x: -200,
-        y: height * 0.3,
-        targetX: width + 200,
-        targetY: height * 0.4,
-        speed: 2.2,
-        angle: 0,
-        wingCycle: 0,
-        scale: 0.55,
-        targetScale: 0.55,
-        alpha: 0.9,
-        state: 'flying',
-        spineNodes: [],
-        nodeCount: 14,
-        fireTimer: 0,
-        fireInterval: 180
+    const PALETTES = {
+        red: {
+            bodyTop: '#3a0d0d', body: '#1f0808', bodyBelly: '#110303',
+            wingRoot: '#2a0a0a', wingTip: '#130404', wingFar: '#0b0202',
+            bone: '#5a1a1a', rim: '#b91c1c', eye: '#fbbf24'
+        },
+        blue: {
+            bodyTop: '#0d1b3a', body: '#07101f', bodyBelly: '#03060d',
+            wingRoot: '#0a1730', wingTip: '#04070d', wingFar: '#02030a',
+            bone: '#1e3a8a', rim: '#3b82f6', eye: '#fde047'
+        }
     };
 
-    for (let i = 0; i < dragon.nodeCount; i++) {
-        dragon.spineNodes.push({ x: dragon.x, y: dragon.y, angle: 0 });
+    function createDragon(palette, opts) {
+        const d = {
+            palette,
+            x: 0,
+            y: 0,
+            baseY: 0,
+            band: opts.band,
+            direction: opts.direction,
+            speed: opts.speed,
+            baseSpeed: opts.speed,
+            angle: opts.direction > 0 ? 0 : Math.PI,
+            pitch: 0,
+            wingCycle: opts.wingPhase,
+            wingFlap: 0,
+            flapCooldown: Math.random() * 3,
+            flapBurst: 0,
+            tailPhase: Math.random() * Math.PI * 2,
+            bobPhase: opts.phase,
+            baseScale: opts.baseScale,
+            scale: opts.baseScale,
+            alpha: opts.alpha
+        };
+        resetDragon(d, true);
+        return d;
     }
 
-    const embers = [];
-    const fireParticles = [];
-
-    function createEmber() {
-        if (Math.random() > 0.4) return;
-        embers.push({
-            x: dragon.x - Math.cos(dragon.angle) * 40,
-            y: dragon.y - Math.sin(dragon.angle) * 10,
-            vx: -Math.cos(dragon.angle) * 1.5 - (Math.random() - 0.5) * 0.8,
-            vy: -Math.sin(dragon.angle) * 0.8 + (Math.random() - 0.5) * 0.6,
-            life: 1.0,
-            decay: 0.015 + Math.random() * 0.01,
-            size: 1 + Math.random() * 2
-        });
+    function resetDragon(d, initial) {
+        const margin = 320;
+        d.band = 0.2 + Math.random() * 0.55;
+        d.baseY = height * d.band;
+        d.y = d.baseY + (Math.random() - 0.5) * 40;
+        d.x = d.direction > 0 ? -margin : width + margin;
+        d.speed = d.baseSpeed * (0.85 + Math.random() * 0.3);
+        d.angle = d.direction > 0 ? 0 : Math.PI;
+        if (!initial) {
+            d.tailPhase = Math.random() * Math.PI * 2;
+            d.flapCooldown = 1 + Math.random() * 3;
+        }
     }
 
-    function createFireBreath() {
-        const mouthX = dragon.x + Math.cos(dragon.angle) * 52;
-        const mouthY = dragon.y + Math.sin(dragon.angle) * 3;
-        for (let i = 0; i < 8; i++) {
-            fireParticles.push({
-                x: mouthX,
-                y: mouthY,
-                vx: Math.cos(dragon.angle + (Math.random() - 0.5) * 0.4) * (4 + Math.random() * 3),
-                vy: Math.sin(dragon.angle + (Math.random() - 0.5) * 0.4) * (2 + Math.random() * 2) + (Math.random() - 0.5) * 1.5,
-                life: 1.0,
-                decay: 0.02 + Math.random() * 0.015,
-                size: 3 + Math.random() * 4,
-                hue: Math.random() < 0.3 ? 45 : 15
+    const dragons = [
+        createDragon(PALETTES.red, {
+            band: 0.3,
+            direction: 1,
+            speed: 2.3,
+            wingPhase: 0,
+            baseScale: 0.62,
+            phase: 0,
+            alpha: 0.9
+        }),
+        createDragon(PALETTES.blue, {
+            band: 0.62,
+            direction: -1,
+            speed: 1.65,
+            wingPhase: Math.PI * 0.8,
+            baseScale: 0.5,
+            phase: Math.PI * 0.6,
+            alpha: 0.82
+        })
+    ];
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        const factor = width < 640 ? 0.62 : width < 1024 ? 0.8 : 1;
+        for (const d of dragons) {
+            d.scale = d.baseScale * factor;
+            d.baseY = height * d.band;
+        }
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function updateDragon(d, dt, now) {
+        // Planeo predominante con ráfagas de aleteo ocasionales.
+        d.flapCooldown -= dt;
+        if (d.flapCooldown <= 0) {
+            d.flapBurst = 1;
+            d.flapCooldown = 3.2 + Math.random() * 4.5;
+        }
+        d.flapBurst = Math.max(0, d.flapBurst - dt * 1.25);
+        d.wingCycle += dt * (2.2 + d.flapBurst * 2.6);
+        d.wingFlap = Math.sin(d.wingCycle) * (0.16 + 0.84 * d.flapBurst);
+
+        const margin = 320;
+        if ((d.direction > 0 && d.x > width + margin) || (d.direction < 0 && d.x < -margin)) {
+            resetDragon(d, false);
+        }
+
+        d.baseY = height * d.band;
+        const targetY = d.baseY + Math.sin(now * 0.00055 + d.bobPhase) * height * 0.075;
+        const targetX = d.direction > 0 ? width + margin : -margin;
+        const desiredAngle = Math.atan2(targetY - d.y, targetX - d.x);
+        let delta = desiredAngle - d.angle;
+        while (delta > Math.PI) delta -= Math.PI * 2;
+        while (delta < -Math.PI) delta += Math.PI * 2;
+        d.angle += delta * Math.min(1, dt * 1.6);
+
+        const speed = d.speed * (1 + 0.06 * Math.sin(now * 0.0008 + d.bobPhase));
+        d.x += Math.cos(d.angle) * speed * dt * 60;
+        d.y += Math.sin(d.angle) * speed * dt * 60;
+        d.y = Math.max(70, Math.min(height - 70, d.y));
+
+        d.tailPhase += dt * 1.6;
+        d.pitch = Math.sin(d.tailPhase * 0.65) * 0.035 + d.wingFlap * 0.025;
+    }
+
+    function drawWing(context, d, far) {
+        const p = d.palette;
+        const flap = d.wingFlap;
+        const rootX = far ? 6 : 16;
+        const rootY = far ? -9 : -5;
+        const len = far ? 96 : 114;
+        const baseAngle = -1.92 + flap * 0.55;
+        const tipX = rootX + Math.cos(baseAngle) * len;
+        const tipY = rootY + Math.sin(baseAngle) * len;
+        const hipX = -58;
+        const hipY = 9;
+
+        // Puntos de la orilla posterior (nervaduras) desde el extremo a la cadera.
+        const pts = [];
+        for (let i = 0; i <= 3; i++) {
+            const t = i / 3;
+            pts.push({
+                x: tipX + (hipX - tipX) * t,
+                y: tipY + (hipY - tipY) * t
             });
         }
-    }
 
-    function updateDragon() {
-        dragon.wingCycle += 0.16;
-        dragon.fireTimer++;
+        const lx = tipX - rootX;
+        const ly = tipY - rootY;
+        const llen = Math.hypot(lx, ly) || 1;
+        const leadCtrlX = rootX + lx * 0.5 + (-ly / llen) * 11;
+        const leadCtrlY = rootY + ly * 0.5 + (lx / llen) * 11;
 
-        if (dragon.fireTimer > dragon.fireInterval) {
-            dragon.fireTimer = 0;
-            dragon.fireInterval = 120 + Math.random() * 200;
-            if (Math.random() < 0.6) {
-                createFireBreath();
-            }
-        }
-
-        if (dragon.x > width + 250) {
-            dragon.x = -250;
-            dragon.y = height * (0.2 + Math.random() * 0.4);
-            dragon.targetY = height * (0.25 + Math.random() * 0.5);
-            dragon.speed = 1.8 + Math.random() * 0.8;
-        }
-
-        const dx = dragon.targetX - dragon.x;
-        const dy = dragon.targetY - dragon.y;
-        dragon.angle = Math.atan2(dy, dx);
-
-        dragon.x += Math.cos(dragon.angle) * dragon.speed;
-        dragon.y += Math.sin(dragon.angle) * dragon.speed;
-
-        dragon.targetY += Math.sin(Date.now() * 0.0008) * 0.3;
-        dragon.targetX += Math.cos(Date.now() * 0.0005) * 0.2;
-
-        createEmber();
-
-        for (let i = embers.length - 1; i >= 0; i--) {
-            const e = embers[i];
-            e.x += e.vx;
-            e.y += e.vy;
-            e.vy -= 0.01;
-            e.life -= e.decay;
-            if (e.life <= 0) embers.splice(i, 1);
-        }
-
-        for (let i = fireParticles.length - 1; i >= 0; i--) {
-            const f = fireParticles[i];
-            f.x += f.vx;
-            f.y += f.vy;
-            f.vx *= 0.95;
-            f.vy *= 0.95;
-            f.life -= f.decay;
-            if (f.life <= 0) fireParticles.splice(i, 1);
-        }
-
-        dragon.spineNodes[0].x = dragon.x;
-        dragon.spineNodes[0].y = dragon.y;
-        dragon.spineNodes[0].angle = dragon.angle;
-
-        for (let i = 1; i < dragon.spineNodes.length; i++) {
-            const prev = dragon.spineNodes[i - 1];
-            const node = dragon.spineNodes[i];
-            const dxn = prev.x - node.x;
-            const dyn = prev.y - node.y;
-            const dist = Math.sqrt(dxn * dxn + dyn * dyn) || 1;
-            const followDist = 8 - i * 0.3;
-            node.x = prev.x - (dxn / dist) * followDist;
-            node.y = prev.y - (dyn / dist) * followDist;
-            node.angle = Math.atan2(dyn, dxn);
-        }
-    }
-
-    function drawDragonOn(context) {
         context.save();
-        context.globalAlpha = dragon.alpha;
+        if (far) context.globalAlpha *= 0.7;
 
-        // Estela de brasas
-        for (let i = 0; i < embers.length; i++) {
-            const e = embers[i];
-            context.save();
-            context.globalAlpha = e.life * 0.6;
-            const grad = context.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.size * 2);
-            grad.addColorStop(0, 'rgba(255, 200, 100, 0.8)');
-            grad.addColorStop(0.5, 'rgba(239, 68, 68, 0.4)');
-            grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
-            context.fillStyle = grad;
-            context.beginPath();
-            context.arc(e.x, e.y, e.size, 0, Math.PI * 2);
-            context.fill();
-            context.restore();
+        context.beginPath();
+        context.moveTo(rootX, rootY);
+        context.quadraticCurveTo(leadCtrlX, leadCtrlY, tipX, tipY);
+        for (let i = 0; i < pts.length - 1; i++) {
+            const a = pts[i];
+            const b = pts[i + 1];
+            const mx = (a.x + b.x) / 2;
+            const my = (a.y + b.y) / 2;
+            const ctrlX = mx + (rootX - mx) * 0.24;
+            const ctrlY = my + (rootY - my) * 0.24;
+            context.quadraticCurveTo(ctrlX, ctrlY, b.x, b.y);
         }
+        context.closePath();
 
-        context.translate(dragon.x, dragon.y);
-        context.scale(dragon.scale, dragon.scale);
-        context.rotate(dragon.angle);
+        const wingGrad = context.createLinearGradient(rootX, rootY, tipX, tipY);
+        wingGrad.addColorStop(0, far ? p.wingFar : p.wingRoot);
+        wingGrad.addColorStop(1, far ? p.wingFar : p.wingTip);
+        context.fillStyle = wingGrad;
+        context.fill();
 
-        const wingFlap = Math.sin(dragon.wingCycle);
-        const wingSpan = 75 + wingFlap * 20;
-        const wingYOffset = wingFlap * 25;
+        // Borde de fuga iluminado tenue.
+        context.strokeStyle = p.rim;
+        context.globalAlpha *= 0.28;
+        context.lineWidth = 1.4;
+        context.stroke();
+        context.globalAlpha /= 0.28;
 
-        function drawWing(side) {
-            context.save();
-            context.scale(1, side);
-            context.beginPath();
-            context.moveTo(-10, 0);
-            context.quadraticCurveTo(5, wingSpan * 0.7, 40, wingSpan + wingYOffset);
-            context.lineTo(45, wingSpan + wingYOffset + 8);
-            context.quadraticCurveTo(15, wingSpan * 0.8, -10, wingSpan * 0.65);
-            context.quadraticCurveTo(-30, wingSpan * 0.5, -45, wingSpan * 0.35);
-            context.quadraticCurveTo(-50, wingSpan * 0.2, -40, 5);
-            context.closePath();
-            const wingGrad = context.createRadialGradient(0, wingSpan * 0.5, 5, 0, wingSpan * 0.5, wingSpan);
-            wingGrad.addColorStop(0, '#dc2626');
-            wingGrad.addColorStop(0.5, '#991b1b');
-            wingGrad.addColorStop(1, '#450a0a');
-            context.fillStyle = wingGrad;
-            context.fill();
-            context.strokeStyle = '#7f1d1d';
-            context.lineWidth = 2.5;
-            context.beginPath();
-            context.moveTo(-10, 0);
-            context.lineTo(40, wingSpan + wingYOffset);
-            context.moveTo(10, wingSpan * 0.45);
-            context.lineTo(-10, wingSpan * 0.65);
-            context.moveTo(5, wingSpan * 0.35);
-            context.lineTo(-45, wingSpan * 0.35);
-            context.stroke();
-            context.restore();
+        // Nervaduras.
+        const wristX = rootX + lx * 0.34;
+        const wristY = rootY + ly * 0.34;
+        context.strokeStyle = p.bone;
+        context.globalAlpha *= 0.5;
+        context.lineWidth = 1.1;
+        context.beginPath();
+        for (let i = 1; i < pts.length; i++) {
+            context.moveTo(wristX, wristY);
+            context.lineTo(pts[i].x, pts[i].y);
         }
+        context.stroke();
 
-        drawWing(1);
-        drawWing(-1);
+        // Garra del ala.
+        context.globalAlpha *= 1.6;
+        context.strokeStyle = p.bone;
+        context.lineWidth = 1.6;
+        context.beginPath();
+        context.moveTo(tipX, tipY);
+        context.lineTo(tipX + 5, tipY - 4);
+        context.stroke();
 
-        // Cuerpo
-        const bodyGrad = context.createLinearGradient(-30, -20, 40, 20);
-        bodyGrad.addColorStop(0, '#b91c1c');
-        bodyGrad.addColorStop(0.6, '#991b1b');
-        bodyGrad.addColorStop(1, '#7f1d1d');
+        context.restore();
+    }
+
+    function drawBody(context, d) {
+        const p = d.palette;
+        const sway = Math.sin(d.tailPhase) * 7;
+
+        context.save();
+
+        // Cola larga y fina con aleta terminal.
+        context.beginPath();
+        context.moveTo(-28, -9);
+        context.bezierCurveTo(-68, -7, -110, -3 + sway * 0.25, -148, -9 + sway);
+        context.lineTo(-166, -3 + sway);
+        context.lineTo(-150, 3 + sway * 0.7);
+        context.bezierCurveTo(-110, 7, -68, 9, -28, 9);
+        context.closePath();
+        const tailGrad = context.createLinearGradient(-166, 0, -28, 0);
+        tailGrad.addColorStop(0, p.bodyBelly);
+        tailGrad.addColorStop(1, p.body);
+        context.fillStyle = tailGrad;
+        context.fill();
+
+        // Cuerpo aerodinámico.
+        context.beginPath();
+        context.moveTo(36, -3);
+        context.bezierCurveTo(22, -13, 0, -15, -22, -11);
+        context.bezierCurveTo(-48, -8, -66, -6, -80, -5);
+        context.bezierCurveTo(-66, 1, -48, 5, -22, 8);
+        context.bezierCurveTo(0, 12, 24, 10, 36, -3);
+        context.closePath();
+        const bodyGrad = context.createLinearGradient(0, -15, 0, 12);
+        bodyGrad.addColorStop(0, p.bodyTop);
+        bodyGrad.addColorStop(0.55, p.body);
+        bodyGrad.addColorStop(1, p.bodyBelly);
         context.fillStyle = bodyGrad;
-        context.beginPath();
-        context.ellipse(0, 0, 38, 16, 0, 0, Math.PI * 2);
         context.fill();
-        context.strokeStyle = '#450a0a';
-        context.lineWidth = 2;
-        context.stroke();
 
-        // Cuello y cabeza
-        context.save();
-        context.translate(35, 0);
-        context.rotate(wingFlap * 0.08);
-        const headGrad = context.createRadialGradient(8, -2, 2, 12, 0, 14);
-        headGrad.addColorStop(0, '#dc2626');
-        headGrad.addColorStop(1, '#991b1b');
-        context.fillStyle = headGrad;
+        // Cuello y cabeza.
         context.beginPath();
-        context.ellipse(12, 0, 16, 12, 0, 0, Math.PI * 2);
+        context.moveTo(28, -11);
+        context.bezierCurveTo(44, -13, 56, -19, 64, -22);
+        context.bezierCurveTo(68, -24, 74, -24, 78, -21);
+        context.lineTo(85, -18);
+        context.lineTo(84, -15);
+        context.bezierCurveTo(79, -13, 73, -13, 68, -14);
+        context.bezierCurveTo(60, -13, 48, -8, 34, 2);
+        context.closePath();
+        context.fillStyle = p.bodyTop;
         context.fill();
-        context.strokeStyle = '#450a0a';
-        context.lineWidth = 2;
-        context.stroke();
 
-        // Cuernos
-        context.fillStyle = '#a16207';
+        // Cuernos barridos hacia atrás.
+        context.fillStyle = p.bodyBelly;
         context.beginPath();
-        context.moveTo(8, -10);
-        context.lineTo(12, -18);
-        context.lineTo(16, -10);
+        context.moveTo(66, -22);
+        context.lineTo(56, -30);
+        context.lineTo(64, -21);
         context.closePath();
         context.fill();
         context.beginPath();
-        context.moveTo(14, -8);
-        context.lineTo(18, -16);
-        context.lineTo(22, -8);
+        context.moveTo(71, -23);
+        context.lineTo(63, -31);
+        context.lineTo(69, -22);
         context.closePath();
         context.fill();
 
-        // Ojos
-        context.fillStyle = '#fbbf24';
-        context.beginPath();
-        context.arc(18, -4, 3, 0, Math.PI * 2);
-        context.arc(18, 4, 3, 0, Math.PI * 2);
-        context.fill();
-        context.fillStyle = '#000';
-        context.beginPath();
-        context.arc(19, -4, 1.2, 0, Math.PI * 2);
-        context.arc(19, 4, 1.2, 0, Math.PI * 2);
-        context.fill();
-
-        // Narices
-        context.fillStyle = '#450a0a';
-        context.beginPath();
-        context.arc(26, -2, 1.5, 0, Math.PI * 2);
-        context.arc(26, 2, 1.5, 0, Math.PI * 2);
-        context.fill();
-
-        // Destello de fuego en las fauces
-        if (Math.random() < 0.25) {
-            context.fillStyle = 'rgba(239, 68, 68, 0.85)';
-            context.shadowColor = '#ef4444';
-            context.shadowBlur = 12;
+        // Cresta dorsal discreta.
+        context.fillStyle = p.bodyBelly;
+        for (let i = 0; i < 6; i++) {
+            const x = -10 - i * 12;
+            const y = -13 + i * 0.5;
             context.beginPath();
-            context.arc(28, 0, 2.5, 0, Math.PI * 2);
+            context.moveTo(x, y);
+            context.lineTo(x - 4, y - 5);
+            context.lineTo(x - 8, y);
+            context.closePath();
             context.fill();
-            context.shadowBlur = 0;
         }
 
-        context.restore();
-        context.restore();
-
-        // Boca
-        context.save();
-        context.translate(dragon.x + Math.cos(dragon.angle) * 45, dragon.y + Math.sin(dragon.angle) * 2);
-        context.rotate(dragon.angle);
-        context.fillStyle = 'rgba(69, 10, 10, 0.9)';
+        // Ojo tenue, sin mirada caricaturesca.
+        context.fillStyle = p.eye;
+        context.globalAlpha *= 0.75;
+        context.shadowColor = p.eye;
+        context.shadowBlur = 4;
         context.beginPath();
-        context.ellipse(0, 0, 6, 3, 0, 0, Math.PI * 2);
+        context.arc(73, -18.5, 1.1, 0, Math.PI * 2);
         context.fill();
-        context.restore();
-
-        // Partículas de fuego
-        for (let i = 0; i < fireParticles.length; i++) {
-            const f = fireParticles[i];
-            context.save();
-            context.globalAlpha = f.life * 0.8;
-            const gradF = context.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.size);
-            if (f.hue === 45) {
-                gradF.addColorStop(0, 'rgba(251, 191, 36, 0.9)');
-                gradF.addColorStop(0.5, 'rgba(239, 68, 68, 0.6)');
-                gradF.addColorStop(1, 'rgba(239, 68, 68, 0)');
-            } else {
-                gradF.addColorStop(0, 'rgba(252, 165, 165, 0.9)');
-                gradF.addColorStop(0.5, 'rgba(220, 38, 38, 0.6)');
-                gradF.addColorStop(1, 'rgba(153, 27, 27, 0)');
-            }
-            context.fillStyle = gradF;
-            context.beginPath();
-            context.arc(f.x, f.y, f.size * f.life, 0, Math.PI * 2);
-            context.fill();
-            context.restore();
-        }
+        context.shadowBlur = 0;
 
         context.restore();
     }
 
-    function animate() {
+    function drawDragon(context, d) {
+        context.save();
+        context.globalAlpha = d.alpha;
+        context.shadowColor = d.palette.rim;
+        context.shadowBlur = 10;
+        context.translate(d.x, d.y);
+        context.rotate(d.angle + d.pitch);
+        context.scale(d.scale, d.scale);
+
+        // Ala lejana (detrás del cuerpo).
+        drawWing(context, d, true);
+        drawBody(context, d);
+        // Ala cercana (delante).
+        drawWing(context, d, false);
+
+        context.restore();
+    }
+
+    let lastTime = 0;
+    function animate(now) {
+        if (!lastTime) lastTime = now;
+        const dt = Math.min(0.05, (now - lastTime) / 1000);
+        lastTime = now;
+
         ctx.clearRect(0, 0, width, height);
-        ctxBlue.clearRect(0, 0, width, height);
-
-        updateDragon();
-        drawDragonOn(ctx);
-        drawDragonOn(ctxBlue);
-
+        for (const d of dragons) {
+            updateDragon(d, dt, now);
+            drawDragon(ctx, d);
+        }
         requestAnimationFrame(animate);
     }
 
-    document.addEventListener('DOMContentLoaded', animate);
-    animate();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(animate));
+    } else {
+        requestAnimationFrame(animate);
+    }
 
     // Reloj de arena medieval
     let hourglassOverlay = null;

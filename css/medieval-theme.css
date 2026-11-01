@@ -23,38 +23,6 @@ body {
     color: #f3f4f6 !important;
 }
 
-/* 🕯️ ATMÓSFERA: LUZ DINÁMICA Y POLVO */
-.atmosfera-antorcha {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9999;
-    background: radial-gradient(circle at var(--torch-x, 50%) var(--torch-y, 50%), 
-                transparent 10%, 
-                rgba(0,0,0,0.6) 80%);
-    animation: torchFlicker 4s infinite ease-in-out;
-}
-
-@keyframes torchFlicker {
-    0%, 100% { opacity: 0.8; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.02); }
-}
-
-.particula-polvo {
-    position: absolute;
-    background: rgba(212, 175, 55, 0.3);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 1;
-    animation: floatParticle linear infinite;
-}
-
-@keyframes floatParticle {
-    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-    50% { opacity: 0.5; }
-    100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
-}
-
 /* 🛡️ PANEL CARDS: GLASSMORPHISM GÓTICO */
 .panel-card {
     background: var(--glass-dark) !important;
@@ -131,8 +99,7 @@ body {
 /* 3. LOCALES Y PROMOCIÓN — LA BODEGA FEUDAL */
 #pestana-locales-promocion, #pestana-barrios {
     background-image: 
-        radial-gradient(circle at 50% 30%, rgba(136, 19, 55, 0.3) 0%, rgba(15, 7, 10, 0.95) 85%),
-        url('../ambiente-bodega.jpg') !important;
+        radial-gradient(circle at 50% 30%, rgba(136, 19, 55, 0.3) 0%, rgba(15, 7, 10, 0.95) 85%) !important;
     background-size: cover !important;
     background-position: center !important;
     border: 2px solid #9f1239 !important;
@@ -165,8 +132,7 @@ body {
 /* 5. SORTEOS Y PENAS FEUDALES — LA HORCA / EL PATÍBULO */
 #pestana-sorteo-eventos, #pestana-tronistas {
     background-image: 
-        radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.15) 0%, rgba(8, 14, 26, 0.96) 85%),
-        url('../ambiente-horca.jpg') !important;
+        radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.15) 0%, rgba(8, 14, 26, 0.96) 85%) !important;
     background-size: cover !important;
     background-position: center !important;
     border: 2px solid #0284c7 !important;
@@ -277,47 +243,6 @@ body {
     font-size: 2.5rem !important;
     color: #fff !important;
     text-shadow: 0 0 10px var(--sangre-real), 0 0 20px red !important;
-}
-
-/* ⚡ EFECTOS DINÁMICOS */
-.lightning-flash {
-    position: fixed;
-    inset: 0;
-    background: white;
-    opacity: 0;
-    z-index: 10000;
-    pointer-events: none;
-}
-.flash-active {
-    animation: lightningBolt 0.2s ease-out;
-}
-@keyframes lightningBolt {
-    0% { opacity: 0; }
-    10% { opacity: 0.8; }
-    20% { opacity: 0.2; }
-    30% { opacity: 0.9; }
-    100% { opacity: 0; }
-}
-.spider-entity {
-    position: absolute;
-    font-size: 1.5rem;
-    filter: grayscale(1) brightness(0.2);
-    transition: all 2s linear;
-    z-index: 10;
-}
-.crow-entity {
-    position: absolute;
-    font-size: 2.5rem;
-    filter: grayscale(1) brightness(0.1);
-    z-index: 11;
-    animation: flyAcross 10s linear infinite;
-}
-@keyframes flyAcross {
-    0% { transform: translate(-100px, 0) scaleX(1); }
-    45% { transform: translate(110vw, -50px) scaleX(1); }
-    50% { transform: translate(110vw, -50px) scaleX(-1); }
-    95% { transform: translate(-100px, -50px) scaleX(-1); }
-    100% { transform: translate(-100px, 0) scaleX(1); }
 }
 
 /* ✨ EFECTO ESPECTACULAR: BRASAS FLOTANTES Y RAYOS DE LUZ CINEMATOGRÁFICOS */
@@ -526,3 +451,12 @@ body {
 }
 
 
+/* ============================================================
+   SOLO EL DRAGÓN SE MUEVE
+   Se desactivan todas las animaciones CSS decorativas y de
+   interfaz. El vuelo del dragón sigue activo porque lo anima
+   JavaScript sobre el canvas.
+   ============================================================ */
+*, *::before, *::after {
+    animation: none !important;
+}

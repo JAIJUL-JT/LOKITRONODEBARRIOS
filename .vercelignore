@@ -35,14 +35,10 @@ supabase/
 logo.jpg
 LoKiLogo.jpg
 Lokijuegopresent
-# Imágenes de ambiente no usadas (solo se usa ambiente-prision.jpg en 404.html)
-ambiente-batalla.jpg
-ambiente-bodega.jpg
-ambiente-iglesia.jpg
-ambiente-taberna.jpg
-ambiente-horca.jpg
-textura-pergamino.jpg
-fondo-cinematografico.jpg
 fototrono.jpg
-reliquia-pintxo-oro.jpg
+
+# Capturas y material de trabajo no servido por la web
+q*.png
+favicon-temp.png
+favicon.ico.old
 

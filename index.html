@@ -48,7 +48,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/medieval-theme.css">
-    <link rel="stylesheet" href="css/themes/seasonal-themes.css">
+
     <link rel="stylesheet" href="css/legal.css">
     <!-- Leaflet: mapas interactivos de ciudades/distritos/barrios -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
@@ -110,13 +110,12 @@
     <script src="js/legal-config.js"></script>
     <script src="js/analytics.js" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261025"></script>
-    <script src="js/dragon.js?v=20261025"></script>
+    <script src="js/app.js?v=20261025" defer></script>
+    <script src="js/dragon.js?v=20261031" defer></script>
 </head>
 
 <body>
     <header class="hero" style="text-align: center; position: relative;">
-        <div class="atmosfera-antorcha"></div>
         <div class="web-decor web-tl"></div>
         <div class="web-decor web-tr"></div>
         <div class="web-decor web-bl"></div>
@@ -182,6 +181,7 @@
                 <optgroup label="📜 Menú de Maestres">
                     <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario</option>
                     <option value="pestana-votacion-barrio" data-tab="tab-votacion-barrio">🗳️ Votar</option>
+                    <option value="pestana-clasificacion" data-tab="tab-clasificacion">🏆 Clasificación</option>
                     <option value="pestana-tronistas" data-tab="tab-tronistas">👑 Lokitronistas</option>
                     <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
                 </optgroup>
@@ -294,11 +294,11 @@
             <section id="pestana-votacion-barrio" class="tab-content tema-taberna" style="display: none; background-image: linear-gradient(rgba(20,12,8,0.55), rgba(0,0,0,0.85)), url('./reliquia-pintxo-oro.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
                 <div id="timer-justa-activa" style="display:none; margin-bottom: 20px; text-align: center;">
                     <div class="timer-medieval-container">
-                        <span class="timer-label">⏳ CIERRE DE LA JUSTA EN:</span>
+                        <span id="timer-label" class="timer-label">⏳ PRÓXIMA VOTACIÓN EN:</span>
                         <div id="timer-clock" class="timer-medieval-clock">00:00:00:00</div>
+                        <div id="timer-subtitulo" style="margin-top: 6px; font-size: 0.9rem; color: #e5c36a; font-family: 'Cinzel', serif;"></div>
                     </div>
                 </div>
-                <div id="efectos-especiales-votacion" style="position:absolute; inset:0; pointer-events:none; z-index:5;"></div>
 
                 <div class="panel-card">
                     <h2>🗳️ Votar</h2>
@@ -430,6 +430,15 @@
                     <p style="color: #e5c36a; text-align: center; font-style: italic; margin-bottom: 20px;">
                         📜 Crónica imperial de eventos. Los días marcados con la <strong>Cruz Roja Imperial (❌)</strong> señalan las fechas con justas y festines oficiales de la corte.
                     </p>
+
+                    <!-- CUENTA ATRÁS AL PRÓXIMO EVENTO -->
+                    <div id="cal-cuenta-atras-proximo-evento" style="display:none; margin-bottom: 20px; text-align: center;">
+                        <div class="timer-medieval-container">
+                            <span id="cal-countdown-label" class="timer-label">⏳ PRÓXIMO EVENTO EN:</span>
+                            <div id="cal-countdown-clock" class="timer-medieval-clock">00:00:00:00</div>
+                            <div id="cal-countdown-sub" style="margin-top: 6px; font-size: 0.9rem; color: #e5c36a; font-family: 'Cinzel', serif;"></div>
+                        </div>
+                    </div>
 
                     <!-- CONTENEDOR DE NAVEGACIÓN Y MATRIZ DE CALENDARIO MEDIEVAL -->
                     <div class="medieval-calendar-container">
@@ -1590,8 +1599,8 @@
 
     <!-- Código JS principal -->
     <script src="js/supabase.js"></script>
-    <script src="js/themes/seasonal-themes.js"></script>
-    <script src="js/app.js"></script>
+
+
     <script>document.getElementById('footer-year').textContent = String(new Date().getFullYear());</script>
 </body>
 

@@ -323,14 +323,15 @@ function aplicarFinDeJuegoUI() {
     aplicarRestriccionNavegacionFinJuego();
 }
 
-// Tras concluir el juego, los roles no administradores solo acceden a Clasificación.
+// Tras concluir el juego, los roles no administradores solo acceden a Clasificación y Calendario.
 function aplicarRestriccionNavegacionFinJuego() {
     const usuario = getCurrentUser();
     const restringido = restriccionFinDeJuegoActiva() && !(usuario && puedeAdministrar(usuario.role));
+    const permitidas = ['pestana-clasificacion', 'tab-calendario'];
     const select = document.getElementById('select-seccion-corte');
     if (select) {
         Array.from(select.options).forEach(opt => {
-            opt.disabled = restringido && opt.value !== 'pestana-clasificacion';
+            opt.disabled = restringido && !permitidas.includes(opt.value);
         });
         Array.from(select.querySelectorAll('optgroup')).forEach(g => {
             const hayHabilitada = Array.from(g.querySelectorAll('option')).some(o => !o.disabled);
@@ -339,7 +340,7 @@ function aplicarRestriccionNavegacionFinJuego() {
     }
     if (restringido) {
         const activa = document.querySelector('.tab-content.active');
-        if (!activa || activa.id !== 'pestana-clasificacion') {
+        if (!activa || !permitidas.includes(activa.id)) {
             cambiarPestana('pestana-clasificacion');
         }
     }
@@ -386,8 +387,9 @@ function cambiarPestana(valor) {
         && !esSuperadmin && !galaFinalEstaPublicada()) {
         valor = 'pestana-clasificacion';
     }
-    // Con el juego concluido, los roles no administradores solo ven Clasificación.
-    if (!esSuperadmin && typeof restriccionFinDeJuegoActiva === 'function' && restriccionFinDeJuegoActiva() && valor !== 'pestana-clasificacion') {
+    // Con el juego concluido, los roles no administradores solo ven Clasificación y Calendario.
+    if (!esSuperadmin && typeof restriccionFinDeJuegoActiva === 'function' && restriccionFinDeJuegoActiva()
+        && valor !== 'pestana-clasificacion' && valor !== 'tab-calendario') {
         valor = 'pestana-clasificacion';
     }
     if (esLocalesPromocion && esMaster && typeof cargarLocalesPromocion === 'function') {
@@ -439,6 +441,7 @@ function actualizarInterfazSesion(usuario) {
         if (nav) nav.style.display = 'block';
         if (contenido) contenido.style.display = 'block';
         const esSuperadmin = puedeAdministrar(usuario.role);
+        const esMaster = esRolMaster(usuario.role);
         const esGestorSorteo = puedeGestionarSorteo(usuario);
         if (optgroupAdmin) optgroupAdmin.style.display = (esSuperadmin || esGestorSorteo) ? '' : 'none';
         const optSorteo = document.querySelector("option[value=\"pestana-sorteo-eventos\"]");
@@ -3170,13 +3173,13 @@ async function cargarGalaFinalDesdeSupabase() {
     aplicarVisibilidadGalaFinal();
 }
 
-// Muestra u oculta la opción de la Gala Final en el menú de la corte según el
-// rol del usuario y si la administración ya la ha publicado.
+// La Gala Final solo aparece en el menú de la Administración. Los maestres
+// tienen un menú reducido: Calendario, Votar, Clasificación y Lokitronistas.
 function aplicarVisibilidadGalaFinal() {
     const usuario = getCurrentUser();
     const esAdmin = Boolean(usuario && puedeAdministrar(usuario.role));
     const option = document.querySelector('#select-seccion-corte option[value="pestana-evento-final"]');
-    if (option) option.style.display = (esAdmin || galaFinalEstaPublicada()) ? '' : 'none';
+    if (option) option.style.display = esAdmin ? '' : 'none';
 }
 
 function renderGalaFinal() {
@@ -8274,102 +8277,119 @@ window.cargarLocalEnFormulario = cargarLocalEnFormulario;
 window.limpiarFormularioLocal = limpiarFormularioLocal;
 window.marcarDonacionLocal = marcarDonacionLocal;
 
-// Efecto de Luz de Antorcha Dinámica
-document.addEventListener('mousemove', (e) => {
-    const torch = document.querySelector('.atmosfera-antorcha');
-    if (torch) {
-        const x = (e.clientX / window.innerWidth) * 100;
-        const y = (e.clientY / window.innerHeight) * 100;
-        torch.style.setProperty('--torch-x', x + '%');
-        torch.style.setProperty('--torch-y', y + '%');
-    }
-});
-
 // ============================================================================
-// ⏳ SISTEMA DE RELOJ DE JUSTA Y EFECTOS DINÁMICOS
+// ⏳ SISTEMA DE RELOJ DE JUSTA
 // ============================================================================
 
+function parseFechaHoraEvento(fecha, hora, horaFallback) {
+    if (!fecha) return null;
+    const h = hora || horaFallback || '00:00';
+    const dt = new Date(`${fecha}T${h}:00`);
+    return isNaN(dt.getTime()) ? null : dt;
+}
+
+function formatearCuentaAtras(diffMs) {
+    const total = Math.max(0, Math.floor(diffMs / 1000));
+    const dias = Math.floor(total / (3600 * 24));
+    const horas = Math.floor((total % (3600 * 24)) / 3600);
+    const mins = Math.floor((total % 3600) / 60);
+    const segs = total % 60;
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(dias)}:${pad(horas)}:${pad(mins)}:${pad(segs)}`;
+}
+
+// Reloj de la pestaña Votar: cuenta atrás al cierre de la votación activa o,
+// si no hay ninguna abierta, a la próxima votación programada.
 function actualizarRelojJusta() {
     const timerContainer = document.getElementById('timer-justa-activa');
     const clockEl = document.getElementById('timer-clock');
     if (!timerContainer || !clockEl) return;
 
-    const eventos = getEventosDelAmbito();
-    const eventoActivo = eventos.find(e => {
-        const ahora = new Date();
-        const inicio = new Date(e.fecha + 'T' + e.hora_inicio_votacion);
-        const fin = new Date((e.fecha_fin_votacion || e.fecha) + 'T' + e.hora_fin_votacion);
-        return ahora >= inicio && ahora <= fin;
-    });
+    const labelEl = document.getElementById('timer-label');
+    const subEl = document.getElementById('timer-subtitulo');
+    const ahora = new Date();
 
-    if (!eventoActivo) {
+    const conVotacion = getEventosDelAmbito().filter(e =>
+        e && e.tiene_votacion !== false && !e.cerrado_manualmente && e.fecha
+    );
+
+    let activo = null;
+    let proximo = null;
+    for (const evt of conVotacion) {
+        const inicio = parseFechaHoraEvento(evt.fecha, evt.hora_inicio_votacion, evt.hora || '20:30');
+        const fin = parseFechaHoraEvento(evt.fecha_fin_votacion || evt.fecha, evt.hora_fin_votacion, '23:30');
+        if (!inicio || !fin) continue;
+        if (ahora >= inicio && ahora <= fin) {
+            activo = { evt, inicio, fin };
+            break;
+        }
+        if (inicio > ahora && (!proximo || inicio < proximo.inicio)) {
+            proximo = { evt, inicio, fin };
+        }
+    }
+
+    const referencia = activo || proximo;
+    if (!referencia) {
         timerContainer.style.display = 'none';
+        if (typeof renderBannerVotacionAbierta === 'function') renderBannerVotacionAbierta(getCurrentUser());
         return;
     }
 
     timerContainer.style.display = 'block';
-    const ahora = new Date();
-    const fin = new Date((eventoActivo.fecha_fin_votacion || eventoActivo.fecha) + 'T' + eventoActivo.hora_fin_votacion);
-    const diff = fin - ahora;
+    const objetivo = activo ? activo.fin : referencia.inicio;
+    const diff = objetivo - ahora;
+    const evt = referencia.evt;
 
-    if (diff <= 0) {
-        clockEl.textContent = "00:00:00:00";
-        clockEl.style.color = "red";
-        return;
+    clockEl.textContent = formatearCuentaAtras(diff);
+    clockEl.style.color = activo && diff <= 60000 ? '#ef4444' : '#fff';
+
+    if (labelEl) {
+        labelEl.textContent = activo
+            ? '🔥 CIERRE DE LA VOTACIÓN EN:'
+            : '⏳ PRÓXIMA VOTACIÓN EN:';
     }
-
-    const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const horas = Math.floor((diff / (1000 * 60 * 60)) % 24);
-    const mins = Math.floor((diff / (1000 * 60)) % 60);
-    const segs = Math.floor((diff / 1000) % 60);
-
-    clockEl.textContent = 
-        String(dias).padStart(2, '0') + ':' + 
-        String(horas).padStart(2, '0') + ':' + 
-        String(mins).padStart(2, '0') + ':' + 
-        String(segs).padStart(2, '0');
-    clockEl.style.color = "#fff";
+    if (subEl) {
+        const barrio = evt.barrio || 'Reino';
+        const nombre = evt.nombre || 'Evento';
+        subEl.textContent = activo
+            ? `🗳️ ${barrio} · ${nombre} (cierra a las ${evt.hora_fin_votacion || '23:30'})`
+            : `🗳️ ${barrio} · ${nombre} — ${evt.fecha}${evt.hora_inicio_votacion ? ' a las ' + evt.hora_inicio_votacion : ''}`;
+    }
 
     if (typeof renderBannerVotacionAbierta === 'function') renderBannerVotacionAbierta(getCurrentUser());
 }
 
-function lanzarEfectosJusta() {
-    const container = document.getElementById('efectos-especiales-votacion');
-    if (!container) return;
+// Reloj de la pestaña Calendario: cuenta atrás al próximo evento publicado.
+function actualizarRelojProximoEvento() {
+    const cont = document.getElementById('cal-cuenta-atras-proximo-evento');
+    const clockEl = document.getElementById('cal-countdown-clock');
+    if (!cont || !clockEl) return;
 
-    // ⚡ Relámpago aleatorio
-    if (Math.random() < 0.02) {
-        const flash = document.createElement('div');
-        flash.className = 'lightning-flash flash-active';
-        document.body.appendChild(flash);
-        setTimeout(() => flash.remove(), 200);
+    const subEl = document.getElementById('cal-countdown-sub');
+    const ahora = new Date();
+
+    let proximo = null;
+    for (const evt of getEventosDelAmbito()) {
+        if (!evt || !evt.fecha) continue;
+        const inicio = parseFechaHoraEvento(evt.fecha, evt.hora, '20:00');
+        if (!inicio) continue;
+        if (inicio > ahora && (!proximo || inicio < proximo.inicio)) {
+            proximo = { evt, inicio };
+        }
     }
 
-    // 🕷️ Araña moviéndose
-    if (Math.random() < 0.05) {
-        const spider = document.createElement('div');
-        spider.className = 'spider-entity';
-        spider.textContent = '🕷️';
-        spider.style.left = Math.random() * 100 + 'vw';
-        spider.style.top = Math.random() * 100 + 'vh';
-        container.appendChild(spider);
-
-        setTimeout(() => {
-            spider.style.left = Math.random() * 100 + 'vw';
-            spider.style.top = Math.random() * 100 + 'vh';
-        }, 100);
-
-        setTimeout(() => spider.remove(), 5000);
+    if (!proximo) {
+        cont.style.display = 'none';
+        return;
     }
 
-    // 🐦 Cuervo volando
-    if (Math.random() < 0.01) {
-        const crow = document.createElement('div');
-        crow.className = 'crow-entity';
-        crow.textContent = '🐦';
-        crow.style.top = Math.random() * 60 + 'vh';
-        container.appendChild(crow);
-        setTimeout(() => crow.remove(), 10000);
+    cont.style.display = 'block';
+    clockEl.textContent = formatearCuentaAtras(proximo.inicio - ahora);
+    clockEl.style.color = '#fff';
+
+    if (subEl) {
+        const evt = proximo.evt;
+        subEl.textContent = `📅 ${evt.barrio || 'Reino'} · ${evt.nombre || 'Evento'} — ${evt.fecha}${evt.hora ? ' a las ' + evt.hora : ''}`;
     }
 }
 
@@ -8378,54 +8398,11 @@ const originalDetectarCierres = typeof detectarCierresVotacion === 'function' ? 
 detectarCierresVotacion = function() {
     originalDetectarCierres();
     actualizarRelojJusta();
-    // Solo lanzar efectos si el usuario está en la pestaña de votación
-    if (document.getElementById('pestana-votacion-barrio').style.display !== 'none') {
-        lanzarEfectosJusta();
-    }
 };
 
-// Intervalo dedicado para el reloj de la Justa (cada segundo)
+// Intervalo dedicado para los relojes de Justa y próximo evento (cada segundo)
 setInterval(actualizarRelojJusta, 1000);
-// Intervalo para efectos visuales (más frecuente que el de cierres)
-setInterval(() => {
-    if (document.getElementById('pestana-votacion-barrio') && document.getElementById('pestana-votacion-barrio').style.display !== 'none') {
-        lanzarEfectosJusta();
-    }
-}, 500);
-
-// ============================================================================
-// 🌌 SISTEMA DE PARTÍCULAS DE POLVO (Sustancia Atmosférica)
-// ============================================================================
-function crearParticulasPolvo() {
-    const body = document.body;
-    const numParticulas = 40;
-    
-    for (let i = 0; i < numParticulas; i++) {
-        const part = document.createElement('div');
-        part.className = 'particula-polvo';
-        
-        // Tamaño aleatorio
-        const size = Math.random() * 4 + 1;
-        part.style.width = size + 'px';
-        part.style.height = size + 'px';
-        
-        // Posición inicial aleatoria
-        part.style.left = Math.random() * 100 + 'vw';
-        part.style.top = Math.random() * 100 + 'vh';
-        
-        // Duración y retraso aleatorio
-        const duration = Math.random() * 10 + 10;
-        part.style.animationDuration = duration + 's';
-        part.style.animationDelay = Math.random() * 10 + 's';
-        
-        body.appendChild(part);
-    }
-}
-
-// Inicialización de atmósfera al cargar la app
-document.addEventListener('DOMContentLoaded', () => {
-    crearParticulasPolvo();
-});
+setInterval(actualizarRelojProximoEvento, 1000);
 
 // ============================================================================
 // PASAPORTE DEL MAESTRE — Sellos de votación por evento

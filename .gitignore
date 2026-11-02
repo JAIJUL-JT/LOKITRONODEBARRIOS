@@ -11,3 +11,12 @@ node_modules/
 .vercel
 # OS files
 .DS_Store
+.env*
+
+# Backup and distribution artifacts
+backup_before_deploy_20261016.zip
+*.zip
+*.pptx
+logo.jpg
+backups/
+supabase/.temp/

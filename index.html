@@ -656,6 +656,23 @@
                 <div class="panel-card">
                     <h2>👑 Consejo Real del Superadmin</h2>
 
+                    <!-- ACCESO EXCLUSIVO MASTER: MÓDULOS DEL TRONO MAYOR -->
+                    <div id="panel-acceso-oraculo-master"
+                        style="display:none; margin-top: 20px; background: rgba(30, 27, 75, 0.6); border: 2px solid var(--oro-real); border-radius: 8px; padding: 18px;">
+                        <h3 style="color: var(--oro-brillante); margin: 0 0 10px; font-family: 'Cinzel', serif;">👑 Módulos Reservados del Trono Mayor (MASTER)</h3>
+                        <p style="font-size: 0.85rem; color: #c7d2fe; margin: 0 0 15px;">
+                            Herramientas avanzadas reservadas para el Maestro de la Corte: Inteligencia Feudal (Oráculo IA) y Promoción de Empresas y Tabernas colaboradoras.
+                        </p>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-oraculo-ia')" style="background: #4338ca; flex: 1; min-width: 200px;">
+                                🔮 Oráculo Imperial (IA)
+                            </button>
+                            <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-locales-promocion')" style="background: #713f12; flex: 1; min-width: 200px;">
+                                🍻 Trono Económico (Locales Promocionados)
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- CIERRE Y PROTECCIÓN DEL JUEGO (EXCLUSIVO DE ADMINISTRACIÓN) -->
                     <div id="panel-fin-juego"
                         style="display:none; margin-top: 20px; background: rgba(69, 26, 3, 0.6); border: 2px solid #f59e0b; border-radius: 8px; padding: 20px;">
@@ -992,6 +1009,11 @@
 
             <section id="pestana-locales-promocion" class="tab-content tema-corte-admin" data-tab="tab-locales-promocion" style="display: none;">
                 <div class="panel-card">
+                    <div style="margin-bottom: 15px;">
+                        <button type="button" class="btn-cuervo" onclick="cambiarPestana('tab-superadmin')" style="background: #374151;">
+                            ← Volver a Configuración
+                        </button>
+                    </div>
                     <div class="leaderboard-header" style="text-align: center; margin-bottom: 20px;">
                         <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🍻 LOCALES PROMOCIONADOS DE LOS EVENTOS 🍻</h2>
                         <p style="color: #d6d3d1;">
@@ -1119,6 +1141,11 @@
 
             <section id="pestana-oraculo-ia" class="tab-content tema-oraculo" data-tab="tab-oraculo-ia" style="display: none; background-image: url('fondo-cripta-oraculo.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
                 <div class="leaderboard-container" style="background: rgba(10, 10, 15, 0.95); border: 2px solid var(--oro-real); padding: 25px; border-radius: 12px;">
+                    <div style="margin-bottom: 15px;">
+                        <button type="button" class="btn-cuervo" onclick="cambiarPestana('tab-superadmin')" style="background: #374151;">
+                            ← Volver a Configuración
+                        </button>
+                    </div>
                     <div class="leaderboard-header" style="text-align: center; margin-bottom: 25px;">
                         <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">🔮 ORÁCULO IMPERIAL & MODELOS DE IA 🔮</h2>
                         <p style="color: #d6d3d1;">Inteligencia Feudal para la Generación de Crónicas, Bandos de Guerra y Recomendaciones de Pintxos</p>

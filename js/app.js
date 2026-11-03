@@ -476,6 +476,8 @@ function actualizarInterfazSesion(usuario) {
         if (grupoPin) grupoPin.style.display = esMaster ? 'block' : 'none';
         const accionesCredenciales = document.getElementById('acciones-credenciales-pin');
         if (accionesCredenciales) accionesCredenciales.style.display = esMaster ? 'block' : 'none';
+        const panelOraculoMaster = document.getElementById('panel-acceso-oraculo-master');
+        if (panelOraculoMaster) panelOraculoMaster.style.display = esMaster ? 'block' : 'none';
 
         if (typeof renderOpcionesRolUsuario === 'function') renderOpcionesRolUsuario();
         if (typeof actualizarBadgeMake === 'function') actualizarBadgeMake();

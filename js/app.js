@@ -9319,35 +9319,44 @@ async function solicitarNuevoPIN() {
             return;
         }
 
-        // Automatización: notificar a superadmins/master por webhook Make y WhatsApp directo.
+        // Automatización: notificar a superadmins/master por webhook Make, email y WhatsApp directo.
         const esSuperadminOMaster = (u) => puedeAdministrar(u.role) || esRolMaster(u.role);
         const administradores = usuarios.filter(esSuperadminOMaster);
 
         let resultadoWebhook = null;
         let whatsappUrl = null;
 
-        // 1) Webhook Make (automatización principal si está configurado)
+        // 1) Notificación por Email oficial a afjbilbao@gmail.com (vía webhook Make / backend)
+        const emailCorte = 'afjbilbao@gmail.com';
+        const asuntoEmail = `[LokiTrono] Solicitud de nuevo PIN: ${usuario.name || usuario.phone}`;
+        const cuerpoEmail = `Solicitud de nuevo PIN por olvido:\n\nUsuario: ${usuario.name || 'Sin nombre'}\nTeléfono: ${usuario.phone}\nBarrio: ${usuario.barrio_representado || 'Forastero'}\nRol: ${usuario.role || 'jugador'}\nFecha: ${new Date().toLocaleString('es-ES')}\n\nPor favor, asigna un nuevo PIN en el panel de administración y comunícaselo al usuario.`;
+
+        // 2) Webhook Make (automatización principal con soporte de envío de correo y alerta)
         const webhookUrl = getMakeWebhookUrl();
         if (webhookUrl) {
             try {
                 const payload = {
                     evento: 'SOLICITUD_RECUPERAR_PIN',
+                    destinatario_email: emailCorte,
+                    email_asunto: asuntoEmail,
+                    email_cuerpo: cuerpoEmail,
                     telefono: usuario.phone,
                     nombre: usuario.name || usuario.phone,
+                    email_usuario: usuario.email || '',
                     barrio: usuario.barrio_representado || 'Forastero',
                     rol: usuario.role || 'jugador',
                     rol_etiqueta: etiquetaRol ? etiquetaRol(usuario.role) : (usuario.role || 'jugador'),
-                    mensaje: `🔑 El usuario ${usuario.name || usuario.phone} (${usuario.phone}) ha solicitado un nuevo PIN por olvido. Por favor, générale uno nuevo y comunícaselo por WhatsApp.`,
+                    mensaje: `🔑 El usuario ${usuario.name || usuario.phone} (${usuario.phone}) ha solicitado un nuevo PIN por olvido. Enviar nuevo PIN a afjbilbao@gmail.com o por WhatsApp.`,
                     fecha: new Date().toISOString()
                 };
                 resultadoWebhook = await enviarWebhookMake(payload);
             } catch (e) { /* continuar con fallback */ }
         }
 
-        // 2) WhatsApp directo al primer superadmin/master disponible (fallback / copia)
+        // 3) WhatsApp directo al primer superadmin/master disponible (fallback / copia)
         if (administradores.length > 0) {
             const admin = administradores[0];
-            const textoAdmin = `🔑 *Solicitud de nuevo PIN*\n\nEl maestre *${usuario.name || usuario.phone}* (tel. ${usuario.phone}, barrio ${usuario.barrio_representado || 'Forastero'}) ha olvidado su PIN y solicita que se le genere uno nuevo.\n\nPor favor, crea un PIN de 6 dígitos y comunícaselo por WhatsApp.\n\nLokiTrono de Barrios — Corte Imperial`;
+            const textoAdmin = `🔑 *Solicitud de nuevo PIN*\n\nEl maestre *${usuario.name || usuario.phone}* (tel. ${usuario.phone}, barrio ${usuario.barrio_representado || 'Forastero'}) ha olvidado su PIN y solicita que se le genere uno nuevo.\n\nNotificación enviada también a ${emailCorte}.\n\nLokiTrono de Barrios — Corte Imperial`;
             whatsappUrl = generarEnlaceWhatsAppDirecto(admin.phone, textoAdmin);
         }
 
@@ -9358,6 +9367,7 @@ async function solicitarNuevoPIN() {
                 telefono: usuario.phone,
                 nombre: usuario.name || usuario.phone,
                 barrio: usuario.barrio_representado || 'Forastero',
+                email_notificado: emailCorte,
                 fecha: new Date().toISOString(),
                 webhook: !!resultadoWebhook,
                 whatsapp: !!whatsappUrl
@@ -9366,18 +9376,15 @@ async function solicitarNuevoPIN() {
         } catch (_) { /* noop */ }
 
         if (mensaje) {
-            mensaje.innerHTML = `✅ Solicitud enviada a la corte.<br>Se notificará a la administración para que te comuniquen tu nuevo PIN por WhatsApp.`;
+            mensaje.innerHTML = `✅ Solicitud enviada a la corte (afjbilbao@gmail.com).<br>La administración revisará tu petición y te comunicará el nuevo PIN.`;
             mensaje.style.color = '#4ade80';
         }
         if (input) input.value = '';
 
-        // Si hay webhook configurado, se envía automáticamente. Si no, se ofrece WhatsApp directo.
-        if (!webhookUrl && whatsappUrl) {
-            setTimeout(() => {
-                if (confirm('El webhook Make no está configurado. ¿Quieres abrir WhatsApp para notificar manualmente a la administración?')) {
-                    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-                }
-            }, 600);
+        // Si el webhook no está configurado, abrir cliente de correo mailto para asegurar el envío a afjbilbao@gmail.com
+        if (!webhookUrl) {
+            const mailtoUrl = `mailto:${encodeURIComponent(emailCorte)}?subject=${encodeURIComponent(asuntoEmail)}&body=${encodeURIComponent(cuerpoEmail)}`;
+            window.open(mailtoUrl, '_blank');
         }
     } catch (error) {
         console.error('Error solicitando PIN:', error);

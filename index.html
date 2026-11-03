@@ -179,6 +179,7 @@
             <select id="select-seccion-corte" class="input-medieval" onchange="cambiarPestana(this.value)"
                 style="margin: 0; padding: 10px; font-weight: bold; font-family: 'Cinzel', serif; background: #0a0a0a;">
                 <optgroup label="📜 Menú de Maestres">
+                    <option value="pestana-inicio" data-tab="tab-inicio" selected>🏠 Inicio</option>
                     <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario</option>
                     <option value="pestana-votacion-barrio" data-tab="tab-votacion-barrio">🗳️ Votar</option>
                     <option value="pestana-clasificacion" data-tab="tab-clasificacion">🏆 Clasificación</option>
@@ -213,8 +214,98 @@
                 <span id="banner-votacion-abierta-texto">🗳️ VOTACIÓN ABIERTA PARA —</span>
             </div>
 
+            <!-- PESTAÑA: Inicio / Presentación Épica del Juego -->
+            <section id="pestana-inicio" class="tab-content active seccion-bg-inicio" data-tab="tab-inicio">
+                <div class="leaderboard-container">
+                    <!-- HERO ÉPICO -->
+                    <div class="inicio-hero-card">
+                        <span class="pill-user" style="background: var(--oro-gradiente); color: #000; font-weight: 900; padding: 6px 18px; border-radius: 20px; text-transform: uppercase; letter-spacing: 2px; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);">
+                            ⚔️ Gran Justa Gastronómica de Bilbao ⚔️
+                        </span>
+
+                        <h2 class="inicio-hero-title">LokiTrono de Barrios</h2>
+
+                        <p class="inicio-hero-lema">
+                            «Ocho reinos, las más nobles tabernas de la Villa y un solo Trono Imperial. Cata, juzga según la Ley II de Bilbao y corona a tu barrio como Campeón Supremo.»
+                        </p>
+
+                        <div class="inicio-cta-grid">
+                            <button type="button" class="btn-cuervo inicio-cta-btn" onclick="cambiarPestana('tab-calendario')" style="background: #1e3a8a;">
+                                📅 Ver Calendario
+                            </button>
+                            <button type="button" class="btn-cuervo inicio-cta-btn" onclick="cambiarPestana('pestana-votacion-barrio')" style="background: #78350f;">
+                                🗳️ Emitir Juicio (Votar)
+                            </button>
+                            <button type="button" class="btn-cuervo inicio-cta-btn" onclick="cambiarPestana('pestana-clasificacion')" style="background: #14532d;">
+                                🏆 Ver Clasificación
+                            </button>
+                            <button type="button" class="btn-cuervo inicio-cta-btn" onclick="window.toggleBaileDragones && window.toggleBaileDragones()" style="background: #581c87; border: 1px solid var(--oro-real);" title="Convoca a los dragones de fuego y hielo para una danza ceremonial">
+                                🐉 Danza de Dragones
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PRESENTACIÓN OFICIAL (CARRUSEL INTERACTIVO) -->
+                    <div class="presentacion-container">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 6px; font-size: 1.4rem;">
+                                📜 Crónica Ilustrada del Juego
+                            </h3>
+                            <p style="color: #d6d3d1; font-size: 0.9rem; margin: 0;">
+                                Descubre las reglas feudales, el mapa de tabernas y la senda hacia la gloria en la Gran Gala Final.
+                            </p>
+                        </div>
+
+                        <div class="presentacion-visor" id="presentacion-visor">
+                            <img id="presentacion-slide-img" src="assets/presentacion/slide_1.webp" alt="Presentación oficial de LokiTrono de Barrios">
+                            <button type="button" class="presentacion-nav-btn prev" onclick="retrocederPresentacion()" aria-label="Diapositiva anterior">❮</button>
+                            <button type="button" class="presentacion-nav-btn next" onclick="avanzarPresentacion()" aria-label="Diapositiva siguiente">❯</button>
+                        </div>
+
+                        <!-- Indicadores de posición -->
+                        <div class="presentacion-dots" id="presentacion-dots"></div>
+
+                        <div style="text-align: center; margin-top: 14px;">
+                            <span id="presentacion-contador" style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 0.88rem; font-weight: bold;">
+                                📜 Página 1 de 12
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- LOS 3 PILARES FEUDALES -->
+                    <div style="margin-top: 30px;">
+                        <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); text-align: center; margin-bottom: 20px; font-size: 1.5rem;">
+                            ⚜️ Las Tres Leyes de la Competición ⚜️
+                        </h3>
+                        <div class="pilares-grid">
+                            <div class="pilar-card">
+                                <span class="pilar-icono">🍷</span>
+                                <h4 class="pilar-titulo">I. La Justa en Tabernas</h4>
+                                <p class="pilar-texto">
+                                    En cada jornada barrial, los Maestres recorren los locales de la corte catando sus creaciones culinarias más gloriosas.
+                                </p>
+                            </div>
+                            <div class="pilar-card">
+                                <span class="pilar-icono">⚖️</span>
+                                <h4 class="pilar-titulo">II. El Códice y la Ley II</h4>
+                                <p class="pilar-texto">
+                                    Evaluación ponderada: 50% el Festín Gastronómico, 20% los Caminos y Accesos, y 30% el Espíritu Feudal de la taberna.
+                                </p>
+                            </div>
+                            <div class="pilar-card">
+                                <span class="pilar-icono">👑</span>
+                                <h4 class="pilar-titulo">III. La Gran Gala Final</h4>
+                                <p class="pilar-texto">
+                                    Quienes completen la ruta y sellen su pasaporte acceden al Pase Dorado VIP para la coronación oficial del barrio vencedor.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- PESTAÑA 0: Clasificación de Reinos -->
-            <section id="pestana-clasificacion" class="tab-content active tema-trono" style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('./fondo-cinematografico.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
+            <section id="pestana-clasificacion" class="tab-content seccion-bg-clasificacion tema-trono" style="display: none; background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('./fondo-cinematografico.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
 
                 <div class="leaderboard-container">
                     <div class="leaderboard-header">
@@ -292,7 +383,7 @@
             </section>
 
             <!-- PESTAÑA 1: Votación de Barrio (Visible para todos) -->
-            <section id="pestana-votacion-barrio" class="tab-content tema-taberna" style="display: none; background-image: linear-gradient(rgba(20,12,8,0.55), rgba(0,0,0,0.85)), url('./reliquia-pintxo-oro.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
+            <section id="pestana-votacion-barrio" class="tab-content seccion-bg-votar tema-taberna" style="display: none; background-image: linear-gradient(rgba(20,12,8,0.55), rgba(0,0,0,0.85)), url('./reliquia-pintxo-oro.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
                 <div id="timer-justa-activa" style="display:none; margin-bottom: 20px; text-align: center;">
                     <div class="timer-medieval-container">
                         <span id="timer-label" class="timer-label">⏳ PRÓXIMA VOTACIÓN EN:</span>
@@ -409,7 +500,7 @@
             </section>
 
             <!-- PESTAÑA 1: Lokitronistas de Barrios (Solo lectura general, lista de Lokitronistas Barriales y asignación) -->
-            <section id="pestana-tronistas" class="tab-content tema-corte-admin" style="display: none; background-image: url('fondo-tronistas.svg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
+            <section id="pestana-tronistas" class="tab-content seccion-bg-tronistas tema-corte-admin" style="display: none; background-image: url('fondo-tronistas.svg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
                 <div class="panel-card">
                     <h2>👑 Lokitronistas de los Barrios y Consejeros del Lokitrono</h2>
                     <p>Representantes oficiales del Lokitrono por cada reino barrial, agrupados por barrio
@@ -425,7 +516,7 @@
             </section>
 
             <!-- PESTAÑA 2: Calendario Feudal de Justas -->
-            <section id="tab-calendario" class="tab-content tema-cronica" data-tab="tab-calendario" style="display: none; background-image: url('fondo-calendario.svg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
+            <section id="tab-calendario" class="tab-content seccion-bg-calendario tema-cronica" data-tab="tab-calendario" style="display: none; background-image: url('fondo-calendario.svg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
                 <div class="panel-card">
                     <h2 style="font-family: 'Cinzel', serif; color: var(--oro-real); text-align: center;">📅 Calendario Feudal de Justas y Eventos Barriales</h2>
                     <p style="color: #e5c36a; text-align: center; font-style: italic; margin-bottom: 20px;">
@@ -1471,7 +1562,7 @@
                 </div>
             </section>
             <!-- PESTAÑA 5: Celebración de la Gran Gala Final -->
-            <section id="pestana-evento-final" class="tab-content tema-gala" style="display: none;">
+            <section id="pestana-evento-final" class="tab-content seccion-bg-gala tema-gala" style="display: none;">
                 <div class="panel-card">
                     <!-- PROCLAMACIÓN OFICIAL DE LA GALA (VISTA DE LECTURA PARA TODOS LOS USUARIOS) -->
                     <div id="vista-proclamacion-gala-final" style="text-align: center; background: radial-gradient(circle at 50% 30%, rgba(35, 28, 15, 0.98), rgba(10, 8, 5, 0.99)); border: 2px solid var(--oro-real); border-radius: 16px; padding: 35px 25px; box-shadow: 0 12px 35px rgba(0, 0, 0, 0.9), inset 0 0 40px rgba(212, 175, 55, 0.2); position: relative; overflow: hidden; margin-bottom: 25px;">

@@ -178,7 +178,104 @@
         context.restore();
     }
 
+    // ==========================================
+    // 🎭 DANZA / BAILE DE DRAGONES
+    // ==========================================
+    let modoBaile = false;
+    let tiempoBaile = 0;
+    const DURACION_BAILE = 14; // segundos de danza ceremonial
+
+    function iniciarBaileDragones() {
+        modoBaile = true;
+        tiempoBaile = 0;
+        // Posicionar ambos en el centro de la pantalla
+        const centroX = width * 0.5;
+        const centroY = height * 0.42;
+        
+        dragons[0].x = centroX - 180;
+        dragons[0].y = centroY;
+        dragons[0].angle = -Math.PI * 0.5;
+        dragons[0].flapBurst = 1;
+        dragons[0].fireBurst = 1.2;
+
+        dragons[1].x = centroX + 180;
+        dragons[1].y = centroY;
+        dragons[1].angle = Math.PI * 0.5;
+        dragons[1].flapBurst = 1;
+        dragons[1].fireBurst = 1.2;
+    }
+
+    function detenerBaileDragones() {
+        modoBaile = false;
+        tiempoBaile = 0;
+        resetDragon(dragons[0], false);
+        resetDragon(dragons[1], false);
+    }
+
+    function toggleBaileDragones() {
+        if (modoBaile) detenerBaileDragones();
+        else iniciarBaileDragones();
+        return modoBaile;
+    }
+
+    window.iniciarBaileDragones = iniciarBaileDragones;
+    window.detenerBaileDragones = detenerBaileDragones;
+    window.toggleBaileDragones = toggleBaileDragones;
+
+    function updateDragonDanza(d, dt, now) {
+        tiempoBaile += dt * 0.5; // progreso del baile
+        if (tiempoBaile > DURACION_BAILE) {
+            detenerBaileDragones();
+            return;
+        }
+
+        // Es el dragón 0 (rojo) o el 1 (azul)
+        const esRojo = d === dragons[0];
+        const signo = esRojo ? 1 : -1;
+        const desfase = esRojo ? 0 : Math.PI;
+
+        // Trayectoria lemniscata / espiral doble (Danza ceremonial)
+        const centroX = width * 0.5;
+        const centroY = height * 0.42;
+        const radioX = Math.min(width * 0.32, 380);
+        const radioY = Math.min(height * 0.24, 220);
+
+        // Movimiento en figura de 8 (lemniscata de Bernoulli)
+        const t = (now * 0.0012) + desfase;
+        const targetX = centroX + Math.sin(t) * radioX;
+        const targetY = centroY + (Math.sin(t * 2) * 0.5) * radioY;
+
+        // Calcular ángulo hacia adelante en la curva
+        const targetNextX = centroX + Math.sin(t + 0.08) * radioX;
+        const targetNextY = centroY + (Math.sin((t + 0.08) * 2) * 0.5) * radioY;
+        const desiredAngle = Math.atan2(targetNextY - targetY, targetNextX - targetX);
+
+        d.x += (targetX - d.x) * Math.min(1, dt * 5);
+        d.y += (targetY - d.y) * Math.min(1, dt * 5);
+
+        let delta = desiredAngle - d.angle;
+        while (delta > Math.PI) delta -= Math.PI * 2;
+        while (delta < -Math.PI) delta += Math.PI * 2;
+        d.angle += delta * Math.min(1, dt * 8);
+
+        // Aleteo sincronizado y ágil en la danza
+        d.wingCycle += dt * 5.5;
+        d.wingFlap = Math.sin(d.wingCycle) * 0.85;
+        d.tailPhase += dt * 4;
+        d.pitch = Math.sin(d.tailPhase) * 0.08;
+
+        // Esporádicas bocanadas de fuego sincronizadas
+        if (Math.sin(t * 4) > 0.6) {
+            for (let i = 0; i < 2; i++) emitirFuego(d);
+        }
+    }
+
     function updateDragon(d, dt, now) {
+        if (modoBaile) {
+            updateDragonDanza(d, dt, now);
+            return;
+        }
+
         // Planeo predominante con ráfagas de aleteo ocasionales.
         d.flapCooldown -= dt;
         if (d.flapCooldown <= 0) {

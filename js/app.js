@@ -3112,7 +3112,7 @@ function construirGaleriaMediaEvento(evt) {
     return '<div class="evento-media-galeria">' + medios.map(campo => {
         const url = String(evt[`${campo}_url`]).replace(/"/g, '&quot;');
         const etiqueta = EVENTO_MEDIA_ETIQUETAS[campo] || campo;
-        return `<a href="${url}" target="_blank" rel="noopener" title="${etiqueta}"><img src="${url}" alt="${etiqueta}" loading="lazy"></a>`;
+        return `<figure class="evento-media-figura"><a href="${url}" target="_blank" rel="noopener" title="${etiqueta}"><img src="${url}" alt="${etiqueta}" loading="lazy"></a><figcaption class="evento-media-pie">${etiqueta}</figcaption></figure>`;
     }).join('') + '</div>';
 }
 

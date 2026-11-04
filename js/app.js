@@ -1362,6 +1362,12 @@ function buildCriteriosVotoMarkup() {
     const criterios = getCriteriosJerarquicos();
     const raices = criterios.filter(c => !c.parentId);
 
+    const descripcionesPorRaiz = {
+        'crit-ocio': '🍢 Pintxo de Plebeyo (20%) · 👑 Pintxo Real (15%) · 💎 Elixir Elitista (10%) · 🍺 Pócima de Poteo (5%)',
+        'crit-acceso': '🚍 Carruajes (5%) · 🐲 Dragones Subterráneos (5%) · 🏇 Establos (5%) · 🛤️ Solidez de Caminos (5%)',
+        'crit-ambiente': '✨ Originalidad (15%) · 📯 Organización (10%) · 🎊 Gozo del Pueblo (5%)'
+    };
+
     return raices.map(raiz => {
         const hijos = criterios.filter(c => c.parentId === raiz.id);
         const filas = hijos.map(hijo => `
@@ -1376,11 +1382,15 @@ function buildCriteriosVotoMarkup() {
             </div>
         `).join('');
 
+        const desc = descripcionesPorRaiz[raiz.id] || '';
+
         return `
             <section class="voto-disciplina" data-raiz="${raiz.id}">
                 <header class="voto-disciplina-cabecera">
-                    <h4>${escaparHTML(raiz.nombre)}</h4>
-                    <span class="voto-disciplina-peso">Peso ${Number(raiz.peso) || 0}%</span>
+                    <div>
+                        <h4>${escaparHTML(raiz.nombre)} (${Number(raiz.peso) || 0}%)</h4>
+                        ${desc ? `<p style="margin: 4px 0 0; font-size: 0.82rem; color: #d6d3d1; font-weight: normal; font-family: 'MedievalSharp', cursive, serif;">${desc}</p>` : ''}
+                    </div>
                     <span class="voto-disciplina-nota" id="nota-raiz-${raiz.id}">8.0</span>
                 </header>
                 ${filas}

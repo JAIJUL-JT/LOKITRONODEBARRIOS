@@ -327,7 +327,7 @@ function aplicarFinDeJuegoUI() {
 function aplicarRestriccionNavegacionFinJuego() {
     const usuario = getCurrentUser();
     const restringido = restriccionFinDeJuegoActiva() && !(usuario && puedeAdministrar(usuario.role));
-    const permitidas = ['pestana-clasificacion', 'tab-calendario'];
+    const permitidas = ['pestana-inicio', 'pestana-clasificacion', 'tab-calendario'];
     const select = document.getElementById('select-seccion-corte');
     if (select) {
         Array.from(select.options).forEach(opt => {
@@ -389,8 +389,8 @@ function cambiarPestana(valor) {
     }
     // Con el juego concluido, los roles no administradores solo ven Clasificación y Calendario.
     if (!esSuperadmin && typeof restriccionFinDeJuegoActiva === 'function' && restriccionFinDeJuegoActiva()
-        && valor !== 'pestana-clasificacion' && valor !== 'tab-calendario') {
-        valor = 'pestana-clasificacion';
+        && valor !== 'pestana-inicio' && valor !== 'pestana-clasificacion' && valor !== 'tab-calendario') {
+        valor = 'pestana-inicio';
     }
     if (esLocalesPromocion && esMaster && typeof cargarLocalesPromocion === 'function') {
         cargarLocalesPromocion();
@@ -489,7 +489,8 @@ function actualizarInterfazSesion(usuario) {
         // muestre siempre el repositorio común de Supabase, no la caché previa.
         if (typeof cargarVotosDesdeSupabase === 'function') cargarVotosDesdeSupabase();
 
-        cambiarPestana('pestana-clasificacion');
+        cambiarPestana('pestana-inicio');
+        if (typeof inicializarPresentacionInicio === 'function') inicializarPresentacionInicio();
         if (typeof aplicarFinDeJuegoUI === 'function') aplicarFinDeJuegoUI();
         if (typeof renderBannerVotacionAbierta === 'function') renderBannerVotacionAbierta(usuario);
 
@@ -9575,3 +9576,69 @@ window.guardarBlogPost = guardarBlogPost;
 window.eliminarBlogPost = eliminarBlogPost;
 window.editarBlogPost = editarBlogPost;
 window.resetFormBlog = resetFormBlog;
+
+/* ==========================================================================
+   PRESENTACIÓN OFICIAL INTERACTIVA (CARRUSEL DE LA LANDING DE INICIO)
+   ========================================================================== */
+let presentacionSlideActual = 1;
+const PRESENTACION_TOTAL_SLIDES = 12;
+
+function renderPresentacionSlide() {
+    const img = document.getElementById('presentacion-slide-img');
+    const contador = document.getElementById('presentacion-contador');
+    const dotsContainer = document.getElementById('presentacion-dots');
+
+    if (img) {
+        img.src = `assets/presentacion/slide_${presentacionSlideActual}.webp`;
+        img.alt = `Presentación de LokiTrono de Barrios - Diapositiva ${presentacionSlideActual}`;
+    }
+
+    if (contador) {
+        contador.textContent = `📜 Página ${presentacionSlideActual} de ${PRESENTACION_TOTAL_SLIDES}`;
+    }
+
+    if (dotsContainer) {
+        dotsContainer.innerHTML = '';
+        for (let i = 1; i <= PRESENTACION_TOTAL_SLIDES; i++) {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = `presentacion-dot ${i === presentacionSlideActual ? 'active' : ''}`;
+            dot.setAttribute('aria-label', `Ir a página ${i}`);
+            dot.onclick = () => irAPresentacionSlide(i);
+            dotsContainer.appendChild(dot);
+        }
+    }
+}
+
+function avanzarPresentacion() {
+    presentacionSlideActual = (presentacionSlideActual % PRESENTACION_TOTAL_SLIDES) + 1;
+    renderPresentacionSlide();
+}
+
+function retrocederPresentacion() {
+    presentacionSlideActual = presentacionSlideActual === 1 ? PRESENTACION_TOTAL_SLIDES : presentacionSlideActual - 1;
+    renderPresentacionSlide();
+}
+
+function irAPresentacionSlide(num) {
+    if (num >= 1 && num <= PRESENTACION_TOTAL_SLIDES) {
+        presentacionSlideActual = num;
+        renderPresentacionSlide();
+    }
+}
+
+function inicializarPresentacionInicio() {
+    renderPresentacionSlide();
+}
+
+window.avanzarPresentacion = avanzarPresentacion;
+window.retrocederPresentacion = retrocederPresentacion;
+window.irAPresentacionSlide = irAPresentacionSlide;
+window.inicializarPresentacionInicio = inicializarPresentacionInicio;
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarPresentacionInicio);
+} else {
+    inicializarPresentacionInicio();
+}
+

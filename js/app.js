@@ -9642,3 +9642,41 @@ if (document.readyState === 'loading') {
     inicializarPresentacionInicio();
 }
 
+/* ==========================================================================
+   REPRODUCTOR DE HIMNO FEUDAL (SECCIÓN INICIO)
+   ========================================================================== */
+function toggleAudioHimno() {
+    const audio = document.getElementById('audio-himno-inicio');
+    const btn = document.getElementById('btn-audio-himno');
+    if (!audio) return;
+
+    if (audio.paused) {
+        audio.play().then(() => {
+            if (btn) {
+                btn.innerHTML = '⏸️ Pausar Himno';
+                btn.classList.add('audio-reproduciendo');
+            }
+        }).catch(err => {
+            console.warn('Error al reproducir audio del himno:', err);
+        });
+    } else {
+        audio.pause();
+        if (btn) {
+            btn.innerHTML = '🎵 Escuchar Himno';
+            btn.classList.remove('audio-reproduciendo');
+        }
+    }
+}
+
+function alTerminarAudioHimno() {
+    const btn = document.getElementById('btn-audio-himno');
+    if (btn) {
+        btn.innerHTML = '🎵 Escuchar Himno';
+        btn.classList.remove('audio-reproduciendo');
+    }
+}
+
+window.toggleAudioHimno = toggleAudioHimno;
+window.alTerminarAudioHimno = alTerminarAudioHimno;
+
+

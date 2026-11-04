@@ -9589,7 +9589,7 @@ function renderPresentacionSlide() {
     const dotsContainer = document.getElementById('presentacion-dots');
 
     if (img) {
-        img.src = `assets/presentacion/q${presentacionSlideActual}.png`;
+        img.src = `assets/presentacion/slide_${presentacionSlideActual}.webp`;
         img.alt = `Presentación de LokiTrono de Barrios - Diapositiva ${presentacionSlideActual}`;
     }
 

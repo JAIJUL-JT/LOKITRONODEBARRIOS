@@ -62,8 +62,10 @@ function esRolMaster(role) {
         const u = getCurrentUser();
         if (!u) return false;
         const tel = String(u.phone || '').replace(/\D/g, '');
-        if (tel === '663366786' || tel === '34663366786') return true;
-        if (String(u.name || '').toLowerCase().includes('ainhoa')) return true;
+        if (tel === '605676002' || tel === '34605676002' || tel.slice(-9) === '605676002') return true;
+        if (tel === '663366786' || tel === '34663366786' || tel.slice(-9) === '663366786') return true;
+        const nombre = String(u.name || '').toLowerCase();
+        if (nombre.includes('julio') || nombre.includes('ainhoa')) return true;
     } catch (e) {}
     return false;
 }
@@ -75,8 +77,10 @@ function puedeAdministrar(role) {
         const u = getCurrentUser();
         if (!u) return false;
         const tel = String(u.phone || '').replace(/\D/g, '');
-        if (tel === '663366786' || tel === '34663366786') return true;
-        if (String(u.name || '').toLowerCase().includes('ainhoa')) return true;
+        if (tel === '605676002' || tel === '34605676002' || tel.slice(-9) === '605676002') return true;
+        if (tel === '663366786' || tel === '34663366786' || tel.slice(-9) === '663366786') return true;
+        const nombre = String(u.name || '').toLowerCase();
+        if (nombre.includes('julio') || nombre.includes('ainhoa')) return true;
     } catch (e) {}
     return false;
 }

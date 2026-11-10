@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#0b0906">
+    <meta name="description" content="Botxitrono: elige tu héroe y recorre los 52 barrios de Bilbao. Corre, salta, lucha, compra en la DENDA y alcanza el castillo.">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Botxitrono">
+    <title>Botxitrono · El Botxo Medieval</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Supabase JS para Tabla de Puntuaciones en tiempo real -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
+        window.__APP_CONFIG__.SUPABASE_URL = 'https://uswikdckptzivsurzrlc.supabase.co';
+        window.__APP_CONFIG__.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzd2lrZGNrcHR6aXZzdXJ6cmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODAwNTEsImV4cCI6MjEwNjU1NjA1MX0.3kovmMBfC_JCGKyJ_1s5iyxtkKyqVMIt77CfHnytLzI';
+    </script>
+</head>
+<body>
+    <main id="app">
+        <canvas id="game-canvas" aria-label="Reino de Aritza"></canvas>
+        <div id="vignette" aria-hidden="true"></div>
+
+        <div id="hud" class="hidden">
+            <div class="hud-top">
+                <button id="btn-pause" class="hud-icon" type="button" aria-label="Pausar partida">⏸</button>
+                <div class="hud-stats">
+                    <div class="hud-item">
+                        <span class="hud-label">NIVEL</span>
+                        <span id="hud-level" class="hud-value">1</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">MONEDAS</span>
+                        <span id="hud-coins" class="hud-value">0</span>
+                    </div>
+                    <div class="hud-item hud-item--score">
+                        <span class="hud-label">PUNTOS</span>
+                        <span id="hud-score" class="hud-value">0</span>
+                    </div>
+                </div>
+                <div id="hud-hearts" class="hearts" aria-label="3 de 3 corazones">❤❤❤</div>
+            </div>
+
+            <div id="level-banner" class="level-banner hidden" aria-live="polite">
+                <span id="level-eyebrow" class="level-eyebrow">NIVEL 1</span>
+                <span id="level-name" class="level-name">Bosque de Aritza</span>
+                <span id="level-motto" class="level-motto">Donde despiertan las leyendas</span>
+            </div>
+
+            <div class="touch-controls">
+                <div class="move-pad">
+                    <button id="btn-left" class="touch-btn touch-btn--move" type="button" aria-label="Mover a la izquierda">
+                        <span class="touch-arrow">◀</span>
+                    </button>
+                    <button id="btn-right" class="touch-btn touch-btn--move" type="button" aria-label="Mover a la derecha">
+                        <span class="touch-arrow">▶</span>
+                    </button>
+                </div>
+                <div class="action-cluster">
+                    <div id="action-pad" class="action-pad">
+                        <button id="btn-shoot" class="touch-btn touch-btn--action hidden" type="button" aria-label="Disparar flecha">
+                            <span class="touch-arrow">🏹</span>
+                            <span>DISPARAR</span>
+                        </button>
+                        <button id="btn-attack" class="touch-btn touch-btn--action hidden" type="button" aria-label="Atacar con la espada">
+                            <span class="touch-arrow">⚔</span>
+                            <span>GOLPE</span>
+                        </button>
+                    </div>
+                    <button id="btn-jump" class="touch-btn touch-btn--jump" type="button" aria-label="Saltar">
+                        <span class="touch-arrow">▲</span>
+                        <span>SALTAR</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <section id="hero-select-screen" class="overlay hidden">
+            <div class="panel panel--hero-select">
+                <p class="eyebrow">Elige tu aventurera/o</p>
+                <h2>¿Quién eres?</h2>
+                <p class="tagline">Cada héroe tiene su propia historia en el Botxo.</p>
+                <div class="hero-cards">
+                    <button class="hero-card" data-hero="jainvs" type="button">
+                        <canvas class="hero-portrait" width="90" height="110" data-hero="jainvs" aria-label="Jainvs, heroína"></canvas>
+                        <strong>Jainvs</strong>
+                        <span>Heroína del Botxo</span>
+                    </button>
+                    <button class="hero-card" data-hero="jvlivs" type="button">
+                        <canvas class="hero-portrait" width="90" height="110" data-hero="jvlivs" aria-label="Jvlivs, héroe"></canvas>
+                        <strong>Jvlivs</strong>
+                        <span>Héroe del Nervión</span>
+                    </button>
+                    <button class="hero-card" data-hero="aritza" type="button">
+                        <canvas class="hero-portrait" width="90" height="110" data-hero="aritza" aria-label="Aritza, guerrera/o"></canvas>
+                        <strong>Aritza</strong>
+                        <span>Guerrera/o legendaria/o</span>
+                    </button>
+                </div>
+                <button id="btn-hero-back" class="btn btn--ghost" type="button">← Volver al menú</button>
+            </div>
+        </section>
+
+        <section id="menu-screen" class="overlay">
+            <div class="panel panel--menu">
+                <div class="menu-logo-row">
+                    <img src="loki-logo.png" alt="LokiTrono de Barrios" class="menu-logo">
+                    <p class="eyebrow">LokiTrono de Barrios presenta</p>
+                </div>
+                <h1 class="game-title">Botxitrono<span> del Botxo</span></h1>
+                <p class="tagline">Elige tu héroe y cruza los 52 barrios de Bilbao. Corre, lucha, compra pintxos en la DENDA y alcanza el castillo.</p>
+
+                <div class="menu-best">
+                    <span class="menu-best-label">RÉCORD</span>
+                    <strong id="menu-best-score">0</strong>
+                    <span class="menu-best-level">Mejor nivel <b id="menu-best-level">1</b></span>
+                </div>
+
+                <div class="menu-actions">
+                    <button id="btn-play" class="btn btn--primary" type="button">¡A LAS ARMAS!</button>
+                    <button id="btn-play-milestone" class="btn btn--secondary hidden" type="button">Comenzar en Nivel <span id="menu-milestone-num">6</span> 🏰</button>
+                    <button id="btn-menu-scores" class="btn btn--secondary" type="button">🏆 Tabla de Puntuaciones</button>
+                    <button id="btn-menu-trivia" class="btn btn--secondary" type="button">🧠 Jugar al Trivial del Botxo</button>
+                    <button id="btn-menu-map" class="btn btn--secondary" type="button">🗺️ Mapa de Bilbao (52 Barrios)</button>
+                    <button id="btn-howto" class="btn btn--secondary" type="button">Cómo jugar</button>
+                    <button id="btn-menu-credits" class="btn btn--ghost" type="button">📜 Ver créditos</button>
+                </div>
+
+                <div class="menu-footer">
+                    <button id="btn-sound" class="btn btn--ghost" type="button" aria-pressed="true">🔊 Sonido</button>
+                    <button id="btn-motion" class="btn btn--ghost" type="button" aria-pressed="false">✨ Animación</button>
+                </div>
+
+                <p class="menu-meta">
+                    <span id="menu-total-coins">0</span> monedas ·
+                    <span id="menu-total-runs">0</span> partidas
+                </p>
+            </div>
+        
+</section>
+
+        <section id="howto-screen" class="overlay hidden">
+            <div class="panel">
+                <p class="eyebrow">Manual de la heroína</p>
+                <h2>Cómo jugar</h2>
+                <ul class="howto-list">
+                    <li><strong>Muévete</strong> con <kbd>←</kbd> <kbd>→</kbd> o los botones de flechas. Mantén pulsado para correr.</li>
+                    <li><strong>Salta</strong> con <kbd>Espacio</kbd>, <kbd>↑</kbd> o <strong>SALTAR</strong>. Con el doble salto, pulsa otra vez en el aire.</li>
+                    <li><strong>Ataca</strong> con <kbd>X</kbd>/<kbd>J</kbd> o el botón ⚔. <strong>Dispara</strong> con <kbd>C</kbd>/<kbd>K</kbd> o el botón 🏹; cambia de arma con <kbd>Q</kbd>.</li>
+                    <li><strong>Dash</strong> con <kbd>Shift</kbd> o doble toque de dirección cuando lo tengas. El escudo bloquea proyectiles frontales.</li>
+                    <li>Recoge <strong>monedas</strong> y llega al <strong>castillo</strong>. En la <strong>DENDA</strong>, a mitad de nivel, compra pintxos, pociones y equipo; la primera visita cura todos los corazones.</li>
+                    <li>Tienes <strong>3 corazones</strong> y puedes llegar a <strong>6</strong>. Los abismos cuestan un corazón; cada nivel superado devuelve uno.</li>
+                </ul>
+                <button id="btn-howto-close" class="btn btn--primary" type="button">Entendido</button>
+            </div>
+        
+</section>
+
+        <section id="pause-screen" class="overlay hidden">
+            <div class="panel">
+                <p class="eyebrow">La aventura espera</p>
+                <h2>En pausa</h2>
+                <div class="pause-stats">
+                    <div><span>Nivel</span><strong id="pause-level">1</strong></div>
+                    <div><span>Monedas</span><strong id="pause-coins">0</strong></div>
+                    <div><span>Puntos</span><strong id="pause-score">0</strong></div>
+                </div>
+                <button id="btn-resume" class="btn btn--primary" type="button">Seguir adelante</button>
+                <button id="btn-swap-weapon" class="btn btn--secondary hidden" type="button">Arma a distancia: <b id="swap-label">Arco</b></button>
+                <button id="btn-pause-menu" class="btn btn--secondary" type="button">Volver al menú</button>
+            </div>
+        
+</section>
+
+        <section id="gameover-screen" class="overlay hidden">
+            <div class="panel panel--result">
+                <p class="eyebrow">Fin de la aventura</p>
+                <h2 id="gameover-title">Has caído</h2>
+                <div class="result-score">
+                    <span>PUNTOS</span>
+                    <strong id="result-score">0</strong>
+                </div>
+                <p id="result-record" class="record hidden">¡Nuevo récord!</p>
+                <div class="result-grid">
+                    <div><span>Nivel</span><strong id="result-level">1</strong></div>
+                    <div><span>Monedas</span><strong id="result-coins">0</strong></div>
+                    <div><span>Récord</span><strong id="result-best">0</strong></div>
+                    <div><span>Reino</span><strong id="result-theme">—</strong></div>
+                </div>
+                
+                <!-- Registro en la tabla de puntuaciones -->
+                <div id="gameover-submit-box" class="score-submit-box">
+                    <p class="score-submit-label">Registra tu hazaña en el Trono:</p>
+                    <div class="score-submit-row">
+                        <input id="score-player-name" class="score-player-input" type="text" placeholder="Tu nombre o apodo..." maxlength="25" autocomplete="name">
+                        <button id="btn-submit-score" class="btn btn--small btn--primary" type="button">Guardar 📜</button>
+                    </div>
+                    <p id="score-submit-feedback" class="score-submit-feedback hidden"></p>
+                </div>
+
+                <div class="gameover-actions">
+                    <button id="btn-continue-level" class="btn btn--primary" type="button">Continuar nivel <span id="continue-level-num">1</span> (❤❤)</button>
+                    <button id="btn-restart-milestone" class="btn btn--secondary hidden" type="button">Reiniciar desde Nivel <span id="milestone-level-num">1</span> 🏰</button>
+                    <button id="btn-restart-run" class="btn btn--secondary" type="button">Empezar desde Nivel 1</button>
+                    <button id="btn-gameover-menu" class="btn btn--ghost" type="button">Volver al menú</button>
+                </div>
+            </div>
+        
+</section>
+
+        <section id="levelclear-screen" class="overlay hidden">
+            <div class="panel panel--clear">
+                <p class="eyebrow">Nivel superado</p>
+                <h2>¡Castillo conquistado!</h2>
+                <div class="clear-badge" aria-hidden="true">⚔️</div>
+                <div class="result-grid">
+                    <div><span>Nivel</span><strong id="clear-level">1</strong></div>
+                    <div><span>Monedas</span><strong id="clear-coins">0</strong></div>
+                    <div><span>Puntos</span><strong id="clear-score">0</strong></div>
+                    <div><span>Bonus</span><strong id="clear-bonus">+0</strong></div>
+                </div>
+                <button id="btn-next-level" class="btn btn--primary" type="button">Siguiente nivel</button>
+                <button id="btn-clear-menu" class="btn btn--secondary" type="button">Abandonar y volver al menú</button>
+            </div>
+        
+</section>
+
+        <section id="denda-screen" class="overlay hidden">
+            <div class="panel panel--denda">
+                <p class="eyebrow">Descanso del camino</p>
+                <h2 id="denda-title">DENDA</h2>
+                <div class="denda-purse">
+                    <span>Monedero <strong id="denda-coins">0</strong> 🪙</span>
+                    <span id="denda-hearts" class="denda-hearts">❤❤❤</span>
+                </div>
+                <p id="denda-message" class="denda-message">Pintxos, pociones y equipo para seguir el camino.</p>
+                <div id="denda-offers" class="denda-offers"></div>
+                <button id="btn-denda-close" class="btn btn--primary" type="button">Seguir el camino</button>
+            </div>
+        
+</section>
+
+        <section id="map-screen" class="overlay hidden">
+            <div class="panel panel--map">
+                <p class="eyebrow">Recorrido del Botxo</p>
+                <h2 id="map-title">🗺️ Bilbao Medieval — Los 52 Barrios</h2>
+                <p id="map-subtitle" class="map-subtitle">Desde <strong>San Pedro de Deusto</strong> hasta <strong>Gurtubay</strong>.</p>
+                <div class="map-progress-bar-container">
+                    <div id="map-progress-bar" class="map-progress-bar" style="width: 2%;"></div>
+                </div>
+                <!-- Canvas del mapa medieval de Bilbao -->
+                <canvas id="map-medieval-canvas" class="map-medieval-canvas" width="780" height="320"
+                        aria-label="Mapa medieval de los barrios de Bilbao"></canvas>
+                <div id="map-legend" class="map-legend">
+                    <span>🟢 Conquistado</span>
+                    <span>📍 Barrio Actual</span>
+                    <span>🔒 Por Conquistar</span>
+                </div>
+                <div id="map-districts-grid" class="map-districts-grid"></div>
+                <button id="btn-map-close" class="btn btn--primary" type="button">¡A la aventura!</button>
+            </div>
+        </section>
+
+        <section id="trivial-board-screen" class="overlay hidden">
+            <div class="panel panel--board">
+                <p class="eyebrow">El Trivial del Botxo</p>
+                <h2>🎲 La vuelta a los 52 barrios</h2>
+                <p id="trivial-board-subtitle" class="trivial-board-subtitle">Empiezas en <strong>San Pedro de Deusto</strong>. Tira los dados y conquista barrio a barrio.</p>
+
+                <div class="trivial-board-stats">
+                    <div><span>Pintxos</span><strong id="trivial-board-pintxos">0/52</strong></div>
+                    <div><span>Fallos</span><strong id="trivial-board-fallos">0/10</strong></div>
+                    <div><span>Aciertos</span><strong id="trivial-board-aciertos">0</strong></div>
+                    <div><span>Barrio actual</span><strong id="trivial-board-progress">0/5</strong></div>
+                </div>
+
+                <canvas id="trivial-board-canvas" class="trivial-board-canvas" width="780" height="320"
+                        aria-label="Tablero del Trivial del Botxo con los 52 barrios de Bilbao"></canvas>
+
+                <div id="trivial-board-message" class="trivial-board-message" aria-live="polite">
+                    Pulsa <strong>Lanzar dados</strong> para empezar el recorrido.
+                </div>
+
+                <div class="trivial-dice-row">
+                    <div id="trivial-die-1" class="trivial-die" aria-label="Dado 1">⚀</div>
+                    <div id="trivial-die-2" class="trivial-die" aria-label="Dado 2">⚀</div>
+                    <button id="btn-trivial-roll" class="btn btn--primary" type="button">Lanzar dados 🎲</button>
+                </div>
+
+                <div class="trivial-vitrina">
+                    <div class="trivial-vitrina-head">
+                        <h3>Vitrina de pintxos</h3>
+                        <span id="trivial-vitrina-count">0/52</span>
+                    </div>
+                    <div id="trivial-pintxo-grid" class="trivial-pintxo-grid"></div>
+                </div>
+
+                <div class="trivial-board-actions">
+                    <button id="btn-trivial-board-menu" class="btn btn--ghost" type="button">Abandonar partida</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="trivia-screen" class="overlay hidden">
+            <div class="panel panel--trivia">
+                <p class="eyebrow" id="trivia-eyebrow">Desafío del Botxo</p>
+                <h2 id="trivia-title">Trivial de Bilbao</h2>
+
+                <!-- Captura de nombre del jugador -->
+                <div id="trivia-name-entry" class="trivia-name-entry hidden">
+                    <p class="trivia-name-label">¿Cómo te llamas, jugadora?</p>
+                    <input id="trivia-player-input" class="trivia-player-input" type="text"
+                           placeholder="Tu nombre..." maxlength="30" autocomplete="off">
+                    <button id="btn-trivia-start" class="btn btn--primary" type="button">¡Empezar el Trivial!</button>
+                </div>
+
+                <!-- Panel de juego -->
+                <div id="trivia-game-panel">
+                    <div class="trivia-meta-bar">
+                        <div class="trivia-progress">Pregunta <span id="trivia-current-num">1</span> de <span id="trivia-total-num">3</span></div>
+                        <div class="trivia-stats-badge"><strong id="trivia-barrio-name">Barrio</strong> · <span id="trivia-barrio-correct">0</span>/5</div>
+                        <div class="trivia-stats-badge">Aciertos: <strong id="trivia-score">0</strong></div>
+                        <div class="trivia-stats-badge">Pintxos <strong id="trivia-pintxos">0</strong> · Fallos <strong id="trivia-fallos">0</strong></div>
+                        <div class="trivia-countdown"><strong id="trivia-timer-count">10</strong>s</div>
+                    </div>
+                    <!-- Vela animada con Canvas -->
+                    <div class="trivia-candle-wrap">
+                        <canvas id="trivia-candle-canvas" class="trivia-candle-canvas" width="80" height="140"
+                                aria-label="Vela temporizadora"></canvas>
+                    </div>
+                    <div class="trivia-card">
+                        <p id="trivia-question" class="trivia-question">Cargando pregunta...</p>
+                        <div id="trivia-options" class="trivia-options"></div>
+                        <p id="trivia-feedback" class="trivia-feedback hidden"></p>
+                    </div>
+                </div>
+
+                <div class="trivia-actions">
+                    <button id="btn-trivia-next" class="btn btn--primary hidden" type="button">Siguiente pregunta ▶</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="trivial-end-screen" class="overlay hidden">
+            <div class="panel panel--result">
+                <p class="eyebrow">Fin del recorrido</p>
+                <h2 id="trivial-end-title">¡Victoria!</h2>
+                <p id="trivial-end-text" class="trivial-end-text"></p>
+                <div class="result-grid">
+                    <div><span>Pintxos</span><strong id="trivial-end-pintxos">0/52</strong></div>
+                    <div><span>Fallos</span><strong id="trivial-end-fallos">0/10</strong></div>
+                    <div><span>Aciertos</span><strong id="trivial-end-aciertos">0</strong></div>
+                    <div><span>Barrios</span><strong id="trivial-end-barrios">0/52</strong></div>
+                </div>
+                <div class="gameover-actions">
+                    <button id="btn-trivial-end-again" class="btn btn--primary" type="button">Jugar otra vez</button>
+                    <button id="btn-trivial-end-menu" class="btn btn--ghost" type="button">Volver al menú</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="scores-screen" class="overlay hidden">
+            <div class="panel panel--scores">
+                <p class="eyebrow">Salón de la Fama</p>
+                <div class="scores-header-row">
+                    <h2>🏆 Puntuaciones del Botxo</h2>
+                    <span id="scores-live-badge" class="scores-live-badge is-live">● EN VIVO</span>
+                </div>
+                <p class="tagline">Las hazañas legendarias registradas a lo largo de los 52 barrios de Bilbao.</p>
+
+                <div class="scores-table-wrap">
+                    <table class="scores-table" aria-label="Tabla de puntuaciones de Botxitrono">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Héroe / Aventurero</th>
+                                <th>Nivel</th>
+                                <th>🪙</th>
+                                <th>Puntos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scores-table-body">
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 18px; color: var(--muted);">Cargando proezas...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="scores-actions">
+                    <button id="btn-scores-refresh" class="btn btn--secondary" type="button">🔄 Actualizar</button>
+                    <button id="btn-scores-close" class="btn btn--primary" type="button">Volver al Menú</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="credits-screen" class="overlay hidden">
+            <div class="panel panel--credits">
+                <p class="eyebrow">LokiTrono de Barrios</p>
+                <h2 class="credits-title">Créditos de la Aventura</h2>
+                <div class="credits-trophy" aria-hidden="true">🏆👑🏰</div>
+                <p class="credits-desc">Aritza del Reino · Aventura por los <strong>52 barrios de Bilbao</strong>.</p>
+                <div class="credits-content">
+                    <p><strong>Creadores y Diseñadores:</strong><br>Julio Arteaga &amp; Ainhoa Alonso</p>
+                    <p><strong>Heroína:</strong> Aritza de Bilbao</p>
+                    <p><strong>Mundo:</strong> Los 52 Barrios de la Villa de Bilbao</p>
+                    <p><strong>Música y Efectos:</strong> Audio sintético Web Audio API</p>
+                    <p><strong>Agradecimientos:</strong> Al Botxo, a su gente y a cada rincón de la Ría.</p>
+                </div>
+                <button id="btn-credits-menu" class="btn btn--primary" type="button">Volver al Menú</button>
+            </div>
+        </section>
+
+        <noscript>
+            <div class="overlay">
+                <div class="panel">
+                    <h2>JavaScript necesario</h2>
+                    <p>Aritza necesita JavaScript para funcionar.</p>
+                </div>
+            </div>
+        </noscript>
+    </main>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

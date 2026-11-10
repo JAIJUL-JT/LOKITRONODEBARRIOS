@@ -1,0 +1,23 @@
+{
+  "name": "lokitrono-runner",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Aritza: Heroína del Reino. Plataformas medievales con HTML5 Canvas + JS vanilla, sin build.",
+  "scripts": {
+    "dev": "python3 -m http.server 3000",
+    "test": "node --test tests/",
+    "build": "echo \"No build step: Aritza es estático\""
+  },
+  "keywords": [
+    "lokitrono",
+    "aritza",
+    "plataformas",
+    "medieval",
+    "heroina",
+    "canvas",
+    "juego",
+    "pwa"
+  ],
+  "license": "UNLICENSED"
+}

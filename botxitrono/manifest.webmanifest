@@ -1,0 +1,33 @@
+{
+  "name": "Botxitrono",
+  "short_name": "Botxitrono",
+  "description": "Botxitrono: elige tu héroe y corre por los 52 barrios de Bilbao. Plataformas medievales con Canvas 2D.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#101a16",
+  "theme_color": "#101a16",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -9595,7 +9595,20 @@ window.resetFormBlog = resetFormBlog;
    PRESENTACIÓN OFICIAL INTERACTIVA (CARRUSEL DE LA LANDING DE INICIO)
    ========================================================================== */
 let presentacionSlideActual = 1;
-const PRESENTACION_TOTAL_SLIDES = 12;
+const PRESENTACION_SLIDES = [
+    'assets/presentacion/q1.png',
+    'assets/presentacion/q2.png',
+    'assets/presentacion/q3.png',
+    'assets/presentacion/q55.png',
+    'assets/presentacion/q6.png',
+    'assets/presentacion/q7.png',
+    'assets/presentacion/q8.png',
+    'assets/presentacion/q9.png',
+    'assets/presentacion/q10.png',
+    'assets/presentacion/q11.png',
+    'assets/presentacion/q12.png',
+];
+const PRESENTACION_TOTAL_SLIDES = PRESENTACION_SLIDES.length;
 
 function renderPresentacionSlide() {
     const img = document.getElementById('presentacion-slide-img');
@@ -9603,7 +9616,7 @@ function renderPresentacionSlide() {
     const dotsContainer = document.getElementById('presentacion-dots');
 
     if (img) {
-        img.src = `assets/presentacion/slide_${presentacionSlideActual}.webp`;
+        img.src = PRESENTACION_SLIDES[presentacionSlideActual - 1];
         img.alt = `Presentación de LokiTrono de Barrios - Diapositiva ${presentacionSlideActual}`;
     }
 
@@ -9692,5 +9705,32 @@ function alTerminarAudioHimno() {
 
 window.toggleAudioHimno = toggleAudioHimno;
 window.alTerminarAudioHimno = alTerminarAudioHimno;
+
+// Integración de Botxitrono
+function abrirBotxitrono() {
+    const overlay = document.getElementById('botxitrono-modal-overlay');
+    const iframe = document.getElementById('botxitrono-iframe');
+    if (overlay && iframe) {
+        if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href) {
+            iframe.src = './botxitrono/';
+        }
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+    } else {
+        window.open('./botxitrono/', '_blank');
+    }
+}
+
+function cerrarBotxitrono() {
+    const overlay = document.getElementById('botxitrono-modal-overlay');
+    const iframe = document.getElementById('botxitrono-iframe');
+    if (overlay) overlay.style.display = 'none';
+    if (iframe) iframe.src = 'about:blank';
+}
+
+window.abrirBotxitrono = abrirBotxitrono;
+window.cerrarBotxitrono = cerrarBotxitrono;
+
 
 

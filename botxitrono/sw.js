@@ -1,6 +1,6 @@
 // Service worker de Aritza: app shell offline.
 // Sube la versión de CACHE cada vez que cambien los archivos del shell.
-const CACHE = 'aritza-reino-v4';
+const CACHE = 'botxitrono-v5';
 const SHELL = [
   './',
   './index.html',
@@ -10,10 +10,17 @@ const SHELL = [
   './js/render.js',
   './js/storage.js',
   './js/audio.js',
+  './js/scores.js',
+  './js/pintxo-art.js',
+  './js/trivial-core.js',
+  './js/trivia-data.js',
+  './js/trivia-barrios.js',
   './manifest.webmanifest',
   './icon.svg',
   './icon-192.png',
   './icon-512.png',
+  './loki-logo.png',
+  './favicon.ico',
 ];
 
 self.addEventListener('install', (event) => {

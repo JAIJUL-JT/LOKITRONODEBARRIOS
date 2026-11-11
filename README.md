@@ -4,6 +4,8 @@
 
 ## 🛠️ Mejoras UI recientes
 
+- **Menú hamburguesa persistente**: el antiguo desplegable se sustituye por un botón hamburguesa fijo y siempre visible que abre un panel lateral con las mismas secciones, respetando roles y opciones ocultas.
+- **Web app instalable / offline**: se registra un service worker (`sw.js`) que cachea el app shell para abrir la aplicación sin conexión y permitir su instalación como PWA.
 - **Toggle PIN visible / oculto**: ahora el botón 👁️ en la pantalla de acceso muestra u oculta el PIN de 6 dígitos y cambia su emoji entre 👁️ y 🙈, facilitando la introducción del código.
 - **Dos dragones animados**: se han añadido dos dragones en la cabecera — el original rojo y uno nuevo azul — que flotan suavemente con una animación CSS. Añaden un toque lúdico al tema medieval del sitio.
 

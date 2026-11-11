@@ -421,6 +421,9 @@ function cambiarPestana(valor) {
     if (valor === 'pestana-blog' || valor === 'tab-blog') {
         if (typeof renderBlogPosts === 'function') renderBlogPosts();
     }
+    if (typeof sincronizarEstadoMenuHamburguesa === 'function') {
+        sincronizarEstadoMenuHamburguesa(valor);
+    }
 }
 
 function actualizarInterfazSesion(usuario) {
@@ -514,12 +517,130 @@ function actualizarInterfazSesion(usuario) {
             authStatus.style.display = 'none';
             authStatus.innerHTML = '';
         }
-        if (nav) nav.style.display = 'none';
+        if (nav) nav.style.display = 'block';
         if (contenido) contenido.style.display = 'none';
+        if (optgroupAdmin) optgroupAdmin.style.display = 'none';
+        if (typeof cerrarMenuHamburguesa === 'function') cerrarMenuHamburguesa();
 
         cambiarPestana('pestana-clasificacion');
     }
+
+    if (typeof renderMenuHamburguesa === 'function') renderMenuHamburguesa();
 }
+
+/* ============================================================
+   MENÚ HAMBURGUESA PERSISTENTE
+   El selector nativo se conserva oculto como fuente de datos;
+   el panel se genera a partir de sus opciones y respeta las
+   opciones que la app oculta o deshabilita por rol/estado.
+   ============================================================ */
+function alternarMenuHamburguesa() {
+    const menu = document.getElementById('menu-hamburguesa');
+    if (!menu) return;
+    if (menu.hidden) abrirMenuHamburguesa();
+    else cerrarMenuHamburguesa();
+}
+
+function abrirMenuHamburguesa() {
+    const menu = document.getElementById('menu-hamburguesa');
+    const boton = document.getElementById('btn-menu-hamburguesa');
+    if (!menu) return;
+    renderMenuHamburguesa();
+    menu.hidden = false;
+    document.body.classList.add('menu-hamburguesa-abierto');
+    if (boton) boton.setAttribute('aria-expanded', 'true');
+    const primero = menu.querySelector('.menu-hamburguesa__item');
+    if (primero && typeof primero.focus === 'function') {
+        setTimeout(function () { primero.focus(); }, 0);
+    }
+}
+
+function cerrarMenuHamburguesa() {
+    const menu = document.getElementById('menu-hamburguesa');
+    const boton = document.getElementById('btn-menu-hamburguesa');
+    if (!menu || menu.hidden) return;
+    menu.hidden = true;
+    document.body.classList.remove('menu-hamburguesa-abierto');
+    if (boton) {
+        boton.setAttribute('aria-expanded', 'false');
+        if (typeof boton.focus === 'function') boton.focus();
+    }
+}
+
+function renderMenuHamburguesa() {
+    const lista = document.getElementById('menu-hamburguesa-lista');
+    const select = document.getElementById('select-seccion-corte');
+    const aviso = document.getElementById('menu-hamburguesa-aviso');
+    if (!lista || !select) return;
+    const usuario = getCurrentUser();
+    if (aviso) aviso.hidden = !!usuario;
+    const valorActivo = select.value || 'pestana-inicio';
+    lista.innerHTML = '';
+    Array.from(select.children).forEach(function (hijo) {
+        if (hijo.tagName === 'OPTGROUP') {
+            if (hijo.hidden || hijo.style.display === 'none' || hijo.disabled) return;
+            const opciones = Array.from(hijo.querySelectorAll('option')).filter(function (opt) {
+                return !opt.hidden && opt.style.display !== 'none' && !opt.disabled;
+            });
+            if (!opciones.length) return;
+            const grupo = document.createElement('div');
+            grupo.className = 'menu-hamburguesa__grupo';
+            grupo.textContent = hijo.label || 'Secciones';
+            lista.appendChild(grupo);
+            opciones.forEach(function (opt) {
+                lista.appendChild(crearBotonMenuHamburguesa(opt, valorActivo));
+            });
+        } else if (hijo.tagName === 'OPTION') {
+            if (hijo.hidden || hijo.style.display === 'none' || hijo.disabled) return;
+            lista.appendChild(crearBotonMenuHamburguesa(hijo, valorActivo));
+        }
+    });
+    if (!lista.children.length) {
+        const vacio = document.createElement('p');
+        vacio.className = 'menu-hamburguesa__aviso';
+        vacio.textContent = 'No hay secciones disponibles.';
+        lista.appendChild(vacio);
+    }
+}
+
+function crearBotonMenuHamburguesa(option, valorActivo) {
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'menu-hamburguesa__item';
+    boton.dataset.valor = option.value;
+    boton.textContent = option.textContent.trim();
+    if (option.value === valorActivo) boton.classList.add('activo');
+    boton.addEventListener('click', function () {
+        seleccionarSeccionMenuHamburguesa(option.value);
+    });
+    return boton;
+}
+
+function seleccionarSeccionMenuHamburguesa(valor) {
+    const select = document.getElementById('select-seccion-corte');
+    if (select && select.value !== valor) select.value = valor;
+    cerrarMenuHamburguesa();
+    cambiarPestana(valor);
+}
+
+function sincronizarEstadoMenuHamburguesa(valor) {
+    const lista = document.getElementById('menu-hamburguesa-lista');
+    if (!lista) return;
+    const select = document.getElementById('select-seccion-corte');
+    const activo = valor || (select ? select.value : '');
+    lista.querySelectorAll('.menu-hamburguesa__item').forEach(function (boton) {
+        boton.classList.toggle('activo', boton.dataset.valor === activo);
+    });
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') cerrarMenuHamburguesa();
+});
+
+window.alternarMenuHamburguesa = alternarMenuHamburguesa;
+window.abrirMenuHamburguesa = abrirMenuHamburguesa;
+window.cerrarMenuHamburguesa = cerrarMenuHamburguesa;
+window.renderMenuHamburguesa = renderMenuHamburguesa;
 
 
 function cerrarSesionDirecta() {
@@ -9717,6 +9838,12 @@ function abrirBotxitrono() {
         overlay.style.display = 'flex';
         overlay.style.alignItems = 'center';
         overlay.style.justifyContent = 'center';
+        setTimeout(function () {
+            try {
+                if (iframe.contentWindow) iframe.contentWindow.focus();
+                iframe.focus();
+            } catch (_) {}
+        }, 150);
     } else {
         window.open('./botxitrono/', '_blank');
     }

@@ -29,13 +29,6 @@
             inyectar('https://lokitronodebarrios.vercel.app/_vercel/speed-insights/script.js');
         }
     }
-        if (cfg.vercelAnalytics) {
-            inyectar('/_vercel/insights/script.js');
-        }
-        if (cfg.vercelSpeedInsights) {
-            inyectar('/_vercel/speed-insights/script.js');
-        }
-    }
 
     function cargarGA4(id) {
         if (!id) return;

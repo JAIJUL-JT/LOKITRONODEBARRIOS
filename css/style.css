@@ -2333,3 +2333,229 @@ p, span, div, li { color: #e5e7eb !important; text-shadow: 1px 1px 2px rgba(0,0,
     margin: 0;
 }
 
+/* ============================================================
+   MENÚ HAMBURGUESA PERSISTENTE
+   El botón queda fijo y siempre visible; el panel lateral se
+   construye a partir del selector oculto de secciones.
+   ============================================================ */
+.nav-hamburguesa {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 9000;
+    display: block !important;
+    margin: 0;
+    padding: 0;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-align: left;
+}
+
+.select-seccion-oculto {
+    display: none !important;
+}
+
+.btn-menu-hamburguesa {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border: 1.5px solid var(--oro-real, #d4af37);
+    border-radius: 14px;
+    background: radial-gradient(circle at 50% 20%, rgba(45, 35, 18, 0.98), rgba(5, 5, 5, 0.96));
+    color: var(--oro-brillante, #fef08a);
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(212, 175, 55, 0.15) inset;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-menu-hamburguesa:hover,
+.btn-menu-hamburguesa:focus-visible {
+    transform: translateY(-1px) scale(1.03);
+    border-color: var(--oro-brillante, #fef08a);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.75), 0 0 18px rgba(212, 175, 55, 0.35);
+    outline: none;
+}
+
+.btn-menu-hamburguesa__linea {
+    display: block;
+    width: 24px;
+    height: 2.5px;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 6px rgba(212, 175, 55, 0.65);
+}
+
+body.menu-hamburguesa-abierto {
+    overflow: hidden;
+}
+
+.menu-hamburguesa[hidden] {
+    display: none;
+}
+
+.menu-hamburguesa {
+    position: fixed;
+    inset: 0;
+    z-index: 9500;
+    display: block;
+}
+
+.menu-hamburguesa__fondo {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.66);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+.menu-hamburguesa__panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(86vw, 360px);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(circle at 20% 0%, rgba(40, 30, 14, 0.99), rgba(5, 5, 5, 0.995));
+    border-right: 2px solid var(--oro-real, #d4af37);
+    box-shadow: 12px 0 40px rgba(0, 0, 0, 0.8);
+    padding: 16px 14px 22px;
+    overflow-y: auto;
+    animation: menuHamburguesaEntrar 0.22s ease-out;
+}
+
+@keyframes menuHamburguesaEntrar {
+    from { transform: translateX(-100%); opacity: 0.4; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.menu-hamburguesa__cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 4px 14px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+    margin-bottom: 12px;
+    font-family: 'Cinzel', serif;
+    color: var(--oro-brillante, #fef08a);
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    font-size: 1.02rem;
+}
+
+.menu-hamburguesa__cerrar {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(212, 175, 55, 0.55);
+    background: rgba(60, 20, 20, 0.55);
+    color: #fecaca;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.menu-hamburguesa__cerrar:hover,
+.menu-hamburguesa__cerrar:focus-visible {
+    background: #7f1d1d;
+    color: #fff;
+    outline: none;
+}
+
+.menu-hamburguesa__aviso {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+    background: rgba(120, 53, 15, 0.22);
+    color: #fde68a;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.menu-hamburguesa__lista {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.menu-hamburguesa__grupo {
+    margin: 10px 4px 4px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--oro-real, #d4af37);
+    opacity: 0.9;
+}
+
+.menu-hamburguesa__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.035);
+    color: #f5f0e1;
+    font-family: 'Cinzel', serif;
+    font-size: 0.93rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+.menu-hamburguesa__item:hover,
+.menu-hamburguesa__item:focus-visible {
+    background: rgba(212, 175, 55, 0.14);
+    border-color: rgba(212, 175, 55, 0.5);
+    transform: translateX(2px);
+    outline: none;
+}
+
+.menu-hamburguesa__item.activo {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.28), rgba(120, 53, 15, 0.35));
+    border-color: var(--oro-real, #d4af37);
+    color: #fff7d6;
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.18) inset;
+}
+
+.menu-hamburguesa__item[disabled] {
+    opacity: 0.38;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 600px) {
+    .nav-hamburguesa {
+        top: 8px;
+        left: 8px;
+    }
+
+    .btn-menu-hamburguesa {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+    }
+
+    .btn-menu-hamburguesa__linea {
+        width: 21px;
+    }
+
+    .menu-hamburguesa__panel {
+        width: min(92vw, 340px);
+        padding: 14px 12px 20px;
+    }
+}
+

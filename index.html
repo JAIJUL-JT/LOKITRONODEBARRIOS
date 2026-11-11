@@ -12,6 +12,10 @@
     <meta name="author" content="Julio Arteaga">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="theme-color" content="#050505">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LokiTrono">
     <link rel="canonical" href="https://lokitronodebarrios.vercel.app/">
     <link rel="manifest" href="/manifest.webmanifest">
 
@@ -46,7 +50,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261101">
+    <link rel="stylesheet" href="css/style.css?v=20261110">
     <link rel="stylesheet" href="css/medieval-theme.css?v=20261101">
 
     <link rel="stylesheet" href="css/legal.css">
@@ -108,9 +112,9 @@
 
     <!-- Config legal y consentimiento de cookies (RGPD/LSSI + Consent Mode v2) -->
     <script src="js/legal-config.js"></script>
-    <script src="js/analytics.js" defer></script>
+    <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261103" defer></script>
+    <script src="js/app.js?v=20261110" defer></script>
     <script src="js/dragon.js?v=20261101" defer></script>
 </head>
 
@@ -168,35 +172,51 @@
         </p>
     </header>
 
-    <!-- Menú Desplegable de Secciones (Visible sólo tras iniciar sesión) -->
-    <nav id="nav-secciones-corte" class="nav-dropdown-container"
-        style="display: none; background: rgba(5, 5, 5, 0.98); border-bottom: 2px solid var(--oro-real); padding: 14px; text-align: center;">
-        <div
-            style="max-width: 600px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 12px;">
-            <label for="select-seccion-corte"
-                style="font-family: 'Cinzel', serif; color: var(--oro-real); font-weight: bold; white-space: nowrap; font-size: 1rem;">📜
-                Menú de la Corte:</label>
-            <select id="select-seccion-corte" class="input-medieval" onchange="cambiarPestana(this.value)"
-                style="margin: 0; padding: 10px; font-weight: bold; font-family: 'Cinzel', serif; background: #0a0a0a;">
-                <optgroup label="📜 Menú de Maestres">
-                    <option value="pestana-inicio" data-tab="tab-inicio" selected>🏠 Inicio</option>
-                    <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario</option>
-                    <option value="pestana-votacion-barrio" data-tab="tab-votacion-barrio">🗳️ Votar</option>
-                    <option value="pestana-clasificacion" data-tab="tab-clasificacion">🏆 Clasificación</option>
-                    <option value="pestana-tronistas" data-tab="tab-tronistas">👑 Lokitronistas</option>
-                    <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
-                </optgroup>
-                <optgroup label="👑 Administración" id="optgroup-admin-menu">
-                    <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Gestión Usuarios</option>
-                    <option value="pestana-barrios" data-tab="tab-barrios">🏰 Gestión ubicaciones</option>
-                    <option value="pestana-estadisticas" id="option-menu-estadisticas" data-tab="tab-estadisticas">📊 Estadísticas</option>
-                    <option value="pestana-generar-evento" data-tab="tab-generar-evento">🗓️ Eventos</option>
-                    <option value="tab-superadmin" data-tab="tab-superadmin">⚙️ Configuración</option>
-                    <option value="pestana-marketing" data-tab="tab-marketing" id="option-menu-marketing" style="display:none;">📣 Marketing (Promocionar Locales)</option>
-                </optgroup>
-            </select>
-        </div>
+    <!-- Menú hamburguesa persistente: el botón queda siempre visible. -->
+    <nav id="nav-secciones-corte" class="nav-hamburguesa" aria-label="Menú de secciones">
+        <button type="button" id="btn-menu-hamburguesa" class="btn-menu-hamburguesa"
+            aria-label="Abrir menú de secciones" aria-controls="menu-hamburguesa" aria-expanded="false"
+            onclick="alternarMenuHamburguesa()">
+            <span class="btn-menu-hamburguesa__linea"></span>
+            <span class="btn-menu-hamburguesa__linea"></span>
+            <span class="btn-menu-hamburguesa__linea"></span>
+        </button>
+        <!-- Selector original conservado como fuente de datos y para el test estático. -->
+        <select id="select-seccion-corte" class="select-seccion-oculto" onchange="cambiarPestana(this.value)"
+            tabindex="-1" aria-hidden="true">
+            <optgroup label="📜 Menú de Maestres">
+                <option value="pestana-inicio" data-tab="tab-inicio" selected>🏠 Inicio</option>
+                <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario</option>
+                <option value="pestana-votacion-barrio" data-tab="tab-votacion-barrio">🗳️ Votar</option>
+                <option value="pestana-clasificacion" data-tab="tab-clasificacion">🏆 Clasificación</option>
+                <option value="pestana-tronistas" data-tab="tab-tronistas">👑 Lokitronistas</option>
+                <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
+            </optgroup>
+            <optgroup label="👑 Administración" id="optgroup-admin-menu" style="display:none;">
+                <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Gestión Usuarios</option>
+                <option value="pestana-barrios" data-tab="tab-barrios">🏰 Gestión ubicaciones</option>
+                <option value="pestana-estadisticas" id="option-menu-estadisticas" data-tab="tab-estadisticas">📊 Estadísticas</option>
+                <option value="pestana-generar-evento" data-tab="tab-generar-evento">🗓️ Eventos</option>
+                <option value="tab-superadmin" data-tab="tab-superadmin">⚙️ Configuración</option>
+                <option value="pestana-marketing" data-tab="tab-marketing" id="option-menu-marketing" style="display:none;">📣 Marketing (Promocionar Locales)</option>
+            </optgroup>
+        </select>
     </nav>
+
+    <!-- Panel lateral del menú hamburguesa -->
+    <div id="menu-hamburguesa" class="menu-hamburguesa" hidden>
+        <div class="menu-hamburguesa__fondo" onclick="cerrarMenuHamburguesa()"></div>
+        <aside class="menu-hamburguesa__panel" role="dialog" aria-modal="true"
+            aria-labelledby="menu-hamburguesa-titulo">
+            <div class="menu-hamburguesa__cabecera">
+                <span id="menu-hamburguesa-titulo">📜 Menú de la Corte</span>
+                <button type="button" class="menu-hamburguesa__cerrar" aria-label="Cerrar menú"
+                    onclick="cerrarMenuHamburguesa()">✕</button>
+            </div>
+            <p id="menu-hamburguesa-aviso" class="menu-hamburguesa__aviso" hidden>Inicia sesión para acceder a todas las secciones.</p>
+            <div id="menu-hamburguesa-lista" class="menu-hamburguesa__lista"></div>
+        </aside>
+    </div>
 
 
 
@@ -1814,6 +1834,13 @@
 
 
     <script>document.getElementById('footer-year').textContent = String(new Date().getFullYear());</script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('./sw.js').catch(function () {});
+            });
+        }
+    </script>
 </body>
 
 </html>

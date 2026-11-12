@@ -9742,6 +9742,8 @@ window.resetFormBlog = resetFormBlog;
    ========================================================================== */
 let presentacionSlideActual = 1;
 const PRESENTACION_SLIDES = [
+    'assets/presentacion/1pres.jpg',
+    'assets/presentacion/2pres.jpg',
     'assets/presentacion/q1.png',
     'assets/presentacion/q2.png',
     'assets/presentacion/q3.png',

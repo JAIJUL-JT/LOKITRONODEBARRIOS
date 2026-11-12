@@ -1,6 +1,6 @@
 // Service worker de Aritza: app shell offline.
 // Sube la versión de CACHE cada vez que cambien los archivos del shell.
-const CACHE = 'botxitrono-v5';
+const CACHE = 'botxitrono-v6';
 const SHELL = [
   './',
   './index.html',

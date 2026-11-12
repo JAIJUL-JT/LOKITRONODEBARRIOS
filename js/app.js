@@ -9828,24 +9828,30 @@ window.toggleAudioHimno = toggleAudioHimno;
 window.alTerminarAudioHimno = alTerminarAudioHimno;
 
 // Integración de Botxitrono
-function abrirBotxitrono() {
+function abrirBotxitrono(modo) {
     const overlay = document.getElementById('botxitrono-modal-overlay');
     const iframe = document.getElementById('botxitrono-iframe');
+    const baseSrc = './botxitrono/';
+    const targetSrc = modo ? baseSrc + '?start=' + modo : baseSrc;
+
     if (overlay && iframe) {
-        if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href) {
-            iframe.src = './botxitrono/';
+        if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href || (modo && !iframe.src.includes('?start=' + modo))) {
+            iframe.src = targetSrc;
         }
         overlay.style.display = 'flex';
         overlay.style.alignItems = 'center';
         overlay.style.justifyContent = 'center';
         setTimeout(function () {
             try {
-                if (iframe.contentWindow) iframe.contentWindow.focus();
+                if (iframe.contentWindow) {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.dispatchEvent(new Event('resize'));
+                }
                 iframe.focus();
             } catch (_) {}
-        }, 150);
+        }, 200);
     } else {
-        window.open('./botxitrono/', '_blank');
+        window.open(targetSrc, '_blank');
     }
 }
 
@@ -9858,6 +9864,7 @@ function cerrarBotxitrono() {
 
 window.abrirBotxitrono = abrirBotxitrono;
 window.cerrarBotxitrono = cerrarBotxitrono;
+
 
 
 

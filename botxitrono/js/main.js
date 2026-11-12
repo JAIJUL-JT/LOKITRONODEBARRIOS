@@ -2139,3 +2139,21 @@ requestAnimationFrame((now) => {
   lastTime = now;
   requestAnimationFrame(frame);
 });
+
+// Autoarranque según parámetro URL (?start=trivial o ?start=game)
+(function checkUrlAutoStart() {
+  try {
+    const params = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
+    const startMode = params.get('start');
+    if (startMode === 'trivial') {
+      setTimeout(() => {
+        startTrivia('menu');
+      }, 350);
+    } else if (startMode === 'game') {
+      setTimeout(() => {
+        startGame();
+      }, 350);
+    }
+  } catch (_) {}
+}());
+

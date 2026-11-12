@@ -403,6 +403,10 @@ function cambiarPestana(valor) {
         cambiarPestana('tab-superadmin');
         return;
     }
+    if (valor === 'pestana-trivial' || valor === 'tab-trivial') {
+        if (typeof abrirBotxitrono === 'function') abrirBotxitrono('trivial');
+        return;
+    }
     const sections = document.querySelectorAll('.tab-content');
     sections.forEach(section => {
         const shouldShow = section.id === valor || section.dataset.tab === valor;
@@ -470,6 +474,7 @@ function actualizarInterfazSesion(usuario) {
         if (optGeografia) optGeografia.style.display = esSuperadmin ? "" : "none";
         // La Gala Final solo aparece a los maestres cuando ya está publicada.
         aplicarVisibilidadGalaFinal();
+        aplicarVisibilidadTrivialMenu();
         if (typeof cargarGalaFinalDesdeSupabase === 'function') cargarGalaFinalDesdeSupabase();
         const panelTronistasAdmin = document.getElementById('panel-superadmin-tronistas');
         if (panelTronistasAdmin) panelTronistasAdmin.style.display = esSuperadmin ? 'block' : 'none';
@@ -521,6 +526,7 @@ function actualizarInterfazSesion(usuario) {
         if (contenido) contenido.style.display = 'none';
         if (optgroupAdmin) optgroupAdmin.style.display = 'none';
         if (typeof cerrarMenuHamburguesa === 'function') cerrarMenuHamburguesa();
+        aplicarVisibilidadTrivialMenu();
 
         cambiarPestana('pestana-clasificacion');
     }
@@ -572,6 +578,7 @@ function renderMenuHamburguesa() {
     const select = document.getElementById('select-seccion-corte');
     const aviso = document.getElementById('menu-hamburguesa-aviso');
     if (!lista || !select) return;
+    if (typeof aplicarVisibilidadTrivialMenu === 'function') aplicarVisibilidadTrivialMenu();
     const usuario = getCurrentUser();
     if (aviso) aviso.hidden = !!usuario;
     const valorActivo = select.value || 'pestana-inicio';
@@ -3520,6 +3527,24 @@ function aplicarVisibilidadGalaFinal() {
     const option = document.querySelector('#select-seccion-corte option[value="pestana-evento-final"]');
     if (option) option.style.display = esAdmin ? '' : 'none';
 }
+
+// El Trivial en el Menú de la Corte es accesible tras emitir al menos un voto (o para la administración).
+function usuarioTieneVotosEmitidos(usuario) {
+    if (!usuario) return false;
+    if (puedeAdministrar(usuario.role)) return true;
+    const userId = String(usuario.phone || usuario.id || '');
+    if (!userId) return false;
+    const votos = typeof getVotosDelAmbito === 'function' ? getVotosDelAmbito() : [];
+    return votos.some(v => String(v.maestre_id || '') === userId);
+}
+
+function aplicarVisibilidadTrivialMenu() {
+    const usuario = getCurrentUser();
+    const puedeVer = usuarioTieneVotosEmitidos(usuario);
+    const option = document.getElementById('option-menu-trivial');
+    if (option) option.style.display = puedeVer ? '' : 'none';
+}
+
 
 function renderGalaFinal() {
     const config = getGalaFinalConfig();

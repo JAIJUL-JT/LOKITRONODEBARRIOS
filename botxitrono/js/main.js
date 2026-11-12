@@ -256,6 +256,7 @@ function syncMusic() {
 function setUiState(next) {
   uiState = next;
   if (next === 'menu') showOverlay('menu');
+  else if (next === 'heroselect') showOverlay('heroselect');
   else if (next === 'howto') showOverlay('howto');
   else if (next === 'paused') showOverlay('pause');
   else if (next === 'over') showOverlay('over');

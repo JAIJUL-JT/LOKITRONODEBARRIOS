@@ -1017,6 +1017,100 @@
                         </button>
                     </div>
 
+                    <!-- PANEL DE GESTIÓN DE TEMAS VISUALES DEL REINO -->
+                    <div id="seccion-configuracion-temas"
+                        style="margin-top: 25px; background: rgba(26, 20, 10, 0.95); border: 2px solid var(--oro-real); padding: 20px; border-radius: 8px;">
+                        <h3 style="color: var(--oro-brillante); margin: 0 0 10px; font-family: 'Cinzel', serif;">
+                            🎨 Selector y Creador de Temas Visuales
+                        </h3>
+                        <p style="font-size: 0.88rem; color: #d6d3d1; margin-top: 4px;">
+                            Personaliza la atmósfera del Reino al instante según la estación, festividad o tipo de evento.
+                        </p>
+
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-top: 15px;">
+                            <div class="form-group" style="flex: 2; min-width: 260px; margin-bottom: 0;">
+                                <label style="font-weight: bold; color: var(--oro-real);">Seleccionar Tema Activo:</label>
+                                <select id="selector-tema-visual" class="input-medieval" onchange="aplicarTemaVisual(this.value)">
+                                    <optgroup label="👑 Temas por Defecto">
+                                        <option value="predeterminado">🏰 Predeterminado (Feudal Bilbao)</option>
+                                    </optgroup>
+                                    <optgroup label="🎃 Festividades y Campañas">
+                                        <option value="halloween">🎃 Halloween</option>
+                                        <option value="blackfriday">🏷️ Black Friday</option>
+                                        <option value="navidad">🎄 Navidad</option>
+                                        <option value="rebajas">🛍️ Rebajas</option>
+                                        <option value="carnavales">🎭 Carnavales</option>
+                                        <option value="semanasanta">🕯️ Semana Santa</option>
+                                        <option value="sanvalentin">❤️ San Valentín</option>
+                                        <option value="fiestafinal">🎉 Fiesta Final</option>
+                                        <option value="inauguracion">✨ Inauguración</option>
+                                    </optgroup>
+                                    <optgroup label="🌸 Estaciones del Año">
+                                        <option value="primavera">🌸 Primavera</option>
+                                        <option value="verano">☀️ Verano</option>
+                                        <option value="otono">🍂 Otoño</option>
+                                        <option value="invierno">❄️ Invierno</option>
+                                        <option value="vacaciones">🏖️ Vacaciones</option>
+                                    </optgroup>
+                                    <optgroup label="🌦️ Climatología y Atmósfera">
+                                        <option value="nieve">❄️ Nieve</option>
+                                        <option value="sol">☀️ Sol Radiante</option>
+                                        <option value="lluvia">🌧️ Lluvia</option>
+                                        <option value="viento">💨 Viento</option>
+                                    </optgroup>
+                                    <optgroup label="🏅 Deporte y Competición">
+                                        <option value="olimpiadasverano">🥇 Olimpiadas de Verano</option>
+                                        <option value="olimpiadasinvierno">🏂 Olimpiadas de Invierno</option>
+                                    </optgroup>
+                                    <optgroup label="🎭 Cultura, Ocio y Eventos">
+                                        <option value="baile">💃 Baile</option>
+                                        <option value="cine">🎬 Cine</option>
+                                        <option value="teatro">🎭 Teatro</option>
+                                        <option value="restauracion">🍷 Restauración / Gastronomía</option>
+                                    </optgroup>
+                                    <optgroup label="🏛️ Corporativo y Oficial">
+                                        <option value="congreso">💼 Congreso de Empresa</option>
+                                        <option value="eventooficial">🏛️ Evento Oficial</option>
+                                        <option value="burocratico">📜 Burocrático / Administrativo</option>
+                                    </optgroup>
+                                    <optgroup label="✨ Temas Personalizados Creados" id="optgroup-temas-custom"></optgroup>
+                                </select>
+                            </div>
+                            <button type="button" class="btn-cuervo" onclick="restablecerTemaPredeterminado()" style="background: #374151; padding: 10px 18px;">
+                                🔄 Restaurar Tema Original
+                            </button>
+                        </div>
+
+                        <!-- GENERADOR DE NUEVOS TEMAS PERSONALIZADOS -->
+                        <div style="margin-top: 20px; background: rgba(0,0,0,0.4); padding: 16px; border-radius: 6px; border: 1px dashed var(--oro-real);">
+                            <h4 style="color: var(--oro-brillante); margin: 0 0 10px; font-family: 'Cinzel', serif;">
+                                ➕ Generar Nuevo Tema Personalizado
+                            </h4>
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                                <div class="form-group" style="flex: 2; min-width: 180px; margin-bottom: 0;">
+                                    <label style="font-size: 0.8rem; color: #94a3b8;">Nombre del nuevo tema</label>
+                                    <input type="text" id="nuevo-tema-nombre" class="input-medieval" placeholder="Ej: Fiestas de Bilbao / Aste Nagusia">
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 110px; margin-bottom: 0;">
+                                    <label style="font-size: 0.8rem; color: #94a3b8;">Color Dorado/Acento</label>
+                                    <input type="color" id="nuevo-tema-color-oro" class="input-medieval" value="#d4af37" style="height: 38px; padding: 2px;">
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 110px; margin-bottom: 0;">
+                                    <label style="font-size: 0.8rem; color: #94a3b8;">Color Primario/Brillante</label>
+                                    <input type="color" id="nuevo-tema-color-brillante" class="input-medieval" value="#f59e0b" style="height: 38px; padding: 2px;">
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 110px; margin-bottom: 0;">
+                                    <label style="font-size: 0.8rem; color: #94a3b8;">Color Fondo Base</label>
+                                    <input type="color" id="nuevo-tema-color-fondo" class="input-medieval" value="#050505" style="height: 38px; padding: 2px;">
+                                </div>
+                                <button type="button" class="btn-cuervo" onclick="crearNuevoTemaPersonalizado()" style="background: #166534; padding: 10px 18px;">
+                                    ✨ Guardar y Aplicar Tema
+                                </button>
+                            </div>
+                            <p id="estado-nuevo-tema" style="font-size: 0.82rem; color: #4ade80; margin: 8px 0 0;"></p>
+                        </div>
+                    </div>
+
 
                     <!-- PANEL DE CONFIGURACIÓN INTEGRACIÓN MAKE.COM & WHATSAPP AUTOMÁTICO -->
                     <div id="seccion-configuracion-make"

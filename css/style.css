@@ -2560,3 +2560,201 @@ body.menu-hamburguesa-abierto {
     }
 }
 
+/* ==========================================================================
+   SISTEMA DINÁMICO DE TEMAS DEL REINO
+   ========================================================================== */
+body.tema-personalizado {
+    background-color: var(--tema-fondo-base, #050505) !important;
+    background-image: var(--tema-fondo-grad, linear-gradient(rgba(5, 5, 5, 0.8), rgba(5, 5, 5, 0.8))) !important;
+}
+
+body[data-tema="halloween"] {
+    --oro-real: #f97316;
+    --oro-brillante: #fb923c;
+    --sangre-real: #7c2d12;
+    --tema-fondo-base: #0f0702;
+    --tema-fondo-grad: radial-gradient(ellipse at 50% 20%, rgba(249, 115, 22, 0.22), transparent 70%), linear-gradient(rgba(10, 5, 0, 0.9), rgba(10, 5, 0, 0.95));
+}
+body[data-tema="blackfriday"] {
+    --oro-real: #eab308;
+    --oro-brillante: #facc15;
+    --sangre-real: #18181b;
+    --tema-fondo-base: #000000;
+    --tema-fondo-grad: linear-gradient(180deg, rgba(20, 20, 20, 0.98), rgba(0, 0, 0, 0.98));
+}
+body[data-tema="navidad"] {
+    --oro-real: #eab308;
+    --oro-brillante: #fef08a;
+    --sangre-real: #dc2626;
+    --tema-fondo-base: #07190d;
+    --tema-fondo-grad: radial-gradient(ellipse at 50% 10%, rgba(220, 38, 38, 0.25), transparent 60%), linear-gradient(rgba(4, 25, 12, 0.92), rgba(2, 10, 5, 0.98));
+}
+body[data-tema="rebajas"] {
+    --oro-real: #ef4444;
+    --oro-brillante: #f87171;
+    --sangre-real: #b91c1c;
+    --tema-fondo-base: #140505;
+    --tema-fondo-grad: linear-gradient(135deg, rgba(40, 10, 10, 0.9), rgba(15, 5, 5, 0.96));
+}
+body[data-tema="carnavales"] {
+    --oro-real: #ec4899;
+    --oro-brillante: #f472b6;
+    --sangre-real: #8b5cf6;
+    --tema-fondo-base: #1a0826;
+    --tema-fondo-grad: radial-gradient(circle at 30% 20%, rgba(236, 72, 153, 0.3), transparent 50%), radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.3), transparent 50%), linear-gradient(rgba(15, 5, 25, 0.95), rgba(10, 3, 18, 0.98));
+}
+body[data-tema="semanasanta"] {
+    --oro-real: #d4af37;
+    --oro-brillante: #fef08a;
+    --sangre-real: #4c1d95;
+    --tema-fondo-base: #120b1f;
+    --tema-fondo-grad: radial-gradient(ellipse at 50% 15%, rgba(109, 40, 217, 0.25), transparent 65%), linear-gradient(rgba(12, 6, 20, 0.94), rgba(5, 2, 10, 0.98));
+}
+body[data-tema="primavera"] {
+    --oro-real: #10b981;
+    --oro-brillante: #34d399;
+    --sangre-real: #047857;
+    --tema-fondo-base: #061f14;
+    --tema-fondo-grad: radial-gradient(circle at 50% 15%, rgba(16, 185, 129, 0.25), transparent 60%), linear-gradient(rgba(6, 31, 20, 0.92), rgba(2, 12, 8, 0.98));
+}
+body[data-tema="verano"] {
+    --oro-real: #f59e0b;
+    --oro-brillante: #fde047;
+    --sangre-real: #0284c7;
+    --tema-fondo-base: #0c1a2e;
+    --tema-fondo-grad: radial-gradient(circle at 50% 10%, rgba(245, 158, 11, 0.3), transparent 60%), linear-gradient(rgba(12, 26, 46, 0.92), rgba(5, 10, 20, 0.98));
+}
+body[data-tema="otono"] {
+    --oro-real: #d97706;
+    --oro-brillante: #fbbf24;
+    --sangre-real: #78350f;
+    --tema-fondo-base: #1f1105;
+    --tema-fondo-grad: radial-gradient(circle at 50% 20%, rgba(217, 119, 6, 0.28), transparent 65%), linear-gradient(rgba(28, 15, 6, 0.94), rgba(10, 5, 2, 0.98));
+}
+body[data-tema="invierno"] {
+    --oro-real: #38bdf8;
+    --oro-brillante: #bae6fd;
+    --sangre-real: #0369a1;
+    --tema-fondo-base: #071524;
+    --tema-fondo-grad: radial-gradient(circle at 50% 15%, rgba(56, 189, 248, 0.25), transparent 60%), linear-gradient(rgba(7, 21, 36, 0.94), rgba(3, 8, 15, 0.98));
+}
+body[data-tema="nieve"] {
+    --oro-real: #cbd5e1;
+    --oro-brillante: #ffffff;
+    --sangre-real: #475569;
+    --tema-fondo-base: #0b111a;
+    --tema-fondo-grad: radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.2), transparent 50%), linear-gradient(rgba(15, 23, 42, 0.94), rgba(5, 8, 15, 0.98));
+}
+body[data-tema="sol"] {
+    --oro-real: #eab308;
+    --oro-brillante: #fef08a;
+    --sangre-real: #ca8a04;
+    --tema-fondo-base: #1f1a05;
+    --tema-fondo-grad: radial-gradient(circle at 50% 0%, rgba(234, 179, 8, 0.35), transparent 65%), linear-gradient(rgba(25, 20, 5, 0.92), rgba(10, 8, 2, 0.98));
+}
+body[data-tema="lluvia"] {
+    --oro-real: #60a5fa;
+    --oro-brillante: #93c5fd;
+    --sangre-real: #1d4ed8;
+    --tema-fondo-base: #0b1526;
+    --tema-fondo-grad: linear-gradient(180deg, rgba(15, 28, 50, 0.94), rgba(5, 10, 20, 0.98));
+}
+body[data-tema="viento"] {
+    --oro-real: #2dd4bf;
+    --oro-brillante: #5eead4;
+    --sangre-real: #0f766e;
+    --tema-fondo-base: #061917;
+    --tema-fondo-grad: radial-gradient(ellipse at 20% 50%, rgba(45, 212, 191, 0.22), transparent 60%), linear-gradient(rgba(8, 28, 25, 0.94), rgba(3, 10, 9, 0.98));
+}
+body[data-tema="vacaciones"] {
+    --oro-real: #06b6d4;
+    --oro-brillante: #67e8f9;
+    --sangre-real: #f97316;
+    --tema-fondo-base: #051a24;
+    --tema-fondo-grad: radial-gradient(circle at 70% 20%, rgba(6, 182, 212, 0.28), transparent 60%), linear-gradient(rgba(8, 30, 42, 0.92), rgba(2, 10, 15, 0.98));
+}
+body[data-tema="sanvalentin"] {
+    --oro-real: #f43f5e;
+    --oro-brillante: #fda4af;
+    --sangre-real: #be123c;
+    --tema-fondo-base: #1f070e;
+    --tema-fondo-grad: radial-gradient(circle at 50% 20%, rgba(244, 63, 94, 0.3), transparent 60%), linear-gradient(rgba(30, 8, 15, 0.94), rgba(12, 3, 6, 0.98));
+}
+body[data-tema="fiestafinal"] {
+    --oro-real: #eab308;
+    --oro-brillante: #fde047;
+    --sangre-real: #7e22ce;
+    --tema-fondo-base: #180829;
+    --tema-fondo-grad: radial-gradient(circle at 50% 15%, rgba(234, 179, 8, 0.3), transparent 60%), radial-gradient(circle at 80% 80%, rgba(126, 34, 206, 0.28), transparent 50%), linear-gradient(rgba(20, 8, 35, 0.94), rgba(8, 2, 15, 0.98));
+}
+body[data-tema="inauguracion"] {
+    --oro-real: #d4af37;
+    --oro-brillante: #ffffff;
+    --sangre-real: #1e3a8a;
+    --tema-fondo-base: #0a1124;
+    --tema-fondo-grad: radial-gradient(circle at 50% 10%, rgba(212, 175, 55, 0.32), transparent 65%), linear-gradient(rgba(10, 18, 38, 0.94), rgba(3, 6, 15, 0.98));
+}
+body[data-tema="olimpiadasverano"] {
+    --oro-real: #f59e0b;
+    --oro-brillante: #22c55e;
+    --sangre-real: #ef4444;
+    --tema-fondo-base: #0d1829;
+    --tema-fondo-grad: radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.25), transparent 50%), radial-gradient(circle at 70% 30%, rgba(239, 68, 68, 0.25), transparent 50%), linear-gradient(rgba(10, 20, 35, 0.95), rgba(3, 8, 15, 0.98));
+}
+body[data-tema="olimpiadasinvierno"] {
+    --oro-real: #38bdf8;
+    --oro-brillante: #e0f2fe;
+    --sangre-real: #1e40af;
+    --tema-fondo-base: #061326;
+    --tema-fondo-grad: radial-gradient(circle at 50% 15%, rgba(56, 189, 248, 0.3), transparent 60%), linear-gradient(rgba(6, 20, 40, 0.95), rgba(2, 6, 15, 0.98));
+}
+body[data-tema="baile"] {
+    --oro-real: #c084fc;
+    --oro-brillante: #f0abfc;
+    --sangre-real: #a21caf;
+    --tema-fondo-base: #170724;
+    --tema-fondo-grad: radial-gradient(circle at 50% 25%, rgba(192, 132, 252, 0.3), transparent 65%), linear-gradient(rgba(22, 8, 35, 0.94), rgba(8, 2, 14, 0.98));
+}
+body[data-tema="cine"] {
+    --oro-real: #fbbf24;
+    --oro-brillante: #fef08a;
+    --sangre-real: #991b1b;
+    --tema-fondo-base: #0a0a0a;
+    --tema-fondo-grad: radial-gradient(ellipse at 50% 0%, rgba(251, 191, 36, 0.25), transparent 60%), linear-gradient(180deg, #141414 0%, #050505 100%);
+}
+body[data-tema="teatro"] {
+    --oro-real: #d4af37;
+    --oro-brillante: #fef08a;
+    --sangre-real: #881337;
+    --tema-fondo-base: #1c050e;
+    --tema-fondo-grad: radial-gradient(ellipse at 50% 10%, rgba(136, 19, 55, 0.35), transparent 65%), linear-gradient(rgba(28, 5, 14, 0.94), rgba(10, 2, 5, 0.98));
+}
+body[data-tema="restauracion"] {
+    --oro-real: #d97706;
+    --oro-brillante: #fde68a;
+    --sangre-real: #b45309;
+    --tema-fondo-base: #1c1005;
+    --tema-fondo-grad: radial-gradient(circle at 50% 20%, rgba(217, 119, 6, 0.28), transparent 65%), linear-gradient(rgba(26, 15, 6, 0.94), rgba(8, 4, 1, 0.98));
+}
+body[data-tema="congreso"] {
+    --oro-real: #3b82f6;
+    --oro-brillante: #93c5fd;
+    --sangre-real: #1e3a8a;
+    --tema-fondo-base: #0a1124;
+    --tema-fondo-grad: radial-gradient(ellipse at 50% 15%, rgba(59, 130, 246, 0.25), transparent 60%), linear-gradient(rgba(10, 18, 38, 0.95), rgba(3, 6, 14, 0.98));
+}
+body[data-tema="eventooficial"] {
+    --oro-real: #d4af37;
+    --oro-brillante: #fef08a;
+    --sangre-real: #1e293b;
+    --tema-fondo-base: #0f172a;
+    --tema-fondo-grad: radial-gradient(ellipse at 50% 15%, rgba(212, 175, 55, 0.28), transparent 60%), linear-gradient(rgba(15, 23, 42, 0.95), rgba(4, 7, 15, 0.98));
+}
+body[data-tema="burocratico"] {
+    --oro-real: #94a3b8;
+    --oro-brillante: #e2e8f0;
+    --sangre-real: #334155;
+    --tema-fondo-base: #0f141c;
+    --tema-fondo-grad: linear-gradient(180deg, rgba(20, 28, 40, 0.94), rgba(6, 10, 15, 0.98));
+}
+

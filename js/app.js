@@ -10365,6 +10365,137 @@ function cerrarBotxitrono() {
 window.abrirBotxitrono = abrirBotxitrono;
 window.cerrarBotxitrono = cerrarBotxitrono;
 
+/* ==========================================================================
+   GESTIÓN Y APLICACIÓN DE TEMAS VISUALES DEL REINO
+   ========================================================================== */
+
+const LS_TEMA_ACTIVO = 'lokitrono_tema_activo';
+const LS_TEMAS_CUSTOM = 'lokitrono_temas_personalizados';
+
+function aplicarTemaVisual(idTema) {
+    if (!idTema || idTema === 'predeterminado') {
+        document.body.removeAttribute('data-tema');
+        document.body.classList.remove('tema-personalizado');
+        document.body.style.removeProperty('--oro-real');
+        document.body.style.removeProperty('--oro-brillante');
+        document.body.style.removeProperty('--tema-fondo-base');
+        try { localStorage.removeItem(LS_TEMA_ACTIVO); } catch (_) {}
+        const sel = document.getElementById('selector-tema-visual');
+        if (sel && sel.value !== 'predeterminado') sel.value = 'predeterminado';
+        return;
+    }
+
+    // Verificar si es un tema creado a medida
+    let temasCustom = [];
+    try {
+        const guardados = localStorage.getItem(LS_TEMAS_CUSTOM);
+        temasCustom = guardados ? JSON.parse(guardados) : [];
+    } catch (_) {}
+
+    const custom = temasCustom.find(t => t.id === idTema);
+    if (custom) {
+        document.body.setAttribute('data-tema', 'custom');
+        document.body.classList.add('tema-personalizado');
+        document.body.style.setProperty('--oro-real', custom.colorOro || '#d4af37');
+        document.body.style.setProperty('--oro-brillante', custom.colorBrillante || '#f59e0b');
+        document.body.style.setProperty('--tema-fondo-base', custom.colorFondo || '#050505');
+        document.body.style.setProperty('--tema-fondo-grad', `linear-gradient(${custom.colorFondo || '#050505'}, rgba(5, 5, 5, 0.96))`);
+    } else {
+        document.body.setAttribute('data-tema', idTema);
+        document.body.classList.add('tema-personalizado');
+        document.body.style.removeProperty('--oro-real');
+        document.body.style.removeProperty('--oro-brillante');
+        document.body.style.removeProperty('--tema-fondo-base');
+        document.body.style.removeProperty('--tema-fondo-grad');
+    }
+
+    try { localStorage.setItem(LS_TEMA_ACTIVO, idTema); } catch (_) {}
+    const sel = document.getElementById('selector-tema-visual');
+    if (sel && sel.value !== idTema) sel.value = idTema;
+}
+window.aplicarTemaVisual = aplicarTemaVisual;
+
+function restablecerTemaPredeterminado() {
+    aplicarTemaVisual('predeterminado');
+}
+window.restablecerTemaPredeterminado = restablecerTemaPredeterminado;
+
+function crearNuevoTemaPersonalizado() {
+    const nombreInput = document.getElementById('nuevo-tema-nombre');
+    const colorOro = document.getElementById('nuevo-tema-color-oro')?.value || '#d4af37';
+    const colorBrillante = document.getElementById('nuevo-tema-color-brillante')?.value || '#f59e0b';
+    const colorFondo = document.getElementById('nuevo-tema-color-fondo')?.value || '#050505';
+    const feedback = document.getElementById('estado-nuevo-tema');
+
+    const nombre = (nombreInput && nombreInput.value.trim()) || '';
+    if (!nombre) {
+        alert('Por favor indica un nombre para el nuevo tema.');
+        return;
+    }
+
+    const idTema = 'custom_' + Date.now();
+    const nuevoTema = {
+        id: idTema,
+        nombre: nombre,
+        colorOro,
+        colorBrillante,
+        colorFondo,
+        creadoEn: new Date().toISOString()
+    };
+
+    let temasCustom = [];
+    try {
+        const guardados = localStorage.getItem(LS_TEMAS_CUSTOM);
+        temasCustom = guardados ? JSON.parse(guardados) : [];
+    } catch (_) {}
+
+    temasCustom.push(nuevoTema);
+    try {
+        localStorage.setItem(LS_TEMAS_CUSTOM, JSON.stringify(temasCustom));
+    } catch (_) {}
+
+    poblarTemasPersonalizados();
+    aplicarTemaVisual(idTema);
+
+    if (feedback) {
+        feedback.textContent = `✨ Tema "${nombre}" guardado y aplicado con éxito.`;
+    }
+    if (nombreInput) nombreInput.value = '';
+}
+window.crearNuevoTemaPersonalizado = crearNuevoTemaPersonalizado;
+
+function poblarTemasPersonalizados() {
+    const optgroup = document.getElementById('optgroup-temas-custom');
+    if (!optgroup) return;
+
+    let temasCustom = [];
+    try {
+        const guardados = localStorage.getItem(LS_TEMAS_CUSTOM);
+        temasCustom = guardados ? JSON.parse(guardados) : [];
+    } catch (_) {}
+
+    if (temasCustom.length === 0) {
+        optgroup.innerHTML = '<option disabled>Sin temas personalizados aún</option>';
+        return;
+    }
+
+    optgroup.innerHTML = temasCustom.map(t =>
+        `<option value="${t.id}">✨ ${t.nombre}</option>`
+    ).join('');
+}
+
+function inicializarTemasDelReino() {
+    poblarTemasPersonalizados();
+    let temaGuardado = null;
+    try {
+        temaGuardado = localStorage.getItem(LS_TEMA_ACTIVO);
+    } catch (_) {}
+    if (temaGuardado) {
+        aplicarTemaVisual(temaGuardado);
+    }
+}
+document.addEventListener('DOMContentLoaded', inicializarTemasDelReino);
+
 
 
 

@@ -290,6 +290,40 @@ assert(supabaseJsContent.includes('haVotadoCasa'), 'Validador haVotadoCasa() de 
 assert(appJsContent.includes('exportarRepositorioCSV'), 'Exportación de votos a CSV implementada');
 
 // -----------------------------------------------------------------------------
+// PASO 12: VERIFICACIÓN DE EL PAPIRO DEL NORTE
+// -----------------------------------------------------------------------------
+console.log('\n📜 PASO 12: Verificación de El Papiro del Norte...');
+const blogMigrationContent = fs.readFileSync(path.join(ROOT_DIR, 'sql/migrations/202611130001_blog_del_reino.sql'), 'utf-8');
+const papiroMigrationContent = fs.readFileSync(path.join(ROOT_DIR, 'sql/migrations/202611130002_papiro_del_norte_categorias.sql'), 'utf-8');
+assert(indexHtmlContent.includes('value="pestana-blog"'), 'El Papiro del Norte está disponible en el Menú de Maestres');
+assert(indexHtmlContent.includes('El Papiro del Norte'), 'El blog se muestra con el nombre El Papiro del Norte');
+assert(/<option value="pestana-inicio"[^>]*>[^<]*<\/option>\s*<option value="pestana-blog"/.test(indexHtmlContent), 'El Papiro del Norte aparece justo después de Inicio en el menú');
+assert(indexHtmlContent.includes('value="pestana-blog-editor"'), 'El Editor del Papiro está disponible en Administración');
+assert(indexHtmlContent.includes('id="pestana-blog"') && indexHtmlContent.includes('id="pestana-blog-editor"'), 'Las secciones pública y de edición de El Papiro del Norte existen en el DOM');
+assert(indexHtmlContent.includes('id="grid-blog-posts"') && indexHtmlContent.includes('id="grid-blog-admin"'), 'El Papiro del Norte tiene listados público y administrativo separados');
+assert(indexHtmlContent.includes('id="form-blog-post"') && indexHtmlContent.includes('id="blog-btn-guardar"'), 'El editor de El Papiro del Norte conserva su formulario de publicación');
+assert(indexHtmlContent.includes('id="blog-categoria"'), 'El editor permite clasificar los artículos por categoría');
+assert(indexHtmlContent.includes('id="panel-oraculo-papiro"') && indexHtmlContent.includes('id="btn-generar-cronica-editor"'), 'El editor incluye el Oráculo Imperial y su Generador de Crónicas del Reino');
+assert(appJsContent.includes("from('blog_posts')"), 'La app carga las crónicas desde la tabla blog_posts de Supabase');
+assert(appJsContent.includes('guardar_blog_post_admin') && appJsContent.includes('eliminar_blog_post_admin'), 'La app usa las RPC administrativas de El Papiro del Norte');
+assert(appJsContent.includes('STORAGE_KEY_BLOG'), 'El Papiro del Norte mantiene una copia local como respaldo sin conexión');
+assert(appJsContent.includes('CATEGORIAS_BLOG'), 'La app define las categorías editoriales de El Papiro del Norte');
+assert(appJsContent.includes('generarCronicaOraculoEditor'), 'El editor invoca al Oráculo Imperial para generar crónicas');
+assert(appJsContent.includes('usarCronicaGeneradaEnEditor'), 'El texto del Oráculo puede volcarse al formulario de la crónica');
+const pestanasAdminMatch = appJsContent.match(/const PESTANAS_ADMIN = \[([^\]]+)\];/);
+const pestanasAdmin = pestanasAdminMatch ? pestanasAdminMatch[1] : '';
+assert(pestanasAdmin.includes("'pestana-blog-editor'"), 'El editor de El Papiro del Norte está protegido como pestaña administrativa');
+assert(!/'pestana-blog'/.test(pestanasAdmin), 'La lectura de El Papiro del Norte no está restringida a la administración');
+assert(blogMigrationContent.includes('CREATE TABLE IF NOT EXISTS public.blog_posts'), 'La migración crea la tabla blog_posts');
+assert(blogMigrationContent.includes('blog_posts_lectura_publica'), 'La migración permite la lectura pública de El Papiro del Norte');
+assert(blogMigrationContent.includes('FUNCTION public.guardar_blog_post_admin'), 'La migración define la RPC de publicación de crónicas');
+assert(blogMigrationContent.includes('FUNCTION public.eliminar_blog_post_admin'), 'La migración define la RPC de eliminación de crónicas');
+assert(blogMigrationContent.includes("v_actor.role NOT IN ('master', 'superadmin')"), 'Solo master y superadmin pueden escribir en El Papiro del Norte');
+assert(papiroMigrationContent.includes('ADD COLUMN IF NOT EXISTS categoria'), 'La migración añade la categoría a las crónicas');
+assert(papiroMigrationContent.includes('blog_posts_categoria_check'), 'La migración valida las categorías permitidas');
+assert(papiroMigrationContent.includes('v_guardado.categoria'), 'La RPC guarda y devuelve la categoría de la crónica');
+
+// -----------------------------------------------------------------------------
 // RESUMEN FINAL
 // -----------------------------------------------------------------------------
 console.log('\n================================================================');

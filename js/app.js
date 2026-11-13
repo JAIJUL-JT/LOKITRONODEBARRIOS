@@ -161,7 +161,7 @@ function setCurrentUser(user) {
     localStorage.setItem(STORAGE_KEYS.usuarioActual, JSON.stringify(user || null));
 }
 
-const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-oraculo-ia', 'pestana-locales-promocion', 'pestana-locales-evento', 'pestana-estadisticas', 'pestana-blog', 'pestana-geografia'];
+const PESTANAS_ADMIN = ['pestana-generar-evento', 'tab-superadmin', 'pestana-usuarios', 'pestana-barrios', 'pestana-oraculo-ia', 'pestana-locales-promocion', 'pestana-locales-evento', 'pestana-estadisticas', 'pestana-blog-editor', 'pestana-geografia'];
 
 /* ==========================================
    FIN DEL JUEGO: ESTADO, PROTECCIÓN Y BLOQUEO
@@ -331,7 +331,7 @@ function aplicarFinDeJuegoUI() {
 function aplicarRestriccionNavegacionFinJuego() {
     const usuario = getCurrentUser();
     const restringido = restriccionFinDeJuegoActiva() && !(usuario && puedeAdministrar(usuario.role));
-    const permitidas = ['pestana-inicio', 'pestana-clasificacion', 'tab-calendario'];
+    const permitidas = ['pestana-inicio', 'pestana-clasificacion', 'tab-calendario', 'pestana-blog'];
     const select = document.getElementById('select-seccion-corte');
     if (select) {
         Array.from(select.options).forEach(opt => {
@@ -381,6 +381,11 @@ function cambiarPestana(valor) {
     if (esEstadisticas && !(esSuperadmin || esMaster)) {
         valor = 'pestana-clasificacion';
     }
+    // El editor del blog es exclusivo de la administración, también por data-tab.
+    const esBlogEditor = valor === 'pestana-blog-editor' || valor === 'tab-blog-editor';
+    if (esBlogEditor && !esSuperadmin) {
+        valor = 'pestana-clasificacion';
+    }
     if (!esSuperadmin && PESTANAS_ADMIN.includes(valor)) {
         if (!(valor === 'pestana-sorteo-eventos' && esGestorSorteo)) {
             valor = 'pestana-clasificacion';
@@ -393,7 +398,8 @@ function cambiarPestana(valor) {
     }
     // Con el juego concluido, los roles no administradores solo ven Clasificación y Calendario.
     if (!esSuperadmin && typeof restriccionFinDeJuegoActiva === 'function' && restriccionFinDeJuegoActiva()
-        && valor !== 'pestana-inicio' && valor !== 'pestana-clasificacion' && valor !== 'tab-calendario') {
+        && valor !== 'pestana-inicio' && valor !== 'pestana-clasificacion' && valor !== 'tab-calendario'
+        && valor !== 'pestana-blog' && valor !== 'tab-blog') {
         valor = 'pestana-inicio';
     }
     if (esLocalesPromocion && esMaster && typeof cargarLocalesPromocion === 'function') {
@@ -420,8 +426,9 @@ function cambiarPestana(valor) {
         if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
         if (typeof renderPasaporteMaestre === 'function') renderPasaporteMaestre();
     }
-    // Renderiza el Blog al abrir la pestaña.
-    if (valor === 'pestana-blog' || valor === 'tab-blog') {
+    // Renderiza el Blog (lectura para maestres y editor para administración).
+    if (valor === 'pestana-blog' || valor === 'tab-blog'
+        || valor === 'pestana-blog-editor' || valor === 'tab-blog-editor') {
         if (typeof renderBlogPosts === 'function') renderBlogPosts();
     }
     if (typeof sincronizarEstadoMenuHamburguesa === 'function') {
@@ -3447,7 +3454,7 @@ function renderEventosGeneradosPestanaAdmin() {
     container.innerHTML = eventos.map(evt => {
         const estadoVot = obtenerEstadoVotacionEvento(evt);
         return `
-            <div class="card-item" style="border: 1px solid var(--oro-real); background: rgba(20, 15, 10, 0.9);">
+            <div class="card-item" style="border: 1px solid var(--oro-real); background: rgba(20, 15, 10, 0.9); display: flex; flex-direction: column;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <span class="pill-user" style="background: rgba(185,28,28,0.8); color: #fff; font-weight: bold; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem;">
                         🏰 ${evt.barrio || 'Reino'}
@@ -3462,7 +3469,7 @@ function renderEventosGeneradosPestanaAdmin() {
                     🗳️ <strong>Tipo:</strong> Con votación · ⏰ ${estadoVot.horaInicio} a ${estadoVot.horaFin} hs (${estadoVot.texto})
                 </p>`}
                 ${construirGaleriaMediaEvento(evt)}
-                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; padding-top: 10px;">
                     <button onclick="editarEventoBarrioDesdePestana('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: #2563eb; flex: 1;">✏️ Editar</button>
                     ${evt.tiene_votacion === false ? '' : `<button onclick="toggleCerrarVotacionEvento('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: ${evt.cerrado_manualmente ? '#166534' : '#d97706'}; flex: 1.2;">
                         ${evt.cerrado_manualmente ? '🟢 Abrir' : '🔒 Cerrar'}
@@ -5626,6 +5633,22 @@ function initApp() {
     if (fecha && !fecha.value) {
         fecha.value = '2026-10-20T20:30';
     }
+
+    // Enrutamiento directo por Hash (#pestana-xxx o #tab-xxx) para SEO, marcadores y navegación directa
+    if (window.location.hash) {
+        const hashTarget = window.location.hash.replace('#', '').trim();
+        if (hashTarget) {
+            setTimeout(() => {
+                if (typeof cambiarPestana === 'function') cambiarPestana(hashTarget);
+            }, 100);
+        }
+    }
+    window.addEventListener('hashchange', () => {
+        const hashTarget = window.location.hash.replace('#', '').trim();
+        if (hashTarget && typeof cambiarPestana === 'function') {
+            cambiarPestana(hashTarget);
+        }
+    });
 }
 
 
@@ -9559,16 +9582,47 @@ window.ocultarPasoRecuperarPIN = ocultarPasoRecuperarPIN;
 window.solicitarNuevoPIN = solicitarNuevoPIN;
 
 // ============================================================================
-// BLOG DEL REINO — CRÓNICAS Y ANUNCIOS OFICIALES
+// EL PAPIRO DEL NORTE — CRÓNICAS Y ANUNCIOS OFICIALES
 // ============================================================================
 
 const STORAGE_KEY_BLOG = 'lokitrono_blog_posts';
 
-function obtenerBlogPosts() {
+const CATEGORIAS_BLOG = {
+    cronica: '📜 Crónica',
+    anuncio: '📣 Anuncio',
+    bando: '👑 Bando',
+    evento: '🗓️ Evento',
+    entrevista: '🎙️ Entrevista',
+    receta: '🍷 Receta',
+    otro: '✨ Otro'
+};
+
+function etiquetaCategoriaBlog(categoria) {
+    return CATEGORIAS_BLOG[categoria] || CATEGORIAS_BLOG.otro;
+}
+
+let blogPostsCache = null;
+
+function normalizarBlogPost(post) {
+    if (!post) return null;
+    const categoria = String(post.categoria || 'cronica');
+    return {
+        id: String(post.id || ''),
+        titulo: String(post.titulo || ''),
+        fecha: String(post.fecha || '').slice(0, 10),
+        categoria: CATEGORIAS_BLOG[categoria] ? categoria : 'otro',
+        contenido: String(post.contenido || ''),
+        autor: String(post.autor || 'Cronista del Reino'),
+        fechaCreacion: post.fechaCreacion || post.created_at || '',
+        actualizadoEn: post.actualizadoEn || post.updated_at || ''
+    };
+}
+
+function obtenerBlogPostsLocal() {
     try {
         const raw = localStorage.getItem(STORAGE_KEY_BLOG);
         const posts = raw ? JSON.parse(raw) : [];
-        return Array.isArray(posts) ? posts : [];
+        return Array.isArray(posts) ? posts.map(normalizarBlogPost).filter(Boolean) : [];
     } catch (_) {
         return [];
     }
@@ -9580,46 +9634,83 @@ function guardarBlogPostsLocal(posts) {
     } catch (_) { /* sin localStorage */ }
 }
 
-function renderBlogPosts() {
-    const contenedor = document.getElementById('grid-blog-posts');
-    const estado = document.getElementById('blog-estado');
-    const form = document.getElementById('form-blog-post');
-    const btnGuardar = document.getElementById('blog-btn-guardar');
-    const btnNuevo = document.getElementById('blog-btn-nuevo');
-    const btnEliminar = document.getElementById('blog-btn-eliminar');
-    const idEdit = document.getElementById('blog-post-id');
+function ordenarBlogPosts(posts) {
+    return posts.slice().sort((a, b) => {
+        const porFecha = new Date(b.fecha || 0) - new Date(a.fecha || 0);
+        if (porFecha !== 0) return porFecha;
+        return String(b.fechaCreacion || '').localeCompare(String(a.fechaCreacion || ''));
+    });
+}
 
+async function cargarBlogPosts() {
+    const locales = ordenarBlogPosts(obtenerBlogPostsLocal());
+    const client = typeof getSupabaseBarriosClient === 'function' ? getSupabaseBarriosClient() : null;
+    if (!client) {
+        blogPostsCache = locales;
+        return locales;
+    }
+
+    try {
+        const { data, error } = await client
+            .from('blog_posts')
+            .select('id, titulo, fecha, categoria, contenido, autor, created_at, updated_at')
+            .order('fecha', { ascending: false })
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const remotos = ordenarBlogPosts((Array.isArray(data) ? data : [])
+            .map(normalizarBlogPost)
+            .filter(Boolean));
+
+        blogPostsCache = remotos;
+        guardarBlogPostsLocal(remotos);
+        return remotos;
+    } catch (error) {
+        console.warn('No se pudo cargar el blog desde Supabase; se usa la copia local.', error);
+        blogPostsCache = locales;
+        return locales;
+    }
+}
+
+function formatearFechaBlog(fecha) {
+    if (!fecha) return 'Sin fecha';
+    const d = new Date(`${fecha}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return fecha;
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function tarjetaBlog(post, conAcciones) {
+    const idSeguro = String(post.id).replace(/'/g, "\\'");
+    const contenido = escaparHTML(post.contenido).replace(/\n/g, '<br>');
+    const acciones = conAcciones ? `
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn-cuervo" style="padding:4px 10px;font-size:0.8rem;background:#44403c;" onclick="editarBlogPost('${idSeguro}')">✏️ Editar</button>
+                    <button type="button" class="btn-cuervo" style="padding:4px 10px;font-size:0.8rem;background:#7f1d1d;" onclick="eliminarBlogPost('${idSeguro}')">🗑️ Eliminar</button>
+                </div>` : '';
+
+    return `
+            <article class="blog-post-card" style="background:rgba(15,23,42,0.6);border:1px solid var(--oro-real);border-radius:10px;padding:16px;margin-bottom:16px;">
+                <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:0 0 6px;font-size:1.1rem;">${escaparHTML(post.titulo)}</h4>
+                <div style="color:#d6d3d1;font-size:0.8rem;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="background:rgba(67,56,202,0.35);color:#c7d2fe;padding:2px 8px;border-radius:10px;font-size:0.75rem;">${escaparHTML(etiquetaCategoriaBlog(post.categoria))}</span>
+                    <span style="font-weight:bold;">📅 ${escaparHTML(formatearFechaBlog(post.fecha))}</span>
+                    ${post.autor ? ' · ✍️ ' + escaparHTML(post.autor) : ''}
+                </div>
+                <div style="color:#e5e7eb;font-size:0.9rem;line-height:1.5;margin-bottom:10px;">${contenido}</div>
+                ${acciones}
+            </article>`;
+}
+
+function renderBlogPublico(posts) {
+    const contenedor = document.getElementById('grid-blog-posts');
+    const estado = document.getElementById('blog-publico-estado');
     if (!contenedor) return;
 
-    const posts = obtenerBlogPosts().slice().sort((a, b) => {
-        return new Date(b.fecha || 0) - new Date(a.fecha || 0);
-    });
-
-    // Estado del formulario (edición vs nueva)
-    const editId = idEdit ? idEdit.value : '';
-    const enEdicion = !!editId;
-    if (btnGuardar) btnGuardar.textContent = enEdicion ? '💾 Actualizar Crónica' : '💾 Publicar Crónica';
-    if (btnEliminar) btnEliminar.style.display = enEdicion ? '' : 'none';
-    if (btnNuevo) btnNuevo.style.display = enEdicion ? 'inline-block' : 'inline-block';
-
-    if (posts.length === 0) {
-        contenedor.innerHTML = '<p style="color:#a1a1aa;text-align:center;padding:24px;">Aún no hay crónicas publicadas en el reino. Sé el primero en relatar los hechos.</p>';
+    if (!posts.length) {
+        contenedor.innerHTML = '<p style="color:#a1a1aa;text-align:center;padding:24px;">Aún no hay crónicas publicadas en el reino. Vuelve pronto para leer las noticias de la corte.</p>';
     } else {
-        contenedor.innerHTML = posts.map(post => `
-            <article class="blog-post-card" style="background:rgba(15,23,42,0.6);border:1px solid var(--oro-real);border-radius:10px;padding:16px;margin-bottom:16px;position:relative;">
-                <div style="position:absolute;top:-10px;left:16px;background:#7f1d1d;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:bold;">${post.veces || 1}</div>
-                <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:0 0 6px;font-size:1.1rem;">${escaparHTML(post.titulo)}</h4>
-                <div style="color:#d6d3d1;font-size:0.8rem;margin-bottom:8px;">
-                    <span style="font-weight:bold;">${escaparHTML(post.fecha || 'Sin fecha')}</span>
-                    ${post.autor ? ' · ' + escaparHTML(post.autor) : ''}
-                </div>
-                <div style="color:#e5e7eb;font-size:0.9rem;line-height:1.5;margin-bottom:10px;">${escaparHTML(post.contenido)}</div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <button type="button" class="btn-cuervo" style="padding:4px 10px;font-size:0.8rem;background:#44403c;" onclick="editarBlogPost('${String(post.id).replace(/'/g, "\\'")}')">✏️ Editar</button>
-                    <button type="button" class="btn-cuervo" style="padding:4px 10px;font-size:0.8rem;background:#7f1d1d;" onclick="eliminarBlogPost('${String(post.id).replace(/'/g, "\\'")}')">🗑️ Eliminar</button>
-                </div>
-            </article>
-        `).join('');
+        contenedor.innerHTML = posts.map(post => tarjetaBlog(post, false)).join('');
     }
 
     if (estado) {
@@ -9627,86 +9718,186 @@ function renderBlogPosts() {
     }
 }
 
-function guardarBlogPost(event) {
+function renderBlogAdmin(posts) {
+    const contenedor = document.getElementById('grid-blog-admin');
+    const estado = document.getElementById('blog-estado');
+    if (!contenedor) return;
+
+    if (!posts.length) {
+        contenedor.innerHTML = '<p style="color:#a1a1aa;text-align:center;padding:24px;">Aún no hay crónicas publicadas. Crea la primera con el formulario de arriba.</p>';
+    } else {
+        contenedor.innerHTML = posts.map(post => tarjetaBlog(post, true)).join('');
+    }
+
+    if (estado) {
+        estado.textContent = `${posts.length} crónica${posts.length !== 1 ? 's' : ''} publicada${posts.length !== 1 ? 's' : ''} en el reino.`;
+    }
+}
+
+function actualizarBotonEdicionBlog() {
+    const idEdit = document.getElementById('blog-post-id');
+    const btnGuardar = document.getElementById('blog-btn-guardar');
+    const btnEliminar = document.getElementById('blog-btn-eliminar');
+    const enEdicion = !!(idEdit && idEdit.value);
+    if (btnGuardar) btnGuardar.textContent = enEdicion ? '💾 Actualizar Crónica' : '💾 Publicar Crónica';
+    if (btnEliminar) btnEliminar.style.display = enEdicion ? '' : 'none';
+}
+
+async function renderBlogPosts() {
+    const posts = await cargarBlogPosts();
+    renderBlogPublico(posts);
+    renderBlogAdmin(posts);
+    actualizarBotonEdicionBlog();
+    return posts;
+}
+
+function estadoBlog(texto, esError) {
+    const estado = document.getElementById('blog-estado');
+    if (!estado) return;
+    estado.textContent = texto || '';
+    estado.style.color = esError ? '#fca5a5' : '#d6d3d1';
+}
+
+async function guardarBlogPost(event) {
     if (event) event.preventDefault();
 
-    const form = document.getElementById('form-blog-post');
     const idEdit = document.getElementById('blog-post-id');
     const titulo = document.getElementById('blog-titulo');
     const fecha = document.getElementById('blog-fecha');
+    const categoria = document.getElementById('blog-categoria');
     const contenido = document.getElementById('blog-contenido');
     const autor = document.getElementById('blog-autor');
-    const estado = document.getElementById('blog-estado');
 
     if (!titulo || !fecha || !contenido) return;
 
     const t = titulo.value.trim();
     const f = fecha.value.trim();
+    const cat = categoria && CATEGORIAS_BLOG[categoria.value] ? categoria.value : 'cronica';
     const c = contenido.value.trim();
-    const a = autor ? autor.value.trim() : 'Cronista del Reino';
+    const a = (autor ? autor.value.trim() : '') || 'Cronista del Reino';
 
     if (!t || !f || !c) {
-        if (estado) estado.textContent = 'Título, fecha y contenido son obligatorios.';
+        estadoBlog('Título, fecha y contenido son obligatorios.', true);
         return;
     }
 
-    const posts = obtenerBlogPosts();
     const editId = idEdit ? idEdit.value : '';
+    const client = typeof getSupabaseBarriosClient === 'function' ? getSupabaseBarriosClient() : null;
+    const usuario = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
 
+    if (client) {
+        if (!usuario || !usuario.token) {
+            estadoBlog('Inicia sesión como administrador para publicar en El Papiro del Norte.', true);
+            return;
+        }
+        try {
+            const payload = { titulo: t, fecha: f, categoria: cat, contenido: c, autor: a };
+            if (editId) payload.id = editId;
+            const { error } = await client.rpc('guardar_blog_post_admin', {
+                p_token: usuario.token,
+                p_post: payload
+            });
+            if (error) throw error;
+            resetFormBlog();
+            await renderBlogPosts();
+            estadoBlog('Crónica guardada con éxito.');
+            return;
+        } catch (error) {
+            console.error('No se pudo guardar la crónica en Supabase:', error);
+            estadoBlog(`No se pudo guardar la crónica: ${error.message || error}`, true);
+            return;
+        }
+    }
+
+    const posts = obtenerBlogPostsLocal();
     if (editId) {
         const idx = posts.findIndex(p => String(p.id) === String(editId));
         if (idx !== -1) {
-            posts[idx] = { ...posts[idx], titulo: t, fecha: f, contenido: c, autor: a };
+            posts[idx] = { ...posts[idx], titulo: t, fecha: f, categoria: cat, contenido: c, autor: a };
         }
     } else {
-        const nuevoId = 'blog-' + Date.now();
         posts.unshift({
-            id: nuevoId,
+            id: 'blog-' + Date.now(),
             titulo: t,
             fecha: f,
+            categoria: cat,
             contenido: c,
             autor: a,
-            fechaCreacion: new Date().toISOString(),
-            veces: 1
+            fechaCreacion: new Date().toISOString()
         });
     }
-
     guardarBlogPostsLocal(posts);
+    blogPostsCache = ordenarBlogPosts(posts);
     resetFormBlog();
-    renderBlogPosts();
-    if (estado) estado.textContent = 'Crónica publicada con éxito.';
+    renderBlogPublico(blogPostsCache);
+    renderBlogAdmin(blogPostsCache);
+    estadoBlog('Crónica publicada con éxito.');
 }
 
-function eliminarBlogPost(id) {
+async function eliminarBlogPost(id) {
     if (!confirm('¿Estás seguro de eliminar esta crónica del reino?')) return;
-    const posts = obtenerBlogPosts().filter(p => String(p.id) !== String(id));
-    guardarBlogPostsLocal(posts);
-    const idEdit = document.getElementById('blog-post-id');
-    if (idEdit && String(idEdit.value) === String(id)) {
-        resetFormBlog();
+
+    const client = typeof getSupabaseBarriosClient === 'function' ? getSupabaseBarriosClient() : null;
+    const usuario = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+
+    if (client) {
+        if (!usuario || !usuario.token) {
+            estadoBlog('Inicia sesión como administrador para eliminar crónicas de El Papiro del Norte.', true);
+            return;
+        }
+        try {
+            const { error } = await client.rpc('eliminar_blog_post_admin', {
+                p_token: usuario.token,
+                p_id: id
+            });
+            if (error) throw error;
+            const idEdit = document.getElementById('blog-post-id');
+            if (idEdit && String(idEdit.value) === String(id)) resetFormBlog();
+            await renderBlogPosts();
+            estadoBlog('Crónica eliminada del reino.');
+            return;
+        } catch (error) {
+            console.error('No se pudo eliminar la crónica en Supabase:', error);
+            estadoBlog(`No se pudo eliminar la crónica: ${error.message || error}`, true);
+            return;
+        }
     }
-    renderBlogPosts();
+
+    const posts = obtenerBlogPostsLocal().filter(p => String(p.id) !== String(id));
+    guardarBlogPostsLocal(posts);
+    blogPostsCache = ordenarBlogPosts(posts);
+    const idEdit = document.getElementById('blog-post-id');
+    if (idEdit && String(idEdit.value) === String(id)) resetFormBlog();
+    renderBlogPublico(blogPostsCache);
+    renderBlogAdmin(blogPostsCache);
+    estadoBlog('Crónica eliminada del reino.');
 }
 
 function editarBlogPost(id) {
-    const posts = obtenerBlogPosts();
+    const posts = blogPostsCache || obtenerBlogPostsLocal();
     const post = posts.find(p => String(p.id) === String(id));
     if (!post) return;
 
     const idEdit = document.getElementById('blog-post-id');
     const titulo = document.getElementById('blog-titulo');
     const fecha = document.getElementById('blog-fecha');
+    const categoria = document.getElementById('blog-categoria');
     const contenido = document.getElementById('blog-contenido');
     const autor = document.getElementById('blog-autor');
 
     if (idEdit) idEdit.value = post.id;
     if (titulo) titulo.value = post.titulo || '';
     if (fecha) fecha.value = post.fecha || '';
+    if (categoria) categoria.value = CATEGORIAS_BLOG[post.categoria] ? post.categoria : 'otro';
     if (contenido) contenido.value = post.contenido || '';
     if (autor) autor.value = post.autor || '';
 
+    actualizarBotonEdicionBlog();
+    if (typeof activarModoEdicion === 'function') activarModoEdicion('form-blog-post', 'crónica de El Papiro del Norte');
+
     const form = document.getElementById('form-blog-post');
     if (form) form.scrollIntoView({ behavior: 'smooth' });
+    if (titulo && typeof titulo.focus === 'function') titulo.focus();
 }
 
 function resetFormBlog() {
@@ -9714,27 +9905,113 @@ function resetFormBlog() {
     const idEdit = document.getElementById('blog-post-id');
     const titulo = document.getElementById('blog-titulo');
     const fecha = document.getElementById('blog-fecha');
+    const categoria = document.getElementById('blog-categoria');
     const contenido = document.getElementById('blog-contenido');
     const autor = document.getElementById('blog-autor');
 
     if (idEdit) idEdit.value = '';
     if (titulo) titulo.value = '';
-    if (fecha) fecha.value = '';
+    if (fecha) fecha.value = new Date().toISOString().slice(0, 10);
+    if (categoria) categoria.value = 'cronica';
     if (contenido) contenido.value = '';
     if (autor) autor.value = '';
-    if (form) {
-        const btnGuardar = document.getElementById('blog-btn-guardar');
-        if (btnGuardar) btnGuardar.textContent = '💾 Publicar Crónica';
-        const btnEliminar = document.getElementById('blog-btn-eliminar');
-        if (btnEliminar) btnEliminar.style.display = 'none';
+    actualizarBotonEdicionBlog();
+    if (typeof desactivarModoEdicion === 'function') desactivarModoEdicion(form);
+}
+
+async function generarCronicaOraculoEditor() {
+    const btn = document.getElementById('btn-generar-cronica-editor');
+    const btnUsar = document.getElementById('btn-usar-cronica-editor');
+    const contenedor = document.getElementById('contenedor-resultado-oraculo-editor');
+    const salida = document.getElementById('salida-oraculo-editor');
+    const badge = document.getElementById('badge-modelo-usado-editor');
+    const tonoSelect = document.getElementById('select-tono-cronica-editor');
+    const modeloSelect = document.getElementById('select-modelo-oraculo-editor');
+    const tono = tonoSelect ? tonoSelect.value : 'epico';
+    const modelo = modeloSelect && modeloSelect.value
+        ? modeloSelect.value
+        : (localStorage.getItem('oraculo_modelo') || ORACULO_MODELO_DEFECTO);
+
+    if (btn) btn.disabled = true;
+    if (btnUsar) btnUsar.disabled = true;
+    if (salida) salida.textContent = '🔮 Invocando al Oráculo e interpretando los signos del Reino...';
+    if (contenedor) contenedor.style.display = 'block';
+
+    const votos = typeof getRepositorioVotos === 'function' ? getRepositorioVotos() : [];
+    const prompt = `Redacta una crónica medieval feudal sobre el concurso 'El Trono del Pintxo' en Bilbao.
+Tono: ${tono}.
+Total de juicios emitidos por Maestres: ${votos.length}.
+Instrucciones: Incluye referencias medievales a las Casas de Indautxu, Casco Viejo, Deusto, Santutxu y Abando, mencionando el festín, los caminos y el espíritu tabernero. Devuelve solo el texto de la crónica, sin títulos ni comentarios adicionales.`;
+
+    try {
+        const res = await llamarModeloOraculo(prompt, modelo);
+        if (salida) {
+            salida.textContent = res.text;
+            salida.dataset.modelo = res.model;
+            salida.dataset.fuente = res.fuente;
+        }
+        if (badge) badge.textContent = `${res.model} (${res.fuente})`;
+    } catch (error) {
+        if (salida) salida.textContent = `No se pudo invocar al Oráculo: ${error.message || error}`;
+        if (badge) badge.textContent = 'Error';
+    } finally {
+        if (btn) btn.disabled = false;
+        if (btnUsar) btnUsar.disabled = false;
     }
 }
+
+function usarCronicaGeneradaEnEditor() {
+    const salida = document.getElementById('salida-oraculo-editor');
+    const contenido = document.getElementById('blog-contenido');
+    const titulo = document.getElementById('blog-titulo');
+    const categoria = document.getElementById('blog-categoria');
+    if (!salida || !contenido) return;
+
+    const texto = (salida.textContent || '').trim();
+    if (!texto) {
+        estadoBlog('Genera primero una crónica con el Oráculo.', true);
+        return;
+    }
+    if (contenido.value.trim() && !confirm('El contenido actual se reemplazará por la crónica generada. ¿Continuar?')) return;
+
+    contenido.value = texto;
+    if (titulo && !titulo.value.trim()) {
+        const primeraLinea = texto.split('\n').map(linea => linea.trim()).filter(Boolean)[0] || 'Crónica del Oráculo';
+        titulo.value = primeraLinea.replace(/^[#*\s]+/, '').slice(0, 120);
+    }
+    if (categoria && !categoria.value) categoria.value = 'cronica';
+    estadoBlog('Crónica del Oráculo copiada al editor. Revísala y publícala.');
+    if (typeof contenido.focus === 'function') contenido.focus();
+}
+
+// Conecta el formulario y los botones del editor de El Papiro del Norte.
+(function inicializarEditorBlog() {
+    const form = document.getElementById('form-blog-post');
+    if (form) form.addEventListener('submit', guardarBlogPost);
+
+    const btnNuevo = document.getElementById('blog-btn-nuevo');
+    if (btnNuevo) btnNuevo.addEventListener('click', resetFormBlog);
+
+    const btnEliminar = document.getElementById('blog-btn-eliminar');
+    if (btnEliminar) {
+        btnEliminar.addEventListener('click', function () {
+            const idEdit = document.getElementById('blog-post-id');
+            if (idEdit && idEdit.value) eliminarBlogPost(idEdit.value);
+        });
+    }
+
+    const fecha = document.getElementById('blog-fecha');
+    if (fecha && !fecha.value) fecha.value = new Date().toISOString().slice(0, 10);
+    actualizarBotonEdicionBlog();
+})();
 
 window.renderBlogPosts = renderBlogPosts;
 window.guardarBlogPost = guardarBlogPost;
 window.eliminarBlogPost = eliminarBlogPost;
 window.editarBlogPost = editarBlogPost;
 window.resetFormBlog = resetFormBlog;
+window.generarCronicaOraculoEditor = generarCronicaOraculoEditor;
+window.usarCronicaGeneradaEnEditor = usarCronicaGeneradaEnEditor;
 
 /* ==========================================================================
    PRESENTACIÓN OFICIAL INTERACTIVA (CARRUSEL DE LA LANDING DE INICIO)

@@ -1,6 +1,6 @@
 /**
  * 🐉 DRAGONES DE LOKITRONO — VUELO REALISTA
- * Dos dragones (rojo + azul) en silueta atmosférica, con planeo, aleteo
+ * Tres dragones (rojo + verde + blanco) en silueta atmosférica, con planeo, aleteo
  * ocasional, inclinación suave y cola ondulante. Física independiente.
  * Visible en todas las pantallas que carguen este script.
  */
@@ -29,10 +29,15 @@
             wingRoot: '#2a0a0a', wingTip: '#130404', wingFar: '#0b0202',
             bone: '#5a1a1a', rim: '#b91c1c', eye: '#fbbf24'
         },
-        blue: {
-            bodyTop: '#0d1b3a', body: '#07101f', bodyBelly: '#03060d',
-            wingRoot: '#0a1730', wingTip: '#04070d', wingFar: '#02030a',
-            bone: '#1e3a8a', rim: '#3b82f6', eye: '#fde047'
+        green: {
+            bodyTop: '#0d3a1b', body: '#071f0e', bodyBelly: '#030d05',
+            wingRoot: '#0a3015', wingTip: '#040d06', wingFar: '#020a03',
+            bone: '#1a5c2e', rim: '#22c55e', eye: '#fde047'
+        },
+        white: {
+            bodyTop: '#c8c8d0', body: '#e8e8f0', bodyBelly: '#f0f0f8',
+            wingRoot: '#b0b0c0', wingTip: '#d0d0e0', wingFar: '#e0e0f0',
+            bone: '#a0a0b8', rim: '#ffffff', eye: '#fbbf24'
         }
     };
 
@@ -88,7 +93,7 @@
             phase: 0,
             alpha: 0.9
         }),
-        createDragon(PALETTES.blue, {
+        createDragon(PALETTES.green, {
             band: 0.62,
             direction: -1,
             speed: 1.65,
@@ -96,6 +101,15 @@
             baseScale: 0.5,
             phase: Math.PI * 0.6,
             alpha: 0.82
+        }),
+        createDragon(PALETTES.white, {
+            band: 0.45,
+            direction: 1,
+            speed: 1.9,
+            wingPhase: Math.PI * 0.4,
+            baseScale: 0.44,
+            phase: Math.PI * 1.2,
+            alpha: 0.75
         })
     ];
 

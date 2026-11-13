@@ -50,7 +50,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261112">
+    <link rel="stylesheet" href="css/style.css?v=20261113">
     <link rel="stylesheet" href="css/medieval-theme.css?v=20261101">
 
     <link rel="stylesheet" href="css/legal.css">
@@ -81,6 +81,9 @@
                 "name": "LokiTrono de Barrios",
                 "url": "https://lokitronodebarrios.vercel.app/",
                 "logo": "https://lokitronodebarrios.vercel.app/lokilogo.png",
+                "sameAs": [
+                    "https://instagram.com/lokitrono"
+                ],
                 "email": "afjbilbao@gmail.com"
             },
             {
@@ -114,8 +117,8 @@
     <script src="js/legal-config.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261113b" defer></script>
-    <script src="js/dragon.js?v=20261101" defer></script>
+    <script src="js/app.js?v=20261113d" defer></script>
+    <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
 <body>
@@ -186,6 +189,7 @@
             tabindex="-1" aria-hidden="true">
             <optgroup label="📜 Menú de Maestres">
                 <option value="pestana-inicio" data-tab="tab-inicio" selected>🏠 Inicio</option>
+                <option value="pestana-blog" data-tab="tab-blog">📜 El Papiro del Norte</option>
                 <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario</option>
                 <option value="pestana-votacion-barrio" data-tab="tab-votacion-barrio">🗳️ Votar</option>
                 <option value="pestana-clasificacion" data-tab="tab-clasificacion">🏆 Clasificación</option>
@@ -197,6 +201,7 @@
                 <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Gestión Usuarios</option>
                 <option value="pestana-barrios" data-tab="tab-barrios">🏰 Gestión ubicaciones</option>
                 <option value="pestana-estadisticas" id="option-menu-estadisticas" data-tab="tab-estadisticas">📊 Estadísticas</option>
+                <option value="pestana-blog-editor" data-tab="tab-blog-editor">✍️ Editor del Papiro</option>
                 <option value="pestana-generar-evento" data-tab="tab-generar-evento">🗓️ Eventos</option>
                 <option value="tab-superadmin" data-tab="tab-superadmin">⚙️ Configuración</option>
                 <option value="pestana-marketing" data-tab="tab-marketing" id="option-menu-marketing" style="display:none;">📣 Marketing (Promocionar Locales)</option>
@@ -633,7 +638,7 @@
 
             <section id="pestana-generar-evento" class="tab-content tema-corte-admin" data-tab="tab-generar-evento" style="display: none;">
                 <div class="panel-card">
-                    <h2 style="font-family: 'Cinzel', serif; color: var(--oro-real);">📅 Generar y Programar Eventos con Votación</h2>
+                    <h2 style="font-family: 'Cinzel', serif; color: var(--oro-real);">📆 Gestión de eventos</h2>
                     <p style="color: #d6d3d1;">Crea y administra eventos oficiales o de prueba para los distintos barrios del reino, configurando la fecha y hora de inicio y de finalización del evento, el lugar, la descripción y las horas (y fecha de cierre) independientes de votación.</p>
 
                     <div style="background: rgba(30, 24, 16, 0.9); border: 1px solid var(--oro-real); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
@@ -765,6 +770,202 @@
                                 <p id="evento-media-estado" style="font-size: 0.8rem; color: #4ade80; margin: 10px 0 0;"></p>
                             </div>
 
+                            <!-- PIE DE FOTO PERSONALIZADO -->
+                            <div style="background: rgba(45, 35, 20, 0.85); padding: 15px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.4); margin: 15px 0;">
+                                <h4 style="color: var(--oro-brillante); margin: 0 0 10px; font-family: 'Cinzel', serif;">🖼️ Pie de Foto y Galería Extra</h4>
+                                <div class="form-group">
+                                    <label style="font-weight: bold; color: var(--oro-real);">📝 Pie de foto principal (leyenda de imagen):</label>
+                                    <input type="text" id="evento-pie-foto" class="input-medieval" placeholder="Ej: Ruta Gastronómica de Deusto — Barrio ganador 2026">
+                                </div>
+                                <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px;">
+                                    <div class="evento-media-item">
+                                        <label for="evento-media-foto-extra1-file">📷 Foto extra 1</label>
+                                        <input type="file" id="evento-media-foto-extra1-file" class="input-medieval evento-media-file" data-media="foto_extra1" accept="image/png,image/jpeg,image/webp,image/gif">
+                                        <input type="hidden" id="evento-media-foto-extra1-url">
+                                        <div class="evento-media-preview" id="evento-media-foto-extra1-preview"><span class="evento-media-vacio">Sin imagen</span></div>
+                                        <input type="text" id="evento-media-foto-extra1-caption" class="input-medieval" placeholder="Pie de foto..." style="margin-top: 4px; font-size: 0.8rem;">
+                                        <button type="button" class="btn-cuervo evento-media-quitar" onclick="quitarMediaEvento('foto_extra1')">✕ Quitar</button>
+                                    </div>
+                                    <div class="evento-media-item">
+                                        <label for="evento-media-foto-extra2-file">📷 Foto extra 2</label>
+                                        <input type="file" id="evento-media-foto-extra2-file" class="input-medieval evento-media-file" data-media="foto_extra2" accept="image/png,image/jpeg,image/webp,image/gif">
+                                        <input type="hidden" id="evento-media-foto-extra2-url">
+                                        <div class="evento-media-preview" id="evento-media-foto-extra2-preview"><span class="evento-media-vacio">Sin imagen</span></div>
+                                        <input type="text" id="evento-media-foto-extra2-caption" class="input-medieval" placeholder="Pie de foto..." style="margin-top: 4px; font-size: 0.8rem;">
+                                        <button type="button" class="btn-cuervo evento-media-quitar" onclick="quitarMediaEvento('foto_extra2')">✕ Quitar</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TIPO DE EVENTO Y ENTRADAS -->
+                            <div style="background: rgba(20, 30, 50, 0.9); padding: 15px; border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.5); margin: 15px 0;">
+                                <h4 style="color: #93c5fd; margin: 0 0 10px; font-family: 'Cinzel', serif;">🎟️ Modalidades del Evento</h4>
+                                <p style="font-size: 0.8rem; color: #94a3b8; margin: 0 0 12px;">Selecciona una o varias modalidades. Pueden combinarse entre sí.</p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 0.9rem;">
+                                        <input type="checkbox" id="evento-mod-entradas" name="evento-modalidad" value="entradas" style="accent-color: #3b82f6;"> 🎟️ Eventos con entradas
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 0.9rem;">
+                                        <input type="checkbox" id="evento-mod-invitaciones" name="evento-modalidad" value="invitaciones" style="accent-color: #8b5cf6;"> 💌 Eventos con invitaciones
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 0.9rem;">
+                                        <input type="checkbox" id="evento-mod-promocion" name="evento-modalidad" value="promocion_subvencionada" style="accent-color: #22c55e;"> 🏛️ Promoción subvencionada
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 0.9rem;">
+                                        <input type="checkbox" id="evento-mod-gratuito" name="evento-modalidad" value="gratuito" style="accent-color: #f59e0b;"> 🆓 Acceso gratuito
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 0.9rem;">
+                                        <input type="checkbox" id="evento-mod-vip" name="evento-modalidad" value="vip" style="accent-color: #d4af37;"> 👑 Zona VIP
+                                    </label>
+                                </div>
+                                <!-- Opciones personalizables adicionales -->
+                                <div id="evento-modalidades-custom" style="margin-bottom: 10px;"></div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                    <input type="text" id="evento-nueva-modalidad" class="input-medieval" placeholder="Nueva opción personalizada..." style="flex: 1; min-width: 180px; font-size: 0.85rem;">
+                                    <button type="button" class="btn-cuervo" onclick="agregarModalidadEvento()" style="background: #374151; padding: 6px 14px; font-size: 0.82rem;">➕ Añadir opción</button>
+                                </div>
+                            </div>
+
+                            <!-- PANEL GESTIÓN DE ENTRADAS Y COBROS (visible si se selecciona "entradas" o "invitaciones") -->
+                            <div id="panel-gestion-entradas" style="display: none; background: rgba(10, 20, 40, 0.95); padding: 18px; border-radius: 8px; border: 2px solid rgba(59, 130, 246, 0.6); margin: 15px 0;">
+                                <h4 style="color: #60a5fa; margin: 0 0 14px; font-family: 'Cinzel', serif;">🎫 Gestión Completa de Entradas</h4>
+
+                                <!-- Tipos de entrada -->
+                                <div style="margin-bottom: 15px;">
+                                    <label style="font-weight: bold; color: var(--oro-real); display: block; margin-bottom: 6px;">🏷️ Tipos de entrada / invitación:</label>
+                                    <div id="lista-tipos-entrada">
+                                        <div class="tipo-entrada-row" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
+                                            <div class="form-group" style="flex: 2; min-width: 140px; margin: 0;">
+                                                <label style="font-size: 0.78rem; color: #94a3b8;">Nombre</label>
+                                                <input type="text" class="input-medieval entrada-nombre" placeholder="Ej: General / VIP / Infantil" style="font-size: 0.85rem;">
+                                            </div>
+                                            <div class="form-group" style="flex: 1; min-width: 90px; margin: 0;">
+                                                <label style="font-size: 0.78rem; color: #94a3b8;">Precio (€)</label>
+                                                <input type="number" class="input-medieval entrada-precio" placeholder="0.00" min="0" step="0.01" style="font-size: 0.85rem;">
+                                            </div>
+                                            <div class="form-group" style="flex: 1; min-width: 90px; margin: 0;">
+                                                <label style="font-size: 0.78rem; color: #94a3b8;">Aforo</label>
+                                                <input type="number" class="input-medieval entrada-aforo" placeholder="∞" min="0" style="font-size: 0.85rem;">
+                                            </div>
+                                            <div class="form-group" style="flex: 1; min-width: 110px; margin: 0;">
+                                                <label style="font-size: 0.78rem; color: #94a3b8;">Desde</label>
+                                                <input type="date" class="input-medieval entrada-fecha-desde" style="font-size: 0.85rem;">
+                                            </div>
+                                            <div class="form-group" style="flex: 1; min-width: 110px; margin: 0;">
+                                                <label style="font-size: 0.78rem; color: #94a3b8;">Hasta</label>
+                                                <input type="date" class="input-medieval entrada-fecha-hasta" style="font-size: 0.85rem;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn-cuervo" onclick="agregarTipoEntrada()" style="background: #1d4ed8; padding: 5px 12px; font-size: 0.82rem;">➕ Añadir tipo</button>
+                                </div>
+
+                                <!-- Métodos de pago y cobro -->
+                                <div style="margin-bottom: 15px;">
+                                    <label style="font-weight: bold; color: var(--oro-real); display: block; margin-bottom: 8px;">💳 Métodos de pago aceptados:</label>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="pago-efectivo" style="accent-color: #22c55e;"> 💵 Efectivo</label>
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="pago-tarjeta" style="accent-color: #3b82f6;"> 💳 Tarjeta</label>
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="pago-bizum" style="accent-color: #8b5cf6;"> 📱 Bizum</label>
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="pago-transferencia" style="accent-color: #f59e0b;"> 🏦 Transferencia</label>
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="pago-online" style="accent-color: #ec4899;"> 🌐 Pago online</label>
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="pago-en-puerta" style="accent-color: #14b8a6;"> 🚪 En puerta</label>
+                                    </div>
+                                </div>
+
+                                <!-- Datos de pago -->
+                                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px;">
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label style="font-weight: bold; color: var(--oro-real);">📱 Bizum / Teléfono cobro:</label>
+                                        <input type="text" id="evento-bizum-tel" class="input-medieval" placeholder="Ej: 600123456">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label style="font-weight: bold; color: var(--oro-real);">🏦 IBAN (transferencia):</label>
+                                        <input type="text" id="evento-iban" class="input-medieval" placeholder="ES00 0000 0000 0000 0000 0000">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label style="font-weight: bold; color: var(--oro-real);">🌐 URL pago online:</label>
+                                        <input type="url" id="evento-url-pago" class="input-medieval" placeholder="https://...">
+                                    </div>
+                                </div>
+
+                                <!-- Opciones de envío de entradas -->
+                                <div style="margin-bottom: 15px;">
+                                    <label style="font-weight: bold; color: var(--oro-real); display: block; margin-bottom: 8px;">📤 Envío de entradas:</label>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="envio-email" style="accent-color: #3b82f6;"> 📧 Por email</label>
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="envio-whatsapp" style="accent-color: #22c55e;"> 💬 Por WhatsApp</label>
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="envio-qr" style="accent-color: #f59e0b;"> 📲 QR digital</label>
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="envio-impreso" style="accent-color: #94a3b8;"> 🖨️ Impreso físico</label>
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;"><input type="checkbox" id="envio-en-taquilla" style="accent-color: #ec4899;"> 🎪 Recogida en taquilla</label>
+                                    </div>
+                                </div>
+
+                                <!-- Panel contabilidad -->
+                                <div style="background: rgba(15, 25, 50, 0.8); padding: 12px; border-radius: 6px; border: 1px solid rgba(99, 102, 241, 0.4);">
+                                    <h5 style="color: #a5b4fc; margin: 0 0 8px; font-family: 'Cinzel', serif;">📊 Contabilidad del Evento</h5>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                        <div class="form-group" style="flex: 1; min-width: 140px;">
+                                            <label style="font-size: 0.8rem; color: #94a3b8;">💰 Presupuesto total (€)</label>
+                                            <input type="number" id="evento-presupuesto" class="input-medieval" placeholder="0.00" min="0" step="0.01" style="font-size: 0.85rem;">
+                                        </div>
+                                        <div class="form-group" style="flex: 1; min-width: 140px;">
+                                            <label style="font-size: 0.8rem; color: #94a3b8;">🏛️ Subvención recibida (€)</label>
+                                            <input type="number" id="evento-subvencion" class="input-medieval" placeholder="0.00" min="0" step="0.01" style="font-size: 0.85rem;">
+                                        </div>
+                                        <div class="form-group" style="flex: 1; min-width: 140px;">
+                                            <label style="font-size: 0.8rem; color: #94a3b8;">🏷️ Gastos estimados (€)</label>
+                                            <input type="number" id="evento-gastos" class="input-medieval" placeholder="0.00" min="0" step="0.01" style="font-size: 0.85rem;">
+                                        </div>
+                                        <div class="form-group" style="flex: 1; min-width: 140px;">
+                                            <label style="font-size: 0.8rem; color: #94a3b8;">📝 Notas contables</label>
+                                            <input type="text" id="evento-notas-contables" class="input-medieval" placeholder="Ej: Patrocinio Bizkaibus" style="font-size: 0.85rem;">
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 10px; padding: 8px; background: rgba(99, 102, 241, 0.1); border-radius: 4px; font-size: 0.82rem; color: #c7d2fe;">
+                                        📈 Panel de gestión completo disponible en el <strong>Repositorio Central</strong> tras guardar el evento.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- GENERAR QR PARA EVENTO -->
+                            <div style="background: rgba(20, 40, 20, 0.9); padding: 15px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.5); margin: 15px 0;">
+                                <h4 style="color: #4ade80; margin: 0 0 10px; font-family: 'Cinzel', serif;">📲 Generar QR para Evento</h4>
+                                <p style="font-size: 0.8rem; color: #86efac; margin: 0 0 10px;">Genera un código QR único para este evento, para acceso, votación o información.</p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px;">
+                                    <select id="evento-qr-tipo" class="input-medieval" style="flex: 1; min-width: 160px;">
+                                        <option value="acceso">🚪 QR de Acceso</option>
+                                        <option value="votacion">🗳️ QR de Votación</option>
+                                        <option value="info">ℹ️ QR Informativo</option>
+                                        <option value="pago">💳 QR de Pago</option>
+                                        <option value="entrada">🎟️ QR de Entrada</option>
+                                    </select>
+                                    <button type="button" class="btn-cuervo" onclick="generarQREvento()" style="background: #15803d; padding: 8px 18px;">
+                                        📲 Generar QR
+                                    </button>
+                                    <button type="button" class="btn-cuervo" onclick="descargarQREvento()" style="background: #1d4ed8; padding: 8px 14px;">
+                                        ⬇️ Descargar
+                                    </button>
+                                </div>
+                                <div id="evento-qr-preview" style="text-align: center; min-height: 60px; display: flex; align-items: center; justify-content: center; color: #4ade80; font-size: 0.82rem;">
+                                    — QR aparecerá aquí —
+                                </div>
+
+                                <!-- ZONA MAESTRE: ESCANEAR QR Y JUSTIFICANTE (oculta por defecto) -->
+                                <div id="zona-maestre-qr" style="display: none; margin-top: 14px; border-top: 1px solid rgba(34,197,94,0.3); padding-top: 12px;">
+                                    <p style="font-size: 0.78rem; color: #86efac; margin: 0 0 8px;">🔒 Zona exclusiva Maestres:</p>
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <button type="button" class="btn-cuervo" onclick="iniciarScanQR()" style="background: #064e3b; padding: 7px 14px; font-size: 0.85rem;">
+                                            📷 Escanear QR
+                                        </button>
+                                        <button type="button" class="btn-cuervo" onclick="abrirModalJustificante()" style="background: #1e3a5f; padding: 7px 14px; font-size: 0.85rem;">
+                                            🧾 Añadir Justificante / Ticket
+                                        </button>
+                                    </div>
+                                    <div id="scan-qr-resultado" style="margin-top: 8px; font-size: 0.82rem; color: #4ade80;"></div>
+                                </div>
+                            </div>
+
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 <button type="submit" id="btn-guardar-evento-dedicated" class="btn-cuervo" style="flex: 2; background: #15803d;">✨ Generar / Guardar Evento</button>
                                 <button type="button" id="btn-cancelar-evento-dedicated" class="btn-cuervo" style="display: none; flex: 1; background: #44403c;" onclick="resetFormEventoDedicated()">Cancelar Edición</button>
@@ -774,7 +975,7 @@
 
                     <!-- LISTADO DE EVENTOS EXISTENTES CON ACCIONES SUPERADMIN -->
                     <div>
-                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">📜 Listado de Eventos Generados en el Reino</h3>
+                        <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif;">📜 Eventos creados</h3>
                         <div id="lista-eventos-generados-admin" class="grid-cards"></div>
                     </div>
                 </div>
@@ -1373,15 +1574,69 @@
             </section>
 
 
-            <!-- PESTAÑA: Blog del Reino -->
-            <section id="pestana-blog" class="tab-content tema-corte-admin" data-tab="tab-blog" style="display: none;">
+            <!-- PESTAÑA: El Papiro del Norte (lectura para todos los roles) -->
+            <section id="pestana-blog" class="tab-content tema-cronica" data-tab="tab-blog" style="display: none;">
                 <div class="panel-card">
                     <div class="leaderboard-header" style="text-align: center; margin-bottom: 25px;">
-                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">📜 BLOG DEL REINO 📜</h2>
+                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">📜 EL PAPIRO DEL NORTE 📜</h2>
                         <p style="color: #d6d3d1;">
                             Crónicas, noticias y anuncios oficiales del Lokitrono de Barrios.
-                            Los maestres pueden leer las últimas publicaciones de la corte.
+                            Lee las últimas publicaciones de la corte.
                         </p>
+                    </div>
+
+                    <div id="grid-blog-posts" class="grid-cards"></div>
+                    <p id="blog-publico-estado" role="status" aria-live="polite" style="color: #d6d3d1; margin-top: 12px;"></p>
+                </div>
+            </section>
+
+            <!-- PESTAÑA: Editor de El Papiro del Norte (solo administración) -->
+            <section id="pestana-blog-editor" class="tab-content tema-corte-admin" data-tab="tab-blog-editor" style="display: none;">
+                <div class="panel-card">
+                    <div class="leaderboard-header" style="text-align: center; margin-bottom: 25px;">
+                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante);">✍️ EDITOR DEL PAPIRO DEL NORTE ✍️</h2>
+                        <p style="color: #d6d3d1;">
+                            Publica, edita y elimina las crónicas oficiales que verán todos los maestres.
+                        </p>
+                    </div>
+
+                    <div id="panel-oraculo-papiro" style="background: rgba(10,10,20,0.65); border: 1px solid #4338ca; border-radius: 10px; padding: 18px; margin-bottom: 26px;">
+                        <h3 style="color: #c7d2fe; font-family: 'Cinzel', serif; margin-bottom: 8px;">🔮 Oráculo Imperial — Generador de Crónicas del Reino</h3>
+                        <p style="font-size: 0.88rem; color: #94a3b8; margin-bottom: 14px;">
+                            El Oráculo analiza la clasificación y los juicios emitidos para redactar una crónica.
+                            Puedes usarla como base y editarla antes de publicarla.
+                        </p>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                            <div class="form-group" style="flex: 1 1 220px;">
+                                <label for="select-modelo-oraculo-editor">Modelo de IA</label>
+                                <select id="select-modelo-oraculo-editor" class="input-medieval">
+                                    <option value="openai/gpt-oss-120b" selected>🦙 GPT-OSS 120B (Equilibrado)</option>
+                                    <option value="openai/gpt-oss-20b">⚡ GPT-OSS 20B (Crónicas Rápidas)</option>
+                                    <option value="qwen/qwen3.8-27b">🧠 Qwen 3.8 27B (Razonamiento)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex: 1 1 220px;">
+                                <label for="select-tono-cronica-editor">Tono de la Crónica</label>
+                                <select id="select-tono-cronica-editor" class="input-medieval">
+                                    <option value="epico">⚔️ Épico Feudal (Poema de Mío Cid)</option>
+                                    <option value="satirico">🎭 Satírico &amp; Tabernero (Coplas de Ciegos)</option>
+                                    <option value="solemne">👑 Bando Real Imperial (Solemne &amp; Oficial)</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1 1 220px;">
+                                <button type="button" class="btn-cuervo" id="btn-generar-cronica-editor" onclick="generarCronicaOraculoEditor()" style="width: 100%; background: #4338ca;">✨ Invocación del Oráculo</button>
+                            </div>
+                        </div>
+                        <div id="contenedor-resultado-oraculo-editor" style="display: none; margin-top: 16px; background: rgba(5,5,10,0.95); border: 1px solid var(--oro-real); border-radius: 8px; padding: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                <strong style="color: var(--oro-brillante);">📜 Dictamen del Oráculo Imperial</strong>
+                                <span id="badge-modelo-usado-editor" style="font-size: 0.75rem; background: var(--oro-real); color: #000; padding: 3px 8px; border-radius: 12px; font-weight: bold;">GPT-OSS 120B</span>
+                            </div>
+                            <div id="salida-oraculo-editor" style="color: #f1f5f9; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; font-family: Georgia, serif; background: rgba(15,23,42,0.5); padding: 12px; border-radius: 6px; border-left: 4px solid var(--oro-real); margin-top: 10px;"></div>
+                            <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button type="button" class="btn-cuervo" id="btn-usar-cronica-editor" onclick="usarCronicaGeneradaEnEditor()" style="background: #166534;">📋 Usar como crónica</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="panel-gestion-blog" style="background: rgba(10,10,10,0.55); border: 1px solid #44403c; border-radius: 10px; padding: 18px; margin-bottom: 26px;">
@@ -1398,6 +1653,18 @@
                                     <label for="blog-fecha">Fecha</label>
                                     <input type="date" id="blog-fecha" class="input-medieval" required>
                                 </div>
+                            </div>
+                            <div class="form-group" style="margin-top: 12px;">
+                                <label for="blog-categoria">Categoría de la crónica</label>
+                                <select id="blog-categoria" class="input-medieval">
+                                    <option value="cronica" selected>📜 Crónica</option>
+                                    <option value="anuncio">📣 Anuncio</option>
+                                    <option value="bando">👑 Bando</option>
+                                    <option value="evento">🗓️ Evento</option>
+                                    <option value="entrevista">🎙️ Entrevista</option>
+                                    <option value="receta">🍷 Receta</option>
+                                    <option value="otro">✨ Otro</option>
+                                </select>
                             </div>
                             <div class="form-group" style="margin-top: 12px;">
                                 <label for="blog-contenido">Contenido de la crónica *</label>
@@ -1418,7 +1685,7 @@
                     </div>
 
                     <h3 style="color: var(--oro-brillante); margin-bottom: 14px;">📜 Crónicas Publicadas</h3>
-                    <div id="grid-blog-posts" class="grid-cards"></div>
+                    <div id="grid-blog-admin" class="grid-cards"></div>
                     <p id="blog-estado" role="status" aria-live="polite" style="color: #d6d3d1; margin-top: 12px;"></p>
                 </div>
             </section>
@@ -1626,7 +1893,7 @@
                             </div>
 
                             <div style="background: rgba(20, 16, 10, 0.9); border: 1px solid var(--oro-real); padding: 15px 22px; border-radius: 10px; min-width: 220px;">
-                                <div style="font-size: 0.8rem; color: #a1a1aa; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">📅 Fecha y Hora Señalada</div>
+                                <div style="font-size: 0.8rem; color: #a1a1aa; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">📆 Fecha y Hora Señalada</div>
                                 <div id="display-gala-fecha" style="font-family: 'Cinzel', serif; color: var(--oro-brillante); font-size: 1.15rem; font-weight: bold;">20 de Octubre de 2026, 20:30 hs</div>
                             </div>
                         </div>
@@ -1639,7 +1906,7 @@
                         </div>
 
                         <button type="button" onclick="descargarICSGalaFinal()" class="btn-cuervo" style="padding: 10px 24px; font-size: 1rem; background: #166534; border-radius: 30px; box-shadow: 0 4px 15px rgba(22, 101, 52, 0.5);">
-                            📅 Añadir Gala a mi Calendario (.ics)
+                            📆 Añadir Gala a mi Calendario (.ics)
                         </button>
                     </div>
 
@@ -1737,6 +2004,14 @@
             <a href="legal/aviso-ia.html">Aviso IA</a>
             <button type="button" data-consent-open>Configurar cookies</button>
         </nav>
+        <div style="margin: 12px 0; text-align: center;">
+            <a href="https://instagram.com/lokitrono" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: var(--oro-real); font-family: 'Cinzel', serif; font-weight: 600; text-decoration: none; padding: 6px 16px; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 20px; background: rgba(20, 16, 10, 0.7); transition: all 0.3s ease;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                <span>Síguenos en Instagram @lokitrono</span>
+            </a>
+        </div>
         <p class="site-footer__ia">🤖 Este sitio y su contenido se han creado con ayuda de herramientas de
             inteligencia artificial bajo supervisión humana. El «Oráculo Imperial» usa IA (Groq) para generar
             textos que pueden contener errores. <a href="legal/aviso-ia.html">Más información</a>.</p>

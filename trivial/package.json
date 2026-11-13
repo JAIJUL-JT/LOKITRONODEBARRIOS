@@ -1,0 +1,13 @@
+{
+  "name": "trivial-del-botxo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "El Trivial del Botxo: 52 barrios de Bilbao, dados y preguntas. Independiente del arcade Botxitrono.",
+  "scripts": {
+    "dev": "python3 -m http.server 3000",
+    "test": "node --test tests/",
+    "build": "echo \"No build step: el Trivial es estático\""
+  },
+  "license": "UNLICENSED"
+}

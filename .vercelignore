@@ -37,8 +37,9 @@ LoKiLogo.jpg
 Lokijuegopresent
 fototrono.jpg
 
-# Capturas y material de trabajo no servido por la web
-q*.png
+# Capturas y material de trabajo no servido por la web (solo raíz; las
+# imágenes del carrusel viven en assets/presentacion/ y sí se publican)
+/q*.png
 favicon-temp.png
 favicon.ico.old
 

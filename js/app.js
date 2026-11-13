@@ -404,8 +404,7 @@ function cambiarPestana(valor) {
         return;
     }
     if (valor === 'pestana-trivial' || valor === 'tab-trivial') {
-        if (typeof abrirBotxitrono === 'function') abrirBotxitrono('trivial');
-        return;
+        cargarIframeTrivial();
     }
     const sections = document.querySelectorAll('.tab-content');
     sections.forEach(section => {
@@ -9742,12 +9741,10 @@ window.resetFormBlog = resetFormBlog;
    ========================================================================== */
 let presentacionSlideActual = 1;
 const PRESENTACION_SLIDES = [
-    'assets/presentacion/1pres.jpg',
-    'assets/presentacion/2pres.jpg',
     'assets/presentacion/q1.png',
     'assets/presentacion/q2.png',
-    'assets/presentacion/q3.png',
-    'assets/presentacion/q55.png',
+    'assets/presentacion/1pres.jpg',
+    'assets/presentacion/q4.png',
     'assets/presentacion/q6.png',
     'assets/presentacion/q7.png',
     'assets/presentacion/q8.png',
@@ -9854,15 +9851,27 @@ function alTerminarAudioHimno() {
 window.toggleAudioHimno = toggleAudioHimno;
 window.alTerminarAudioHimno = alTerminarAudioHimno;
 
+// El Trivial del Botxo vive en su propia sección embebida, separada del arcade Botxitrono.
+function cargarIframeTrivial() {
+    const iframe = document.getElementById('trivial-iframe');
+    if (!iframe) return;
+    const destino = iframe.getAttribute('data-src') || './trivial/';
+    const actual = iframe.getAttribute('src');
+    if (!actual || actual === 'about:blank') {
+        iframe.setAttribute('src', destino);
+    }
+}
+
+window.cargarIframeTrivial = cargarIframeTrivial;
+
 // Integración de Botxitrono
-function abrirBotxitrono(modo) {
+function abrirBotxitrono() {
     const overlay = document.getElementById('botxitrono-modal-overlay');
     const iframe = document.getElementById('botxitrono-iframe');
-    const baseSrc = './botxitrono/';
-    const targetSrc = modo ? baseSrc + '?start=' + modo : baseSrc;
+    const targetSrc = './botxitrono/';
 
     if (overlay && iframe) {
-        if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href || (modo && !iframe.src.includes('?start=' + modo))) {
+        if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href) {
             iframe.src = targetSrc;
         }
         overlay.style.display = 'flex';

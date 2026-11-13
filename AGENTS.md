@@ -6,6 +6,7 @@
 - `js/app.js` (~428 KB, ~9.7k líneas) concentra estado, UI y lógica; no hay módulos. `window.__APP_STATE__` solo expone `eventList`.
 - `js/supabase.js` es legado (helpers `localStorage`), no el cliente Supabase. `app.js` redefine `getRepositorioVotos`, `getEstadisticasAdmin` y `haVotadoCasa`; el test solo exige que esas funciones existan en `js/supabase.js`.
 - `botxitrono/` es un subproyecto independiente (Aritza, plataformas medievales) con su propio `package.json`, tests, `manifest.webmanifest` y `sw.js`. Se sirve en `/botxitrono/` y se abre desde un iframe/modal en `index.html`. No lo mezcles con la app principal.
+- `trivial/` es el antiguo Trivial del Botxo, ahora separado de Botxitrono: subproyecto estático propio con su `package.json`, tests y datos. Se embebe en la pestaña `#pestana-trivial` del Menú de Maestres (`./trivial/`). No vuelvas a meterlo en Botxitrono.
 
 ## Comandos
 
@@ -13,6 +14,7 @@
 - `npm run dev` — `python3 -m http.server 3000`.
 - `npm run preview` / `npm run deploy` — Vercel (login). `npm run build` es no-op.
 - `cd botxitrono && npm test` — tests de lógica con `node --test`. El `npm test` raíz y CI no los ejecutan.
+- `cd trivial && npm test` — tests de lógica del Trivial con `node --test`. Tampoco los ejecuta el `npm test` raíz.
 - No hay lint/typecheck. Para sintaxis: `node --check <archivo>`. `js/analytics.js` (se carga antes de `app.js`, tras consentimiento) ya no tiene el bloque `cargarVercel` duplicado, pero `npm test` no lo valida.
 - `sql/schema.sql` es **destructivo** (`DROP TABLE ... CASCADE`); no lo apliques a producción sin backup. Para cambios crea una migración nueva en `sql/migrations/`.
 - `bash scripts/apply_schema.sh` aplica solo el schema; `bash scripts/apply_all.sh` aplica schema + todas las migraciones; ambos requieren `DATABASE_URL`. Migración suelta: `psql "$POSTGRES_URL_NON_POOLING" -f sql/migrations/<fichero>.sql` (credenciales en `.env.to_push`, ignorado por git). El workflow `apply_supabase_schema.yml` es manual y solo aplica `202610030001_secure_superadmin.sql`.

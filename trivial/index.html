@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0906">
+    <meta name="description" content="El Trivial del Botxo: tira los dados y conquista los 52 barrios de Bilbao respondiendo preguntas.">
+    <title>Trivial del Botxo · Bilbao</title>
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <main id="app">
+        <section id="trivia-screen" class="overlay">
+            <div class="panel panel--trivia">
+                <p class="eyebrow" id="trivia-eyebrow">Desafío del Botxo</p>
+                <h2 id="trivia-title">Trivial de Bilbao</h2>
+
+                <!-- Captura de nombre del jugador -->
+                <div id="trivia-name-entry" class="trivia-name-entry">
+                    <p class="trivia-name-label">¿Cómo te llamas, jugadora?</p>
+                    <input id="trivia-player-input" class="trivia-player-input" type="text"
+                           placeholder="Tu nombre..." maxlength="30" autocomplete="off">
+                    <button id="btn-trivia-start" class="btn btn--primary" type="button">¡Empezar el Trivial!</button>
+                </div>
+
+                <!-- Panel de juego -->
+                <div id="trivia-game-panel" class="hidden">
+                    <div class="trivia-meta-bar">
+                        <div class="trivia-progress">Pregunta <span id="trivia-current-num">1</span> de <span id="trivia-total-num">3</span></div>
+                        <div class="trivia-stats-badge"><strong id="trivia-barrio-name">Barrio</strong> · <span id="trivia-barrio-correct">0</span>/5</div>
+                        <div class="trivia-stats-badge">Aciertos: <strong id="trivia-score">0</strong></div>
+                        <div class="trivia-stats-badge">Pintxos <strong id="trivia-pintxos">0</strong> · Fallos <strong id="trivia-fallos">0</strong></div>
+                        <div class="trivia-countdown"><strong id="trivia-timer-count">10</strong>s</div>
+                    </div>
+                    <!-- Vela animada con Canvas -->
+                    <div class="trivia-candle-wrap">
+                        <canvas id="trivia-candle-canvas" class="trivia-candle-canvas" width="80" height="140"
+                                aria-label="Vela temporizadora"></canvas>
+                    </div>
+                    <div class="trivia-card">
+                        <p id="trivia-question" class="trivia-question">Cargando pregunta...</p>
+                        <div id="trivia-options" class="trivia-options"></div>
+                        <p id="trivia-feedback" class="trivia-feedback hidden"></p>
+                    </div>
+                </div>
+
+                <div class="trivia-actions">
+                    <button id="btn-trivia-next" class="btn btn--primary hidden" type="button">Siguiente pregunta ▶</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="trivial-board-screen" class="overlay hidden">
+            <div class="panel panel--board">
+                <p class="eyebrow">El Trivial del Botxo</p>
+                <h2>🎲 La vuelta a los 52 barrios</h2>
+                <p id="trivial-board-subtitle" class="trivial-board-subtitle">Empiezas en <strong>San Pedro de Deusto</strong>. Tira los dados y conquista barrio a barrio.</p>
+
+                <div class="trivial-board-stats">
+                    <div><span>Pintxos</span><strong id="trivial-board-pintxos">0/52</strong></div>
+                    <div><span>Fallos</span><strong id="trivial-board-fallos">0/10</strong></div>
+                    <div><span>Aciertos</span><strong id="trivial-board-aciertos">0</strong></div>
+                    <div><span>Barrio actual</span><strong id="trivial-board-progress">0/5</strong></div>
+                </div>
+
+                <canvas id="trivial-board-canvas" class="trivial-board-canvas" width="780" height="320"
+                        aria-label="Tablero del Trivial del Botxo con los 52 barrios de Bilbao"></canvas>
+
+                <div id="trivial-board-message" class="trivial-board-message" aria-live="polite">
+                    Pulsa <strong>Lanzar dados</strong> para empezar el recorrido.
+                </div>
+
+                <div class="trivial-dice-row">
+                    <div id="trivial-die-1" class="trivial-die" aria-label="Dado 1">⚀</div>
+                    <div id="trivial-die-2" class="trivial-die" aria-label="Dado 2">⚀</div>
+                    <button id="btn-trivial-roll" class="btn btn--primary" type="button">Lanzar dados 🎲</button>
+                </div>
+
+                <div class="trivial-vitrina">
+                    <div class="trivial-vitrina-head">
+                        <h3>Vitrina de pintxos</h3>
+                        <span id="trivial-vitrina-count">0/52</span>
+                    </div>
+                    <div id="trivial-pintxo-grid" class="trivial-pintxo-grid"></div>
+                </div>
+
+                <div class="trivial-board-actions">
+                    <button id="btn-trivial-board-menu" class="btn btn--ghost" type="button">Abandonar partida</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="trivial-end-screen" class="overlay hidden">
+            <div class="panel panel--result">
+                <p class="eyebrow">Fin del recorrido</p>
+                <h2 id="trivial-end-title">¡Victoria!</h2>
+                <p id="trivial-end-text" class="trivial-end-text"></p>
+                <div class="result-grid">
+                    <div><span>Pintxos</span><strong id="trivial-end-pintxos">0/52</strong></div>
+                    <div><span>Fallos</span><strong id="trivial-end-fallos">0/10</strong></div>
+                    <div><span>Aciertos</span><strong id="trivial-end-aciertos">0</strong></div>
+                    <div><span>Barrios</span><strong id="trivial-end-barrios">0/52</strong></div>
+                </div>
+                <div class="gameover-actions">
+                    <button id="btn-trivial-end-again" class="btn btn--primary" type="button">Jugar otra vez</button>
+                    <button id="btn-trivial-end-menu" class="btn btn--ghost" type="button">Volver al menú</button>
+                </div>
+            </div>
+        </section>
+
+        <noscript>
+            <div class="overlay">
+                <div class="panel">
+                    <h2>JavaScript necesario</h2>
+                    <p>El Trivial del Botxo necesita JavaScript para funcionar.</p>
+                </div>
+            </div>
+        </noscript>
+    </main>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

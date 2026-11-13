@@ -114,7 +114,7 @@
     <script src="js/legal-config.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261112" defer></script>
+    <script src="js/app.js?v=20261113b" defer></script>
     <script src="js/dragon.js?v=20261101" defer></script>
 </head>
 
@@ -254,7 +254,7 @@
                             <button type="button" class="btn-cuervo inicio-cta-btn" onclick="abrirBotxitrono()" style="background: linear-gradient(135deg, #0f766e, #115e59); border: 2px solid var(--oro-real); box-shadow: 0 4px 18px rgba(15, 118, 110, 0.4);" title="Jugar al arcade de plataformas Botxitrono por los 52 barrios">
                                 🎮 Jugar a Botxitrono
                             </button>
-                            <button type="button" class="btn-cuervo inicio-cta-btn" onclick="abrirBotxitrono('trivial')" style="background: linear-gradient(135deg, #7c3aed, #4c1d95); border: 2px solid var(--oro-real); box-shadow: 0 4px 18px rgba(124, 58, 237, 0.4);" title="Jugar al Trivial del Botxo por los 52 barrios de Bilbao">
+                            <button type="button" class="btn-cuervo inicio-cta-btn" onclick="cambiarPestana('pestana-trivial')" style="background: linear-gradient(135deg, #7c3aed, #4c1d95); border: 2px solid var(--oro-real); box-shadow: 0 4px 18px rgba(124, 58, 237, 0.4);" title="Jugar al Trivial del Botxo por los 52 barrios de Bilbao">
                                 🧠 Jugar al Trivial
                             </button>
                             <button type="button" class="btn-cuervo inicio-cta-btn" onclick="cambiarPestana('tab-calendario')" style="background: #1e3a8a;">
@@ -298,7 +298,7 @@
 
                         <div style="text-align: center; margin-top: 14px;">
                             <span id="presentacion-contador" style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 0.88rem; font-weight: bold;">
-                                📜 Página 1 de 12
+                                📜 Página 1 de 11
                             </span>
                         </div>
                     </div>
@@ -537,6 +537,19 @@
 
                     <h3 style="color: var(--oro-brillante);">Representación Oficial de los Barrios</h3>
                     <div id="lista-tronistas" class="grid-cards"></div>
+                </div>
+            </section>
+
+            <!-- PESTAÑA: El Trivial del Botxo (independiente del arcade Botxitrono) -->
+            <section id="pestana-trivial" class="tab-content tema-corte-admin" data-tab="tab-trivial" style="display: none;">
+                <div class="panel-card" style="padding: 0; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid rgba(240, 210, 122, 0.3);">
+                        <h2 style="margin: 0; font-family: 'Cinzel', serif; color: var(--oro-brillante);">🧠 El Trivial del Botxo</h2>
+                        <a href="./trivial/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 6px 12px; text-decoration: none; font-size: 0.85rem;">
+                            ↗ Abrir en nueva pestaña
+                        </a>
+                    </div>
+                    <iframe id="trivial-iframe" src="about:blank" data-src="./trivial/" title="El Trivial del Botxo" loading="lazy" style="width: 100%; height: 78vh; min-height: 540px; border: none; display: block;"></iframe>
                 </div>
             </section>
 

@@ -917,10 +917,12 @@ kbd {
     overflow-y: auto;
 }
 
-/* Vela temporizadora */
+/* Vela temporizadora y cuenta atrás digital */
 .trivia-candle-wrap {
     display: flex;
     justify-content: center;
+    align-items: center;
+    gap: 16px;
     margin: 4px 0 10px;
 }
 
@@ -929,6 +931,39 @@ kbd {
     height: 105px;
     display: block;
     filter: drop-shadow(0 0 10px rgba(255, 160, 50, 0.6));
+}
+
+.trivia-digital-countdown {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    background: rgba(10, 8, 4, 0.85);
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    padding: 6px 14px;
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.4), inset 0 0 8px rgba(0, 0, 0, 0.7);
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.trivia-digital-countdown .digital-icon {
+    font-size: 1.1rem;
+    margin-right: 2px;
+}
+
+.trivia-digital-countdown .digital-display {
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: #facc15;
+    text-shadow: 0 0 10px rgba(250, 204, 21, 0.8), 0 0 20px rgba(234, 179, 8, 0.5);
+    min-width: 2ch;
+    text-align: right;
+    letter-spacing: 1px;
+}
+
+.trivia-digital-countdown .digital-unit {
+    font-size: 0.9rem;
+    color: var(--gold);
+    font-weight: bold;
 }
 
 /* Entrada de nombre del jugador */

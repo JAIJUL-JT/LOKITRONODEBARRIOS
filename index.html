@@ -1693,13 +1693,28 @@
             <!-- PESTAÑA 3: Control de Usuarios (Añadir, Editar, Borrar, Recuperar Contraseña, Asignar Barrio) -->
             <section id="pestana-usuarios" class="tab-content tema-corte-admin" style="display: none;">
                 <div class="panel-card">
-                    <h2>👥 Panel de Control de Usuarios Autorizados</h2>
+                    <h2>👥 Alta de Usuario</h2>
                     <p>Administra accesos, roles (máximo 2 Tronistas por barrio), asignación de reinos y credenciales.
                     </p>
                     <div style="margin-bottom:12px;">
                         <!-- Sincronización automática de usuarios con Supabase tras cada alta/edición (sin botón manual) -->
                     </div>
 
+                    <!-- SELECTOR DE MODO DE ALTA: USUARIO INDIVIDUAL / IMPORTAR CSV / ALTA EMPRESA -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+                        <button type="button" class="btn-cuervo" id="btn-tab-alta-individual" onclick="cambiarSubpestanaAlta('individual')" style="background: #1e3a8a;">
+                            👤 Alta Individual
+                        </button>
+                        <button type="button" class="btn-cuervo" id="btn-tab-alta-csv" onclick="cambiarSubpestanaAlta('csv')" style="background: #374151;">
+                            📂 Subir CSV / Hoja de Cálculo
+                        </button>
+                        <button type="button" class="btn-cuervo" id="btn-tab-alta-empresa" onclick="cambiarSubpestanaAlta('empresa')" style="background: #713f12;">
+                            🏢 Alta de Empresa Colaboradora
+                        </button>
+                    </div>
+
+                    <!-- SUBSECCIÓN 1: FORMULARIO INDIVIDUAL -->
+                    <div id="subseccion-alta-individual">
                     <form id="form-usuario" onsubmit="guardarUsuario(event)">
                         <input type="hidden" id="usuario-id-edit">
                         <div class="form-group">
@@ -1767,6 +1782,197 @@
                             style="display: none; background: #44403c;" onclick="resetFormUsuario()">Cancelar
                             Edición</button>
                     </form>
+                    </div><!-- /#subseccion-alta-individual -->
+
+                    <!-- SUBSECCIÓN 2: IMPORTAR DESDE CSV U HOJA DE CÁLCULO -->
+                    <div id="subseccion-alta-csv" style="display: none; background: rgba(20, 25, 45, 0.9); border: 2px solid var(--oro-real); border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                        <h3 style="color: var(--oro-brillante); margin-top: 0; font-family: 'Cinzel', serif;">📂 Importación Masiva de Usuarios (CSV / Hoja de Cálculo)</h3>
+                        <p style="font-size: 0.88rem; color: #cbd5e1;">
+                            Sube un archivo <strong>.csv</strong> exportado desde Excel, Google Sheets o LibreOffice para incorporar múltiples usuarios a la vez.
+                        </p>
+                        <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 6px; font-size: 0.82rem; color: #94a3b8; margin-bottom: 14px;">
+                            📋 <strong>Formato esperado de columnas (cabecera opcional):</strong><br>
+                            <code>telefono, nombre, rol, barrio, email</code><br>
+                            <em>Ejemplo:</em> <code>600123456, Maestre Jon, jugador, Casco Viejo, jon@feudo.es</code>
+                        </div>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                            <input type="file" id="input-archivo-csv-usuarios" class="input-medieval" accept=".csv,text/csv,text/plain" style="flex: 2; min-width: 240px;">
+                            <button type="button" class="btn-cuervo" onclick="procesarCSVUsuarios()" style="background: #166534; flex: 1; min-width: 180px;">
+                                🚀 Procesar y Dar de Alta
+                            </button>
+                        </div>
+                        <div id="resultado-importacion-csv" style="margin-top: 14px; font-size: 0.85rem; color: #4ade80;"></div>
+                    </div>
+
+                    <!-- SUBSECCIÓN 3: FORMULARIO DE ALTA DE EMPRESAS Y LOCALES COLABORADORES -->
+                    <div id="subseccion-alta-empresa" style="display: none; background: rgba(25, 20, 10, 0.95); border: 2px solid #d97706; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                        <h3 style="color: #fbbf24; margin-top: 0; font-family: 'Cinzel', serif;">🏢 Formulario de Alta de Empresa / Local Colaborador</h3>
+                        <p style="font-size: 0.86rem; color: #d6d3d1;">
+                            Registro completo de entidades jurídicas, empresas, tabernas y locales patrocinadores en España.
+                        </p>
+                        <form id="form-empresa-colaboradora" onsubmit="guardarEmpresaColaboradora(event)">
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 2; min-width: 240px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Razón Social *:</label>
+                                    <input type="text" id="empresa-razon-social" class="input-medieval" placeholder="Ej: Tabernas Feudales de Bilbao S.L." required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 160px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">CIF / NIF España *:</label>
+                                    <input type="text" id="empresa-cif" class="input-medieval" placeholder="B-12345678" pattern="^[A-HJNP-SUVW][0-9]{7}[0-9A-J]$|^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$" required>
+                                </div>
+                                <div class="form-group" style="flex: 2; min-width: 220px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Nombre Comercial / Marca:</label>
+                                    <input type="text" id="empresa-nombre-comercial" class="input-medieval" placeholder="Ej: Taberna El Trono">
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 2; min-width: 240px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Domicilio Fiscal / Dirección en España *:</label>
+                                    <input type="text" id="empresa-direccion" class="input-medieval" placeholder="Calle / Gran Vía, Nº, Piso" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 120px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Código Postal *:</label>
+                                    <input type="text" id="empresa-cp" class="input-medieval" placeholder="48001" maxlength="5" pattern="[0-9]{5}" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 150px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Municipio / Provincia *:</label>
+                                    <input type="text" id="empresa-municipio" class="input-medieval" value="Bilbao (Bizkaia)" required>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Persona de Contacto / Cargo:</label>
+                                    <input type="text" id="empresa-contacto" class="input-medieval" placeholder="Ej: Ainhoa (Gerente)">
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 180px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Teléfono de Contacto / WhatsApp *:</label>
+                                    <input type="tel" id="empresa-telefono" class="input-medieval" placeholder="600123456" required>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 220px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">Email Corporativo / Facturación *:</label>
+                                    <input type="email" id="empresa-email" class="input-medieval" placeholder="contacto@empresa.com" required>
+                                </div>
+                            </div>
+
+                            <!-- REDES SOCIALES -->
+                            <div style="background: rgba(0,0,0,0.35); padding: 12px; border-radius: 6px; margin: 12px 0;">
+                                <h4 style="color: var(--oro-brillante); margin: 0 0 8px; font-family: 'Cinzel', serif;">🌐 Redes Sociales y Web</h4>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin: 0;">
+                                        <label style="font-size: 0.8rem; color: #94a3b8;">📸 Instagram</label>
+                                        <input type="text" id="empresa-redes-instagram" class="input-medieval" placeholder="@mitaberna">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin: 0;">
+                                        <label style="font-size: 0.8rem; color: #94a3b8;">📘 Facebook</label>
+                                        <input type="text" id="empresa-redes-facebook" class="input-medieval" placeholder="facebook.com/mitaberna">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin: 0;">
+                                        <label style="font-size: 0.8rem; color: #94a3b8;">🎵 TikTok</label>
+                                        <input type="text" id="empresa-redes-tiktok" class="input-medieval" placeholder="@mitaberna">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin: 0;">
+                                        <label style="font-size: 0.8rem; color: #94a3b8;">🌐 Sitio Web</label>
+                                        <input type="url" id="empresa-web" class="input-medieval" placeholder="https://mitaberna.es">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TIPO DE EVENTO Y PARTICIPACIÓN DESEADA -->
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 220px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">🎪 Tipo de Evento Deseado:</label>
+                                    <select id="empresa-tipo-evento" class="input-medieval">
+                                        <option value="ruta_gastronomica">🍢 Ruta Gastronómica de Pintxos</option>
+                                        <option value="cata_maridaje">🍷 Cata y Maridaje Feudal</option>
+                                        <option value="concurso_barrio">🏆 Concurso Interbarrios</option>
+                                        <option value="feria_popular">🎪 Feria y Mercado Popular</option>
+                                        <option value="evento_privado">👑 Gala Privada / Corporativa</option>
+                                        <option value="patrocinio_general">🏛️ Patrocinio General del Reino</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex: 1; min-width: 220px;">
+                                    <label style="font-weight: bold; color: var(--oro-real);">🏰 Barrio / Feudo de Adscripción:</label>
+                                    <select id="empresa-barrio" class="input-medieval"></select>
+                                </div>
+                            </div>
+
+                            <!-- FORMAS DE PAGO / DONACIÓN -->
+                            <div style="background: rgba(0,0,0,0.35); padding: 12px; border-radius: 6px; margin: 12px 0;">
+                                <h4 style="color: var(--oro-brillante); margin: 0 0 8px; font-family: 'Cinzel', serif;">💳 Formas de Pago / Donación</h4>
+                                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 200px; margin: 0;">
+                                        <label style="font-size: 0.8rem; color: #94a3b8;">Método preferido</label>
+                                        <select id="empresa-forma-pago" class="input-medieval">
+                                            <option value="transferencia">🏦 Transferencia Bancaria (Factura B2B)</option>
+                                            <option value="bizum">📱 Bizum Empresa</option>
+                                            <option value="tarjeta">💳 Tarjeta / TPV Virtual</option>
+                                            <option value="domiciliacion">📋 Domiciliación SEPA (B2B)</option>
+                                            <option value="donacion_especie">🎁 Aportación en especie / Producto</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 160px; margin: 0;">
+                                        <label style="font-size: 0.8rem; color: #94a3b8;">Importe donación / cuota (€)</label>
+                                        <input type="number" id="empresa-importe" class="input-medieval" placeholder="100.00" min="0" step="0.01">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 220px; margin: 0;">
+                                        <label style="font-size: 0.8rem; color: #94a3b8;">IBAN para cobro / facturación (opcional)</label>
+                                        <input type="text" id="empresa-iban" class="input-medieval" placeholder="ES00 0000 0000 0000 0000 0000">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- PROMOCIÓN, VISIBILIDAD, CALENDARIOS Y CAMPAÑAS -->
+                            <div style="background: rgba(0,0,0,0.35); padding: 12px; border-radius: 6px; margin: 12px 0;">
+                                <h4 style="color: var(--oro-brillante); margin: 0 0 8px; font-family: 'Cinzel', serif;">📢 Promoción, Visibilidad, Calendarios y Campañas</h4>
+                                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;">
+                                        <input type="checkbox" id="empresa-campana-portada" checked style="accent-color: var(--oro-real);"> 🌟 Destacado en Portada de LokiTrono
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;">
+                                        <input type="checkbox" id="empresa-campana-calendario" checked style="accent-color: var(--oro-real);"> 📆 Inclusión en Calendario Feudal
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;">
+                                        <input type="checkbox" id="empresa-campana-papiro" checked style="accent-color: var(--oro-real);"> 📜 Mención en El Papiro del Norte
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; font-size: 0.88rem;">
+                                        <input type="checkbox" id="empresa-campana-rrss" checked style="accent-color: var(--oro-real);"> 📱 Difusión en Instagram @lokitrono
+                                    </label>
+                                </div>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin: 0;">
+                                        <label style="font-size: 0.78rem; color: #94a3b8;">Fecha inicio campaña</label>
+                                        <input type="date" id="empresa-campana-inicio" class="input-medieval">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin: 0;">
+                                        <label style="font-size: 0.78rem; color: #94a3b8;">Fecha fin campaña</label>
+                                        <input type="date" id="empresa-campana-fin" class="input-medieval">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FOTOS DEL LOCAL -->
+                            <div style="background: rgba(0,0,0,0.35); padding: 12px; border-radius: 6px; margin: 12px 0;">
+                                <h4 style="color: var(--oro-brillante); margin: 0 0 8px; font-family: 'Cinzel', serif;">📷 Fotos del Local / Establecimiento</h4>
+                                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 220px; margin: 0;">
+                                        <label style="font-size: 0.8rem; color: #94a3b8;">Fachada / Interior del local</label>
+                                        <input type="file" id="empresa-foto-local" class="input-medieval" accept="image/*">
+                                    </div>
+                                    <div class="form-group" style="flex: 1; min-width: 220px; margin: 0;">
+                                        <label style="font-size: 0.8rem; color: #94a3b8;">Logotipo o Pintxo estrella</label>
+                                        <input type="file" id="empresa-foto-logo" class="input-medieval" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-cuervo" style="background: #166534; width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px;">
+                                📤 Enviar Formulario de Alta de Empresa
+                            </button>
+                        </form>
+                        <div id="empresa-form-feedback" style="margin-top: 12px; font-size: 0.85rem; color: #4ade80; text-align: center;"></div>
+                    </div>
 
                     <div id="acciones-credenciales-pin" style="display: none; margin-top: 20px;">
                         <button type="button" class="btn-cuervo" style="background: #166534;" onclick="descargarUsuariosCSV()">⬇️ Descargar credenciales (CSV)</button>

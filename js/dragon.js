@@ -193,30 +193,40 @@
     }
 
     // ==========================================
-    // 🎭 DANZA / BAILE DE DRAGONES
+    // 🎭 DANZA / BAILE DE DRAGONES EN TRENZA ASCENDENTE + FUEGOS ARTIFICIALES
     // ==========================================
     let modoBaile = false;
     let tiempoBaile = 0;
-    const DURACION_BAILE = 14; // segundos de danza ceremonial
+    const DURACION_BAILE = 12; // segundos del baile trenzado
 
     function iniciarBaileDragones() {
         modoBaile = true;
         tiempoBaile = 0;
-        // Posicionar ambos en el centro de la pantalla
         const centroX = width * 0.5;
-        const centroY = height * 0.42;
-        
-        dragons[0].x = centroX - 180;
-        dragons[0].y = centroY;
+        const inicioY = height + 160;
+
+        // dragón 0: Rojo (hilo 1 de la trenza)
+        dragons[0].x = centroX - 90;
+        dragons[0].y = inicioY;
         dragons[0].angle = -Math.PI * 0.5;
         dragons[0].flapBurst = 1;
-        dragons[0].fireBurst = 1.2;
+        dragons[0].fireBurst = 0;
 
-        dragons[1].x = centroX + 180;
-        dragons[1].y = centroY;
-        dragons[1].angle = Math.PI * 0.5;
+        // dragón 1: Verde (hilo 2 de la trenza, desfasado 180°)
+        dragons[1].x = centroX + 90;
+        dragons[1].y = inicioY;
+        dragons[1].angle = -Math.PI * 0.5;
         dragons[1].flapBurst = 1;
-        dragons[1].fireBurst = 1.2;
+        dragons[1].fireBurst = 0;
+
+        // dragón 2: Blanco (comportamiento independiente: órbita envolvente y veloz)
+        if (dragons[2]) {
+            dragons[2].x = centroX;
+            dragons[2].y = inicioY + 80;
+            dragons[2].angle = -Math.PI * 0.5;
+            dragons[2].flapBurst = 1;
+            dragons[2].fireBurst = 0;
+        }
     }
 
     function detenerBaileDragones() {
@@ -224,6 +234,7 @@
         tiempoBaile = 0;
         resetDragon(dragons[0], false);
         resetDragon(dragons[1], false);
+        if (dragons[2]) resetDragon(dragons[2], false);
     }
 
     function toggleBaileDragones() {
@@ -236,52 +247,143 @@
     window.detenerBaileDragones = detenerBaileDragones;
     window.toggleBaileDragones = toggleBaileDragones;
 
+    function detonarFuegosArtificialesDragones(cx, cy) {
+        if (fireParticles.length >= MAX_FIRE_PARTICLES - 80) return;
+        const tonos = [15, 45, 120, 200, 280, 50]; // policromía de chispas
+        const cantidad = 65;
+        for (let i = 0; i < cantidad; i++) {
+            const rad = (Math.PI * 2 * i) / cantidad + (Math.random() - 0.5) * 0.2;
+            const vel = 180 + Math.random() * 260;
+            const vida = 0.9 + Math.random() * 0.7;
+            fireParticles.push({
+                x: cx + Math.cos(rad) * 12,
+                y: cy + Math.sin(rad) * 12,
+                vx: Math.cos(rad) * vel,
+                vy: Math.sin(rad) * vel - 40,
+                life: vida,
+                initial: vida,
+                size: 3.5 + Math.random() * 4.5,
+                hue: tonos[Math.floor(Math.random() * tonos.length)]
+            });
+        }
+    }
+
     function updateDragonDanza(d, dt, now) {
-        tiempoBaile += dt * 0.5; // progreso del baile
-        if (tiempoBaile > DURACION_BAILE) {
-            detenerBaileDragones();
-            return;
+        // Avance global del baile
+        if (d === dragons[0]) {
+            tiempoBaile += dt;
+            if (tiempoBaile > DURACION_BAILE) {
+                detenerBaileDragones();
+                return;
+            }
         }
 
-        // Es el dragón 0 (rojo) o el 1 (azul)
-        const esRojo = d === dragons[0];
-        const signo = esRojo ? 1 : -1;
-        const desfase = esRojo ? 0 : Math.PI;
+        const progresoAscenso = Math.min(1, tiempoBaile / (DURACION_BAILE * 0.7)); // 0 a 1 mientras sube
+        const enAperturaFuegos = tiempoBaile >= DURACION_BAILE * 0.7;
+        const tiempoFuegos = tiempoBaile - (DURACION_BAILE * 0.7);
 
-        // Trayectoria lemniscata / espiral doble (Danza ceremonial)
         const centroX = width * 0.5;
-        const centroY = height * 0.42;
-        const radioX = Math.min(width * 0.32, 380);
-        const radioY = Math.min(height * 0.24, 220);
+        const yInferior = height + 120;
+        const ySuperior = height * 0.12;
 
-        // Movimiento en figura de 8 (lemniscata de Bernoulli)
-        const t = (now * 0.0012) + desfase;
-        const targetX = centroX + Math.sin(t) * radioX;
-        const targetY = centroY + (Math.sin(t * 2) * 0.5) * radioY;
+        let targetX = centroX;
+        let targetY = ySuperior;
+        let desiredAngle = -Math.PI * 0.5;
 
-        // Calcular ángulo hacia adelante en la curva
-        const targetNextX = centroX + Math.sin(t + 0.08) * radioX;
-        const targetNextY = centroY + (Math.sin((t + 0.08) * 2) * 0.5) * radioY;
-        const desiredAngle = Math.atan2(targetNextY - targetY, targetNextX - targetX);
+        if (!enAperturaFuegos) {
+            // FASE 1: VUELO DE ABAJO A ARRIBA EN TRENZA
+            // y sube progresivamente desde el fondo de pantalla
+            const currentY = yInferior - (yInferior - ySuperior) * Math.sin(progresoAscenso * Math.PI * 0.5);
 
-        d.x += (targetX - d.x) * Math.min(1, dt * 5);
-        d.y += (targetY - d.y) * Math.min(1, dt * 5);
+            if (d === dragons[0]) {
+                // Dragón Rojo: onda sinusoidal a la izquierda/derecha
+                const amplitud = Math.min(width * 0.28, 260);
+                const frecuencia = 3.6; // oscilaciones mientras sube
+                const fase = progresoAscenso * Math.PI * 2 * frecuencia;
+                targetX = centroX + Math.sin(fase) * amplitud;
+                targetY = currentY;
+
+                // Derivada de la curva para el ángulo
+                const nextFase = (progresoAscenso + 0.02) * Math.PI * 2 * frecuencia;
+                const nextX = centroX + Math.sin(nextFase) * amplitud;
+                const nextY = currentY - (yInferior - ySuperior) * 0.02;
+                desiredAngle = Math.atan2(nextY - targetY, nextX - targetX);
+            } else if (d === dragons[1]) {
+                // Dragón Verde: contra-onda sinusoidal (trenza cruzada)
+                const amplitud = Math.min(width * 0.28, 260);
+                const frecuencia = 3.6;
+                const fase = progresoAscenso * Math.PI * 2 * frecuencia + Math.PI; // desfasado exactamente 180°
+                targetX = centroX + Math.sin(fase) * amplitud;
+                targetY = currentY;
+
+                const nextFase = (progresoAscenso + 0.02) * Math.PI * 2 * frecuencia + Math.PI;
+                const nextX = centroX + Math.sin(nextFase) * amplitud;
+                const nextY = currentY - (yInferior - ySuperior) * 0.02;
+                desiredAngle = Math.atan2(nextY - targetY, nextX - targetX);
+            } else {
+                // Dragón Blanco: NO imita al verde ni al rojo.
+                // Hace una órbita helicoidal independiente elíptica y envolvente con ráfagas verticales
+                const amplitudX = Math.min(width * 0.38, 360);
+                const amplitudY = 70;
+                const frecuenciaBlanco = 5.2; // frecuencia independiente más rápida
+                const faseBlanco = progresoAscenso * Math.PI * 2 * frecuenciaBlanco + Math.PI * 0.5;
+                targetX = centroX + Math.cos(faseBlanco) * amplitudX;
+                targetY = currentY + Math.sin(faseBlanco * 2) * amplitudY;
+
+                const nextFaseBlanco = (progresoAscenso + 0.02) * Math.PI * 2 * frecuenciaBlanco + Math.PI * 0.5;
+                const nextX = centroX + Math.cos(nextFaseBlanco) * amplitudX;
+                const nextY = currentY - (yInferior - ySuperior) * 0.02 + Math.sin(nextFaseBlanco * 2) * amplitudY;
+                desiredAngle = Math.atan2(nextY - targetY, nextX - targetX);
+            }
+
+            // Emisión de estela de fuego mientras suben
+            if (Math.random() < 0.3) emitirFuego(d);
+
+        } else {
+            // FASE 2: APERTURA SUPERIOR COMO FUEGOS ARTIFICIALES
+            // Al llegar arriba, se separan radialmente hacia fuera en abanico pirotécnico
+            if (d === dragons[0]) {
+                // Apertura en arco hacia la izquierda superior
+                const anguloApertura = -Math.PI * 0.85;
+                const radio = tiempoFuegos * 420;
+                targetX = centroX + Math.cos(anguloApertura) * radio;
+                targetY = ySuperior + Math.sin(anguloApertura) * radio * 0.6;
+                desiredAngle = anguloApertura;
+            } else if (d === dragons[1]) {
+                // Apertura en arco hacia la derecha superior
+                const anguloApertura = -Math.PI * 0.15;
+                const radio = tiempoFuegos * 420;
+                targetX = centroX + Math.cos(anguloApertura) * radio;
+                targetY = ySuperior + Math.sin(anguloApertura) * radio * 0.6;
+                desiredAngle = anguloApertura;
+            } else {
+                // Dragón Blanco: sube como saeta cenital directo al firmamento
+                const anguloApertura = -Math.PI * 0.5;
+                const radio = tiempoFuegos * 460;
+                targetX = centroX + Math.sin(tiempoFuegos * 4) * 50;
+                targetY = ySuperior + Math.sin(anguloApertura) * radio;
+                desiredAngle = anguloApertura;
+            }
+
+            // Detonar fuegos artificiales al coronar
+            if (tiempoFuegos < 1.6 && Math.random() < 0.45) {
+                detonarFuegosArtificialesDragones(d.x, d.y);
+            }
+        }
+
+        d.x += (targetX - d.x) * Math.min(1, dt * 6.5);
+        d.y += (targetY - d.y) * Math.min(1, dt * 6.5);
 
         let delta = desiredAngle - d.angle;
         while (delta > Math.PI) delta -= Math.PI * 2;
         while (delta < -Math.PI) delta += Math.PI * 2;
-        d.angle += delta * Math.min(1, dt * 8);
+        d.angle += delta * Math.min(1, dt * 9);
 
-        // Aleteo sincronizado y ágil en la danza
-        d.wingCycle += dt * 5.5;
-        d.wingFlap = Math.sin(d.wingCycle) * 0.85;
-        d.tailPhase += dt * 4;
-        d.pitch = Math.sin(d.tailPhase) * 0.08;
-
-        // Esporádicas bocanadas de fuego sincronizadas
-        if (Math.sin(t * 4) > 0.6) {
-            for (let i = 0; i < 2; i++) emitirFuego(d);
-        }
+        // Aleteo ágil sincronizado con la danza
+        d.wingCycle += dt * 7.5;
+        d.wingFlap = Math.sin(d.wingCycle) * 0.95;
+        d.tailPhase += dt * 5;
+        d.pitch = Math.sin(d.tailPhase) * 0.09;
     }
 
     function updateDragon(d, dt, now) {

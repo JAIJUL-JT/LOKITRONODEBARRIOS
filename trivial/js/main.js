@@ -286,6 +286,7 @@ const triviaFallosEl     = $('trivia-fallos');
 const triviaCurrentNumEl = $('trivia-current-num');
 const triviaTotalNumEl   = $('trivia-total-num');
 const triviaTimerCountEl = $('trivia-timer-count');
+const triviaTimerDigitalEl = $('trivia-timer-digital');
 const triviaCandleCanvas = $('trivia-candle-canvas');
 const btnTriviaNext   = $('btn-trivia-next');
 
@@ -725,7 +726,9 @@ function startTriviaTimer() {
     triviaTimerInterval = null;
   }
   stopCandleAnimation();
-  if (triviaTimerCountEl) triviaTimerCountEl.textContent = String(Math.round(TRIVIA_DURATION_MS / 1000));
+  const segInicial = String(Math.round(TRIVIA_DURATION_MS / 1000));
+  if (triviaTimerCountEl) triviaTimerCountEl.textContent = segInicial;
+  if (triviaTimerDigitalEl) triviaTimerDigitalEl.textContent = segInicial;
 
   const startTime = Date.now();
 
@@ -733,7 +736,18 @@ function startTriviaTimer() {
     const elapsed = Date.now() - startTime;
     const remainingMs = Math.max(0, TRIVIA_DURATION_MS - elapsed);
     const sec = Math.ceil(remainingMs / 1000);
-    if (triviaTimerCountEl) triviaTimerCountEl.textContent = String(sec);
+    const secStr = String(sec);
+    if (triviaTimerCountEl) triviaTimerCountEl.textContent = secStr;
+    if (triviaTimerDigitalEl) {
+      triviaTimerDigitalEl.textContent = secStr;
+      if (sec <= 3) {
+        triviaTimerDigitalEl.style.color = '#ef4444';
+        triviaTimerDigitalEl.style.textShadow = '0 0 10px rgba(239, 68, 68, 0.9)';
+      } else {
+        triviaTimerDigitalEl.style.color = '#facc15';
+        triviaTimerDigitalEl.style.textShadow = '0 0 10px rgba(250, 204, 21, 0.8)';
+      }
+    }
 
     if (remainingMs <= 0) {
       stopTriviaTimer();

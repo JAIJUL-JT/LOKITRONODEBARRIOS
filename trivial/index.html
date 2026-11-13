@@ -33,10 +33,15 @@
                         <div class="trivia-stats-badge">Pintxos <strong id="trivia-pintxos">0</strong> · Fallos <strong id="trivia-fallos">0</strong></div>
                         <div class="trivia-countdown"><strong id="trivia-timer-count">10</strong>s</div>
                     </div>
-                    <!-- Vela animada con Canvas -->
+                    <!-- Vela animada con Canvas y Cuenta Atrás Digital -->
                     <div class="trivia-candle-wrap">
                         <canvas id="trivia-candle-canvas" class="trivia-candle-canvas" width="80" height="140"
                                 aria-label="Vela temporizadora"></canvas>
+                        <div class="trivia-digital-countdown" aria-label="Cuenta atrás digital">
+                            <span class="digital-icon">⏱️</span>
+                            <span id="trivia-timer-digital" class="digital-display">10</span>
+                            <span class="digital-unit">s</span>
+                        </div>
                     </div>
                     <div class="trivia-card">
                         <p id="trivia-question" class="trivia-question">Cargando pregunta...</p>

@@ -4042,6 +4042,193 @@ window.enviarWhatsAppLibre = enviarWhatsAppLibre;
 window.abrirWhatsAppDirecto = abrirWhatsAppDirecto;
 
 /* ==========================================
+   ALTA DE USUARIOS: SUBPESTAÑAS, CSV Y EMPRESAS
+   ========================================== */
+
+function cambiarSubpestanaAlta(modo) {
+    const secInd = document.getElementById('subseccion-alta-individual');
+    const secCsv = document.getElementById('subseccion-alta-csv');
+    const secEmp = document.getElementById('subseccion-alta-empresa');
+
+    const btnInd = document.getElementById('btn-tab-alta-individual');
+    const btnCsv = document.getElementById('btn-tab-alta-csv');
+    const btnEmp = document.getElementById('btn-tab-alta-empresa');
+
+    if (secInd) secInd.style.display = modo === 'individual' ? '' : 'none';
+    if (secCsv) secCsv.style.display = modo === 'csv' ? '' : 'none';
+    if (secEmp) secEmp.style.display = modo === 'empresa' ? '' : 'none';
+
+    if (btnInd) btnInd.style.background = modo === 'individual' ? '#1e3a8a' : '#374151';
+    if (btnCsv) btnCsv.style.background = modo === 'csv' ? '#1e3a8a' : '#374151';
+    if (btnEmp) btnEmp.style.background = modo === 'empresa' ? '#1e3a8a' : '#374151';
+
+    if (modo === 'empresa') {
+        poblarSelectBarriosEmpresa();
+    }
+}
+window.cambiarSubpestanaAlta = cambiarSubpestanaAlta;
+
+function poblarSelectBarriosEmpresa() {
+    const select = document.getElementById('empresa-barrio');
+    if (!select) return;
+    const barrios = getBarriosRegistrados();
+    select.innerHTML = barrios.map(b => `<option value="${b}">${b}</option>`).join('');
+}
+
+async function procesarCSVUsuarios() {
+    const input = document.getElementById('input-archivo-csv-usuarios');
+    const feedback = document.getElementById('resultado-importacion-csv');
+    if (!input || !input.files || input.files.length === 0) {
+        alert('Por favor selecciona un archivo .csv antes de procesar.');
+        return;
+    }
+    const archivo = input.files[0];
+    const texto = await archivo.text();
+    const lineas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    if (lineas.length === 0) {
+        alert('El archivo CSV está vacío.');
+        return;
+    }
+
+    let altasCorrectas = 0;
+    let omitidos = 0;
+    const usuariosActuales = getUsuariosDelAmbito();
+
+    for (let i = 0; i < lineas.length; i++) {
+        const linea = lineas[i];
+        // Omitir cabecera si contiene "telefono" o "phone"
+        if (i === 0 && (linea.toLowerCase().includes('telefono') || linea.toLowerCase().includes('phone'))) {
+            continue;
+        }
+
+        // Parsear valores por coma o punto y coma
+        const separador = linea.includes(';') ? ';' : ',';
+        const cols = linea.split(separador).map(c => c.trim().replace(/^["']|["']$/g, ''));
+        const telefono = cols[0] || '';
+        const nombre = cols[1] || '';
+        const rol = (cols[2] || 'jugador').toLowerCase();
+        const barrio = cols[3] || 'Forastero';
+        const email = cols[4] || '';
+
+        if (!telefono || !/^\+?[0-9]{7,15}$/.test(telefono.replace(/\s+/g, ''))) {
+            omitidos++;
+            continue;
+        }
+
+        const existe = usuariosActuales.some(u => String(u.phone).trim() === telefono.trim());
+        if (existe) {
+            omitidos++;
+            continue;
+        }
+
+        const nuevoUsuario = {
+            id: 'usr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            phone: telefono,
+            name: nombre || telefono,
+            role: ['superadmin', 'tronista'].includes(rol) ? rol : 'jugador',
+            pin_code: generarPinSeisDigitos(),
+            barrio_asignado: barrio,
+            barrio_representado: barrio,
+            email: email,
+            gender: 'M',
+            created_at: new Date().toISOString()
+        };
+
+        usuariosActuales.push(nuevoUsuario);
+        altasCorrectas++;
+    }
+
+    // Guardar en almacenamiento local y refrescar UI
+    try {
+        localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(usuariosActuales));
+    } catch (_) {}
+
+    renderTablaUsuarios();
+    if (feedback) {
+        feedback.innerHTML = `✅ Importación completada: <strong>${altasCorrectas} usuarios añadidos</strong> (${omitidos} omitidos o existentes).`;
+    }
+    input.value = '';
+}
+window.procesarCSVUsuarios = procesarCSVUsuarios;
+
+function guardarEmpresaColaboradora(event) {
+    if (event) event.preventDefault();
+    const razonSocial = document.getElementById('empresa-razon-social')?.value?.trim();
+    const cif = document.getElementById('empresa-cif')?.value?.trim();
+    const nombreComercial = document.getElementById('empresa-nombre-comercial')?.value?.trim();
+    const direccion = document.getElementById('empresa-direccion')?.value?.trim();
+    const cp = document.getElementById('empresa-cp')?.value?.trim();
+    const municipio = document.getElementById('empresa-municipio')?.value?.trim();
+    const contacto = document.getElementById('empresa-contacto')?.value?.trim();
+    const telefono = document.getElementById('empresa-telefono')?.value?.trim();
+    const email = document.getElementById('empresa-email')?.value?.trim();
+    const rrssInstagram = document.getElementById('empresa-redes-instagram')?.value?.trim();
+    const tipoEvento = document.getElementById('empresa-tipo-evento')?.value;
+    const barrio = document.getElementById('empresa-barrio')?.value;
+    const formaPago = document.getElementById('empresa-forma-pago')?.value;
+    const importe = document.getElementById('empresa-importe')?.value;
+    const iban = document.getElementById('empresa-iban')?.value?.trim();
+
+    if (!razonSocial || !cif || !telefono || !email) {
+        alert('Por favor completa todos los campos requeridos de la empresa.');
+        return;
+    }
+
+    const nuevaEmpresa = {
+        id: 'emp_' + Date.now(),
+        razonSocial,
+        cif,
+        nombreComercial: nombreComercial || razonSocial,
+        direccion,
+        cp,
+        municipio,
+        contacto,
+        telefono,
+        email,
+        rrss: {
+            instagram: rrssInstagram,
+            facebook: document.getElementById('empresa-redes-facebook')?.value?.trim(),
+            tiktok: document.getElementById('empresa-redes-tiktok')?.value?.trim(),
+            web: document.getElementById('empresa-web')?.value?.trim()
+        },
+        tipoEvento,
+        barrio,
+        formaPago,
+        importe: parseFloat(importe) || 0,
+        iban,
+        campanas: {
+            portada: document.getElementById('empresa-campana-portada')?.checked ?? true,
+            calendario: document.getElementById('empresa-campana-calendario')?.checked ?? true,
+            papiro: document.getElementById('empresa-campana-papiro')?.checked ?? true,
+            rrss: document.getElementById('empresa-campana-rrss')?.checked ?? true,
+            inicio: document.getElementById('empresa-campana-inicio')?.value || '',
+            fin: document.getElementById('empresa-campana-fin')?.value || ''
+        },
+        fechaAlta: new Date().toISOString()
+    };
+
+    // Guardar en el listado de empresas / locales de promoción
+    const STORAGE_KEY_EMPRESAS = 'lokitrono_empresas_colaboradoras';
+    let empresas = [];
+    try {
+        const guardadas = localStorage.getItem(STORAGE_KEY_EMPRESAS);
+        empresas = guardadas ? JSON.parse(guardadas) : [];
+    } catch (_) {}
+    empresas.push(nuevaEmpresa);
+    try {
+        localStorage.setItem(STORAGE_KEY_EMPRESAS, JSON.stringify(empresas));
+    } catch (_) {}
+
+    const feedback = document.getElementById('empresa-form-feedback');
+    if (feedback) {
+        feedback.innerHTML = `🎉 ¡Empresa <strong>${nuevaEmpresa.nombreComercial}</strong> dada de alta con éxito! Se ha registrado el CIF <strong>${cif}</strong> y la campaña publicitaria.`;
+    }
+    alert(`Empresa "${nuevaEmpresa.nombreComercial}" registrada correctamente en el reino.`);
+    document.getElementById('form-empresa-colaboradora')?.reset();
+}
+window.guardarEmpresaColaboradora = guardarEmpresaColaboradora;
+
+/* ==========================================
    GESTIÓN DE USUARIOS AUTORIZADOS
    ========================================== */
 

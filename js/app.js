@@ -412,6 +412,9 @@ function cambiarPestana(valor) {
     if (valor === 'pestana-trivial' || valor === 'tab-trivial') {
         cargarIframeTrivial();
     }
+    if (valor === 'pestana-botxitrono' || valor === 'tab-botxitrono') {
+        cargarIframeBotxitronoPestana();
+    }
     const sections = document.querySelectorAll('.tab-content');
     sections.forEach(section => {
         const shouldShow = section.id === valor || section.dataset.tab === valor;
@@ -10326,7 +10329,18 @@ function cargarIframeTrivial() {
     }
 }
 
+function cargarIframeBotxitronoPestana() {
+    const iframe = document.getElementById('botxitrono-tab-iframe');
+    if (!iframe) return;
+    const destino = iframe.getAttribute('data-src') || './botxitrono/';
+    const actual = iframe.getAttribute('src');
+    if (!actual || actual === 'about:blank') {
+        iframe.setAttribute('src', destino);
+    }
+}
+
 window.cargarIframeTrivial = cargarIframeTrivial;
+window.cargarIframeBotxitronoPestana = cargarIframeBotxitronoPestana;
 
 // Integración de Botxitrono
 function abrirBotxitrono() {

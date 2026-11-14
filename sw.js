@@ -3,13 +3,14 @@
  * Cachea el app shell para que la aplicación pueda abrirse sin conexión.
  * Sube CACHE_VERSION cuando cambies cualquiera de los archivos del shell.
  */
-const CACHE_VERSION = 'lokitrono-app-v5';
+const CACHE_VERSION = 'lokitrono-app-v6';
 const CACHE_PREFIX = 'lokitrono-app-';
 const APP_SHELL = [
     './',
     './index.html',
     './manifest.webmanifest',
     './css/style.css',
+    './css/app-bar.css',
     './css/medieval-theme.css',
     './css/legal.css',
     './js/legal-config.js',

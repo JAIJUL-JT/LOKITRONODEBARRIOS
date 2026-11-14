@@ -2,12 +2,23 @@
     "name": "LokiTrono de Barrios",
     "short_name": "LokiTrono",
     "description": "Juego gastronómico y lúdico de los barrios de Bilbao: cata de pintxos, sellos y ranking según la Ley II de Bilbao.",
-    "lang": "es",
+    "lang": "es-ES",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
-    "background_color": "#050505",
+    "display_override": [
+        "window-controls-overlay",
+        "standalone",
+        "minimal-ui"
+    ],
+    "orientation": "any",
+    "background_color": "#090a0f",
     "theme_color": "#d4af37",
+    "categories": [
+        "entertainment",
+        "food",
+        "games"
+    ],
     "icons": [
         {
             "src": "/juego-de-barrios-logo-192.png",
@@ -31,6 +42,44 @@
             "src": "/favicon.ico",
             "sizes": "any",
             "type": "image/x-icon"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Votar Pintxo",
+            "short_name": "Votar",
+            "description": "Emite tu juicio gastronómico para la taberna actual",
+            "url": "/#pestana-votacion-barrio",
+            "icons": [
+                {
+                    "src": "/juego-de-barrios-logo-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Ver Clasificación",
+            "short_name": "Ranking",
+            "description": "Consulta el trono y ranking según la Ley II de Bilbao",
+            "url": "/#pestana-clasificacion",
+            "icons": [
+                {
+                    "src": "/juego-de-barrios-logo-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "El Papiro del Norte",
+            "short_name": "Papiro",
+            "description": "Lee las crónicas y noticias del Reino de Bilbao",
+            "url": "/#pestana-blog",
+            "icons": [
+                {
+                    "src": "/juego-de-barrios-logo-192.png",
+                    "sizes": "192x192"
+                }
+            ]
         }
     ]
 }

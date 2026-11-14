@@ -437,6 +437,15 @@ function cambiarPestana(valor) {
     if (typeof sincronizarEstadoMenuHamburguesa === 'function') {
         sincronizarEstadoMenuHamburguesa(valor);
     }
+
+    // Sincroniza la barra inferior móvil si existe
+    const itemsBarraMovil = document.querySelectorAll('.bottom-nav-item[data-pestana]');
+    if (itemsBarraMovil.length > 0) {
+        itemsBarraMovil.forEach(item => {
+            const match = item.getAttribute('data-pestana') === valor || (valor === 'tab-inicio' && item.getAttribute('data-pestana') === 'pestana-inicio');
+            item.classList.toggle('active', !!match);
+        });
+    }
 }
 
 function actualizarInterfazSesion(usuario) {

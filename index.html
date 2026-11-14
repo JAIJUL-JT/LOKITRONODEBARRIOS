@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>LokiTrono de Barrios | Juego del Pintxo de Bilbao</title>
 
     <!-- SEO básico -->
@@ -50,7 +50,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261113">
+    <link rel="stylesheet" href="css/style.css?v=20261114">
+    <link rel="stylesheet" href="css/app-bar.css?v=20261114">
     <link rel="stylesheet" href="css/medieval-theme.css?v=20261101">
 
     <link rel="stylesheet" href="css/legal.css">
@@ -91,12 +92,30 @@
                 "name": "LokiTrono de Barrios",
                 "url": "https://lokitronodebarrios.vercel.app/",
                 "applicationCategory": "GameApplication",
-                "operatingSystem": "Web",
+                "operatingSystem": "Web, Android, iOS, Windows, macOS, Linux",
                 "inLanguage": "es-ES",
                 "offers": {
                     "@type": "Offer",
                     "price": "0",
                     "priceCurrency": "EUR"
+                }
+            },
+            {
+                "@type": "Event",
+                "name": "LokiTrono de Barrios - Gran Justa Gastronómica del Botxo",
+                "description": "Campeonato y ruta lúdica de pintxos por los barrios y feudos de Bilbao con sellos, juicio popular y ranking según la Ley II.",
+                "startDate": "2026-10-01T20:00:00+02:00",
+                "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+                "eventStatus": "https://schema.org/EventScheduled",
+                "location": {
+                    "@type": "Place",
+                    "name": "Barrios y Tabernas de Bilbao",
+                    "address": {
+                        "@type": "PostalAddress",
+                        "addressLocality": "Bilbao",
+                        "addressRegion": "Bizkaia",
+                        "addressCountry": "ES"
+                    }
                 }
             }
         ]
@@ -2461,6 +2480,30 @@
             <iframe id="botxitrono-iframe" src="" style="width: 100%; border: none; flex: 1; min-height: 0; display: block;" title="Juego Botxitrono"></iframe>
         </div>
     </div>
+
+    <!-- Barra de Navegación Móvil Inferior (Web-App Ergonomics) -->
+    <nav class="mobile-bottom-nav" aria-label="Navegación principal móvil" id="barra-inferior-movil">
+        <button type="button" class="bottom-nav-item active" onclick="cambiarPestana('pestana-inicio')" data-pestana="pestana-inicio" aria-label="Inicio">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Inicio</span>
+        </button>
+        <button type="button" class="bottom-nav-item" onclick="cambiarPestana('pestana-votacion-barrio')" data-pestana="pestana-votacion-barrio" aria-label="Votar">
+            <span class="nav-icon">🗳️</span>
+            <span class="nav-label">Votar</span>
+        </button>
+        <button type="button" class="bottom-nav-item" onclick="cambiarPestana('pestana-clasificacion')" data-pestana="pestana-clasificacion" aria-label="Ranking">
+            <span class="nav-icon">🏆</span>
+            <span class="nav-label">Ranking</span>
+        </button>
+        <button type="button" class="bottom-nav-item" onclick="cambiarPestana('pestana-blog')" data-pestana="pestana-blog" aria-label="El Papiro del Norte">
+            <span class="nav-icon">📜</span>
+            <span class="nav-label">Papiro</span>
+        </button>
+        <button type="button" class="bottom-nav-item" onclick="alternarMenuHamburguesa()" aria-label="Abrir Menú de la Corte">
+            <span class="nav-icon">☰</span>
+            <span class="nav-label">Menú</span>
+        </button>
+    </nav>
 
     <!-- Código JS principal -->
     <script src="js/supabase.js"></script>

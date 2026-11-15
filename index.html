@@ -50,7 +50,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261115c">
+    <link rel="stylesheet" href="css/style.css?v=20261115d">
     <link rel="stylesheet" href="css/app-bar.css?v=20261114">
     <link rel="stylesheet" href="css/medieval-theme.css?v=20261101">
 
@@ -645,10 +645,10 @@
                 </div>
             </section>
 
-            <!-- PESTAÑA 2: Calendario Feudal de Justas -->
+            <!-- PESTAÑA 2: Calendario de Eventos -->
             <section id="tab-calendario" class="tab-content seccion-bg-calendario tema-cronica" data-tab="tab-calendario" style="display: none; background-image: url('assets/img/fondo-calendario.svg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
-                <div class="panel-card">
-                    <h2 style="font-family: 'Cinzel', serif; color: var(--oro-real); text-align: center;">📅 Calendario Feudal de Justas y Eventos Barriales</h2>
+                <div class="panel-card calendario-papiro-card">
+                    <h2 style="font-family: 'Cinzel', serif; color: var(--oro-real); text-align: center;">📅 Calendario de eventos</h2>
                     <p style="color: #e5c36a; text-align: center; font-style: italic; margin-bottom: 20px;">
                         📜 Crónica imperial de eventos. Los días marcados con la <strong>Cruz Roja Imperial (❌)</strong> señalan las fechas con justas y festines oficiales de la corte.
                     </p>
@@ -662,14 +662,14 @@
                         </div>
                     </div>
 
-                    <!-- CONTENEDOR DE NAVEGACIÓN Y MATRIZ DE CALENDARIO MEDIEVAL -->
-                    <div class="medieval-calendar-container">
+                    <!-- CONTENEDOR DE NAVEGACIÓN Y MATRIZ DE CALENDARIO MEDIEVAL PAPIRO -->
+                    <div class="medieval-calendar-container papiro-pergamino-container">
                         <!-- Barra Superior de Controles (Mes / Año / Navegación) -->
-                        <div class="calendar-controls" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; background: rgba(25, 20, 12, 0.9); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.4);">
-                            <button type="button" class="btn-cuervo" onclick="cambiarMesCalendario(-1)" style="padding: 6px 14px;">⬅️ Mes Anterior</button>
+                        <div class="calendar-controls">
+                            <button type="button" class="btn-cuervo cal-btn-nav" onclick="cambiarMesCalendario(-1)">⬅️ <span class="cal-nav-text">Anterior</span></button>
                             
-                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                                <select id="cal-select-mes" class="input-medieval" onchange="actualizarCalendarioMedieval()" style="font-family: 'Cinzel', serif; font-weight: bold; width: 140px;">
+                            <div class="cal-selects-wrapper">
+                                <select id="cal-select-mes" class="input-medieval cal-select-mes" onchange="actualizarCalendarioMedieval()">
                                     <option value="0">Enero</option>
                                     <option value="1">Febrero</option>
                                     <option value="2">Marzo</option>
@@ -683,25 +683,25 @@
                                     <option value="10">Noviembre</option>
                                     <option value="11">Diciembre</option>
                                 </select>
-                                <select id="cal-select-anio" class="input-medieval" onchange="actualizarCalendarioMedieval()" style="font-family: 'Cinzel', serif; font-weight: bold; width: 100px;">
+                                <select id="cal-select-anio" class="input-medieval cal-select-anio" onchange="actualizarCalendarioMedieval()">
                                 </select>
-                                <button type="button" class="btn-cuervo" onclick="irAFechaActual()" style="padding: 6px 12px; background: #854d0e;">🏰 Hoy</button>
+                                <button type="button" class="btn-cuervo cal-btn-hoy" onclick="irAFechaActual()">🏰 Hoy</button>
                             </div>
 
-                            <button type="button" class="btn-cuervo" onclick="cambiarMesCalendario(1)" style="padding: 6px 14px;">Mes Siguiente ➡️</button>
+                            <button type="button" class="btn-cuervo cal-btn-nav" onclick="cambiarMesCalendario(1)"><span class="cal-nav-text">Siguiente</span> ➡️</button>
                         </div>
 
                         <!-- Título principal del mes activo -->
-                        <h3 id="cal-titulo-mes" style="text-align: center; color: var(--oro-brillante); font-family: 'Cinzel', serif; font-size: 1.6rem; margin: 15px 0; letter-spacing: 2px;"></h3>
+                        <h3 id="cal-titulo-mes" class="cal-titulo-mes-papiro"></h3>
 
-                        <!-- Cabecera de los días de la semana y rejilla dinámica de días (deslizable en móvil) -->
-                        <div class="calendario-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 18px; min-width: 100%;">
-                            <div class="calendar-grid-header" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-weight: bold; font-family: 'Cinzel', serif; color: var(--oro-real); background: rgba(45, 35, 20, 0.8); padding: 10px 0; border-radius: 6px; margin-bottom: 8px; min-width: 520px;">
+                        <!-- Rejilla completa del mes sin scroll lateral (ajuste fluido a móvil) -->
+                        <div class="calendario-contenedor-rejilla">
+                            <div class="calendar-grid-header">
                                 <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
                             </div>
 
                             <!-- Rejilla dinámica de días -->
-                            <div id="cal-grid-dias" class="calendar-grid-body" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; min-width: 520px;">
+                            <div id="cal-grid-dias" class="calendar-grid-body">
                             </div>
                         </div>
                     </div>

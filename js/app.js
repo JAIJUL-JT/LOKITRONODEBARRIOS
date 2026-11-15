@@ -7488,12 +7488,9 @@ function lokibotProcesarMensaje(texto) {
 function lokibotActualizarVisibilidad(usuario) {
     const burbuja = document.getElementById('lokibot-burbuja');
     if (!burbuja) return;
-    if (usuario) {
-        burbuja.classList.add('lokibot-visible');
-    } else {
-        burbuja.classList.remove('lokibot-visible');
-        lokibotCerrarPanel();
-    }
+    burbuja.classList.remove('lokibot-visible');
+    burbuja.style.display = 'none';
+    lokibotCerrarPanel();
 }
 
 async function lokibotRegistrarConsulta(pregunta, resuelta) {
@@ -7670,15 +7667,8 @@ function descartarTutorialConfiguracion() {
 function actualizarVisibilidadTutorialConfig(usuario) {
     const burbuja = document.getElementById('tutorial-config-burbuja');
     if (!burbuja) return;
-    const esAdmin = usuario && puedeAdministrar(usuario.role);
-    let descartado = false;
-    try { descartado = localStorage.getItem('tutorial_config_descartado') === '1'; } catch (_) { descartado = false; }
-    burbuja.style.display = esAdmin ? 'flex' : 'none';
-    burbuja.style.opacity = '1';
-    burbuja.title = descartado
-        ? 'Configuración inicial (oculta: «No volver a mostrar»)'
-        : 'Configuración inicial del reino';
-    if (!esAdmin) cerrarTutorialConfiguracion();
+    burbuja.style.display = 'none';
+    cerrarTutorialConfiguracion();
 }
 
 // Recorrido guiado (primer inicio de sesión de un administrador).
@@ -7753,19 +7743,8 @@ function cerrarBienvenidaMaestre(noVolver) {
 // Decide qué guía mostrar en cada inicio de sesión.
 function iniciarGuiasPrimerUso(usuario) {
     if (!usuario) return;
-    const esAdmin = puedeAdministrar(usuario.role);
-    if (esAdmin) {
-        let visto = false;
-        try { visto = localStorage.getItem('tutorial_admin_visto') === '1'; } catch (_) { visto = false; }
-        if (!visto) abrirTourConfiguracion();
-    } else {
-        let vista = false, noMostrar = false;
-        try {
-            vista = localStorage.getItem('bienvenida_maestre_vista') === '1';
-            noMostrar = localStorage.getItem('bienvenida_maestre_no_mostrar') === '1';
-        } catch (_) { /* noop */ }
-        if (!vista && !noMostrar) mostrarBienvenidaMaestre();
-    }
+    // Tutoriales y recorridos desactivados / ocultos por configuración
+    return;
 }
 
 window.abrirTutorialConfiguracion = abrirTutorialConfiguracion;

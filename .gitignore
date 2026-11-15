@@ -19,4 +19,5 @@ backup_before_deploy_20261016.zip
 *.pptx
 logo.jpg
 backups/
+no-usados/
 supabase/.temp/

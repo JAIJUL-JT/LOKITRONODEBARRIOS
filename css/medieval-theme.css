@@ -16,7 +16,7 @@ body {
     background-color: var(--piedra-oscura) !important;
     background-image: 
         radial-gradient(circle at 50% 30%, rgba(20, 15, 10, 0.45) 0%, rgba(5, 5, 6, 0.88) 75%, rgba(0, 0, 0, 0.96) 100%),
-        url('../fondo-cinematografico.jpg') !important;
+        url('../assets/img/fondo-cinematografico.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     background-attachment: fixed !important;
@@ -53,7 +53,7 @@ body {
 #pestana-clasificacion {
     background-image: 
         linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)),
-        url('/fondo-cinematografico.jpg') !important;
+        url('../assets/img/fondo-cinematografico.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     background-attachment: fixed !important;
@@ -73,7 +73,7 @@ body {
 #pestana-votacion-barrio {
     background-image: 
         linear-gradient(rgba(20, 12, 8, 0.55), rgba(0, 0, 0, 0.88)),
-        url('/reliquia-pintxo-oro.jpg') !important;
+        url('../assets/img/reliquia-pintxo-oro.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     background-attachment: fixed !important;
@@ -83,7 +83,7 @@ body {
 #pestana-votacion-barrio .panel-card {
     background-image: 
         linear-gradient(rgba(245, 230, 202, 0.92), rgba(245, 230, 202, 0.92)),
-        url('../textura-pergamino.jpg') !important;
+        url('../assets/img/textura-pergamino.jpg') !important;
     background-size: cover !important;
     color: #2b1810 !important;
     border: 3px double #78350f !important;
@@ -116,7 +116,7 @@ body {
 #pestana-usuarios, #tab-superadmin {
     background-image: 
         radial-gradient(circle at 50% 20%, rgba(30, 41, 59, 0.4) 0%, rgba(4, 7, 12, 0.96) 85%),
-        url('../ambiente-prision.jpg') !important;
+        url('../assets/img/ambiente-prision.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     border: 2px solid #475569 !important;
@@ -149,7 +149,7 @@ body {
 #tab-calendario, #pestana-generar-evento {
     background-image: 
         radial-gradient(circle at 50% 25%, rgba(245, 158, 11, 0.25) 0%, rgba(18, 14, 8, 0.94) 85%),
-        url('../ambiente-iglesia.jpg') !important;
+        url('../assets/img/ambiente-iglesia.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     border: 2px solid #d97706 !important;
@@ -166,7 +166,7 @@ body {
 #pestana-oraculo-ia {
     background-image: 
         radial-gradient(circle at 50% 30%, rgba(147, 51, 234, 0.3) 0%, rgba(8, 5, 15, 0.96) 85%),
-        url('../fondo-cripta-oraculo.jpg') !important;
+        url('../assets/img/fondo-cripta-oraculo.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     border: 2px solid #9333ea !important;
@@ -183,7 +183,7 @@ body {
 #pestana-evento-final {
     background-image: 
         radial-gradient(circle at 50% 20%, rgba(234, 179, 8, 0.35) 0%, rgba(15, 12, 5, 0.96) 85%),
-        url('../reliquia-pintxo-oro.jpg') !important;
+        url('../assets/img/reliquia-pintxo-oro.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     border: 3px solid var(--oro-real) !important;
@@ -223,7 +223,7 @@ body {
     position: absolute;
     width: 20px;
     height: 20px;
-    background-image: url('../lokilogo.png');
+    background-image: url('../assets/img/lokilogo.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;

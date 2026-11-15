@@ -24,6 +24,7 @@ move_block.py
 lokitrono-barrio-management-update/
 lokitrono-login-superadmin-fix/
 backups/
+no-usados/
 
 # Scripts de parcheo y utilidades (no forman parte del sitio)
 *.py

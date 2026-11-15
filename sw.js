@@ -3,7 +3,7 @@
  * Cachea el app shell para que la aplicación pueda abrirse sin conexión.
  * Sube CACHE_VERSION cuando cambies cualquiera de los archivos del shell.
  */
-const CACHE_VERSION = 'lokitrono-app-v6';
+const CACHE_VERSION = 'lokitrono-app-v7';
 const CACHE_PREFIX = 'lokitrono-app-';
 const APP_SHELL = [
     './',
@@ -19,9 +19,10 @@ const APP_SHELL = [
     './js/app.js',
     './js/supabase.js',
     './js/dragon.js',
-    './loki-logo.jpeg',
-    './juego-de-barrios-logo-192.png',
-    './juego-de-barrios-logo-512.png',
+    './assets/img/loki-logo.jpeg',
+    './assets/img/juego-de-barrios-logo-192.png',
+    './assets/img/juego-de-barrios-logo-512.png',
+    './assets/img/lokilogo.png',
     './favicon.ico'
 ];
 

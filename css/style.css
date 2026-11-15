@@ -462,6 +462,7 @@ h1, h2, h3, .hero h1, .login-title, .titulo-seccion-feudal, .maestre-banner, .ra
     font-size: 1.4rem;
     cursor: pointer;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 18px rgba(212, 175, 55, 0.25);
+    display: none !important;
     align-items: center;
     justify-content: center;
 }
@@ -1350,14 +1351,14 @@ h1, h2, h3, .hero h1, .login-title, .titulo-seccion-feudal, .maestre-banner, .ra
     color: #1c1917;
     font-size: 1.55rem;
     cursor: pointer;
-    display: none;
+    display: none !important;
     align-items: center;
     justify-content: center;
     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55), var(--sombra-oro);
     z-index: 1200;
     transition: transform 0.15s ease;
 }
-#lokibot-burbuja.lokibot-visible { display: flex; }
+#lokibot-burbuja.lokibot-visible { display: none !important; }
 #lokibot-burbuja:hover { transform: scale(1.07); }
 
 #lokibot-panel {
@@ -1367,7 +1368,7 @@ h1, h2, h3, .hero h1, .login-title, .titulo-seccion-feudal, .maestre-banner, .ra
     width: 350px;
     max-width: calc(100vw - 40px);
     max-height: min(72vh, 620px);
-    display: none;
+    display: none !important;
     flex-direction: column;
     background: linear-gradient(180deg, #121212 0%, #0a0a0a 100%);
     border: var(--borde-oro-brillante);
@@ -2118,7 +2119,7 @@ p, span, div, li { color: #e5e7eb !important; text-shadow: 1px 1px 2px rgba(0,0,
 }
 
 .tab-content.seccion-bg-calendario {
-    background-image: linear-gradient(rgba(10, 8, 5, 0.65), rgba(10, 8, 5, 0.88)), url('../fondo-calendario.svg') !important;
+    background-image: linear-gradient(rgba(10, 8, 5, 0.65), rgba(10, 8, 5, 0.88)), url('../assets/img/fondo-calendario.svg') !important;
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
@@ -2126,7 +2127,7 @@ p, span, div, li { color: #e5e7eb !important; text-shadow: 1px 1px 2px rgba(0,0,
 }
 
 .tab-content.seccion-bg-votar {
-    background-image: linear-gradient(rgba(20, 12, 8, 0.6), rgba(0, 0, 0, 0.88)), url('../reliquia-pintxo-oro.jpg') !important;
+    background-image: linear-gradient(rgba(20, 12, 8, 0.6), rgba(0, 0, 0, 0.88)), url('../assets/img/reliquia-pintxo-oro.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
@@ -2134,7 +2135,7 @@ p, span, div, li { color: #e5e7eb !important; text-shadow: 1px 1px 2px rgba(0,0,
 }
 
 .tab-content.seccion-bg-clasificacion {
-    background-image: linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.85)), url('../fondo-cinematografico.jpg') !important;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.85)), url('../assets/img/fondo-cinematografico.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
@@ -2142,7 +2143,7 @@ p, span, div, li { color: #e5e7eb !important; text-shadow: 1px 1px 2px rgba(0,0,
 }
 
 .tab-content.seccion-bg-tronistas {
-    background-image: linear-gradient(rgba(10, 10, 15, 0.7), rgba(5, 5, 10, 0.9)), url('../fondo-tronistas.svg') !important;
+    background-image: linear-gradient(rgba(10, 10, 15, 0.7), rgba(5, 5, 10, 0.9)), url('../assets/img/fondo-tronistas.svg') !important;
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
@@ -2150,7 +2151,7 @@ p, span, div, li { color: #e5e7eb !important; text-shadow: 1px 1px 2px rgba(0,0,
 }
 
 .tab-content.seccion-bg-gala {
-    background-image: linear-gradient(rgba(25, 10, 15, 0.68), rgba(10, 5, 8, 0.92)), url('../ambiente-iglesia.jpg') !important;
+    background-image: linear-gradient(rgba(25, 10, 15, 0.68), rgba(10, 5, 8, 0.92)), url('../assets/img/ambiente-iglesia.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;

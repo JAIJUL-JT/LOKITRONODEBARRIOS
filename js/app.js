@@ -462,13 +462,8 @@ function actualizarInterfazSesion(usuario) {
     if (usuario) {
         if (loginBox) loginBox.style.display = 'none';
         if (authStatus) {
-            authStatus.style.display = 'block';
-            authStatus.innerHTML = `
-                <div class="pill-user" style="display: inline-flex; align-items: center; gap: 15px; background: rgba(10,10,10,0.9); border: 1px solid var(--oro-real); padding: 8px 16px; border-radius: 20px;">
-                    <span><strong>Maestre en la corte:</strong> <strong>${getTituloCompleto(usuario)}</strong></span>
-                    <button onclick="cerrarSesionDirecta()" class="btn-cuervo" style="padding: 4px 10px; font-size: 0.8rem; background: #7f1d1d;">🚪 Cerrar Sesión</button>
-                </div>
-            `;
+            authStatus.style.display = 'none';
+            authStatus.innerHTML = '';
         }
         if (userWidget) {
             userWidget.style.display = 'block';

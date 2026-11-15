@@ -136,7 +136,7 @@
     <script src="js/legal-config.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261115d" defer></script>
+    <script src="js/app.js?v=20261115e" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -571,17 +571,32 @@
                             </div>
                         </div>
 
-                        <!-- Tarjeta Créditos -->
+                        <!-- Tarjeta Himno Feudal -->
                         <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
                             <div>
-                                <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">📜 Créditos de la Aventura</h3>
+                                <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎵 Himno del Reino</h3>
                                 <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
-                                    Conoce a los creadores, la inspiración y los agradecimientos del juego de los 52 barrios de Bilbao.
+                                    Escucha la marcha oficial que inspira las justas y el honor en los 52 feudos de Bilbao.
                                 </p>
                             </div>
                             <div>
-                                <button type="button" class="btn-medieval" onclick="cambiarPestana('pestana-creditos')" style="padding: 8px 14px; font-size: 0.85rem;">
-                                    📜 Ver Créditos
+                                <button type="button" id="btn-audio-himno" class="btn-medieval inicio-cta-btn" onclick="toggleAudioHimno()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
+                                    🎵 Escuchar Himno
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta Danza de Dragones -->
+                        <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🐉 Danza de Dragones</h3>
+                                <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
+                                    Convoca el vuelo acrobático de los tres dragones legendarios cruzando el firmamento con fuegos artificiales.
+                                </p>
+                            </div>
+                            <div>
+                                <button type="button" class="btn-medieval" onclick="window.toggleBaileDragones && window.toggleBaileDragones()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%; background: linear-gradient(135deg, #7f1d1d, #450a0a);">
+                                    🔥 Iniciar Danza de Dragones
                                 </button>
                             </div>
                         </div>

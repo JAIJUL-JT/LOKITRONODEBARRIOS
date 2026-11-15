@@ -433,6 +433,7 @@ function cambiarPestana(valor) {
     if (valor === 'pestana-blog' || valor === 'tab-blog'
         || valor === 'pestana-blog-editor' || valor === 'tab-blog-editor') {
         if (typeof renderBlogPosts === 'function') renderBlogPosts();
+        if (typeof renderPresentacionSlide === 'function') renderPresentacionSlide();
     }
     if (typeof sincronizarEstadoMenuHamburguesa === 'function') {
         sincronizarEstadoMenuHamburguesa(valor);

@@ -136,7 +136,7 @@
     <script src="js/legal-config.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261115b" defer></script>
+    <script src="js/app.js?v=20261115c" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -315,33 +315,6 @@
                                 <source src="assets/presentacion/lokipresvid.mp4" type="video/mp4">
                                 Tu navegador no soporta la reproducción de vídeo HTML5.
                             </video>
-                        </div>
-                    </div>
-
-                    <!-- PRESENTACIÓN OFICIAL (CARRUSEL INTERACTIVO) -->
-                    <div class="presentacion-container">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 6px; font-size: 1.4rem;">
-                                📜 Crónica Ilustrada del Juego
-                            </h3>
-                            <p style="color: #d6d3d1; font-size: 0.9rem; margin: 0;">
-                                Descubre las reglas feudales, el mapa de tabernas y la senda hacia la gloria en la Gran Gala Final.
-                            </p>
-                        </div>
-
-                        <div class="presentacion-visor" id="presentacion-visor">
-                            <img id="presentacion-slide-img" src="assets/presentacion/q1.png" alt="Presentación oficial de LokiTrono de Barrios">
-                            <button type="button" class="presentacion-nav-btn prev" onclick="retrocederPresentacion()" aria-label="Diapositiva anterior">❮</button>
-                            <button type="button" class="presentacion-nav-btn next" onclick="avanzarPresentacion()" aria-label="Diapositiva siguiente">❯</button>
-                        </div>
-
-                        <!-- Indicadores de posición -->
-                        <div class="presentacion-dots" id="presentacion-dots"></div>
-
-                        <div style="text-align: center; margin-top: 14px;">
-                            <span id="presentacion-contador" style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 0.88rem; font-weight: bold;">
-                                📜 Página 1 de 11
-                            </span>
                         </div>
                     </div>
                 </div>
@@ -1792,6 +1765,35 @@
                             Lee las últimas publicaciones de la corte.
                         </p>
                     </div>
+
+                    <!-- CRÓNICA ILUSTRADA DEL JUEGO (CARRUSEL INTERACTIVO) -->
+                    <div class="presentacion-container" style="margin-bottom: 35px;">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 6px; font-size: 1.4rem;">
+                                📜 Crónica Ilustrada del Juego
+                            </h3>
+                            <p style="color: #d6d3d1; font-size: 0.9rem; margin: 0;">
+                                Descubre las reglas feudales, el mapa de tabernas y la senda hacia la gloria en la Gran Gala Final.
+                            </p>
+                        </div>
+
+                        <div class="presentacion-visor" id="presentacion-visor">
+                            <img id="presentacion-slide-img" src="assets/presentacion/q1.png" alt="Presentación oficial de LokiTrono de Barrios">
+                            <button type="button" class="presentacion-nav-btn prev" onclick="retrocederPresentacion()" aria-label="Diapositiva anterior">❮</button>
+                            <button type="button" class="presentacion-nav-btn next" onclick="avanzarPresentacion()" aria-label="Diapositiva siguiente">❯</button>
+                        </div>
+
+                        <!-- Indicadores de posición -->
+                        <div class="presentacion-dots" id="presentacion-dots"></div>
+
+                        <div style="text-align: center; margin-top: 14px;">
+                            <span id="presentacion-contador" style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 0.88rem; font-weight: bold;">
+                                📜 Página 1 de 11
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px dashed rgba(212,175,55,0.3); margin: 30px 0 25px;"></div>
 
                     <div id="grid-blog-posts" class="grid-cards"></div>
                     <p id="blog-publico-estado" role="status" aria-live="polite" style="color: #d6d3d1; margin-top: 12px;"></p>

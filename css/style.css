@@ -2554,10 +2554,184 @@ body.menu-hamburguesa-abierto {
     transform: none;
 }
 
+/* ============================================================
+   WIDGET DE USUARIO (ESQUINA SUPERIOR DERECHA)
+   ============================================================ */
+.usuario-sesion-widget {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 9000;
+}
+
+.btn-usuario-widget {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 48px;
+    max-width: 260px;
+    padding: 6px 14px 6px 10px;
+    border: 1.5px solid var(--oro-real, #d4af37);
+    border-radius: 999px;
+    background: radial-gradient(circle at 50% 20%, rgba(45, 35, 18, 0.96), rgba(5, 5, 5, 0.94));
+    color: var(--oro-brillante, #fef08a);
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(212, 175, 55, 0.15) inset;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-usuario-widget:hover,
+.btn-usuario-widget:focus-visible {
+    transform: translateY(-1px) scale(1.02);
+    border-color: var(--oro-brillante, #fef08a);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.75), 0 0 16px rgba(212, 175, 55, 0.35);
+    outline: none;
+}
+
+.usuario-widget-avatar {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(0, 0, 0, 0.8));
+    border: 1px solid var(--oro-real, #d4af37);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.usuario-widget-nombre {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--oro-brillante, #fef08a);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+}
+
+.dropdown-usuario-widget {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 250px;
+    background: radial-gradient(circle at 50% 0%, rgba(30, 24, 14, 0.98), rgba(8, 8, 8, 0.98));
+    border: 1.5px solid var(--oro-real, #d4af37);
+    border-radius: 12px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.9), 0 0 20px rgba(212, 175, 55, 0.2);
+    padding: 12px;
+    animation: fadeInDropdown 0.2s ease-out;
+}
+
+@keyframes fadeInDropdown {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-usuario-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 6px 8px;
+}
+
+.dropdown-usuario-icono {
+    font-size: 1.4rem;
+}
+
+.dropdown-usuario-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.dropdown-usuario-info strong {
+    font-family: 'Cinzel', serif;
+    color: var(--oro-brillante, #fef08a);
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-usuario-rol {
+    color: #a1a1aa;
+    font-size: 0.78rem;
+    text-transform: capitalize;
+}
+
+.dropdown-usuario-separador {
+    height: 1px;
+    background: rgba(212, 175, 55, 0.3);
+    margin: 6px 0 10px;
+}
+
+.dropdown-usuario-btn-cerrar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #fef2f2;
+    background: linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%);
+    border: 1px solid #b91c1c;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.dropdown-usuario-btn-cerrar:hover,
+.dropdown-usuario-btn-cerrar:focus-visible {
+    background: linear-gradient(135deg, #991b1b 0%, #5a0c0c 100%);
+    border-color: #ef4444;
+    transform: translateY(-1px);
+    outline: none;
+}
+
 @media (max-width: 600px) {
     .nav-hamburguesa {
         top: 8px;
         left: 8px;
+    }
+
+    .usuario-sesion-widget {
+        top: 8px;
+        right: 8px;
+    }
+
+    .btn-usuario-widget {
+        height: 44px;
+        max-width: 180px;
+        padding: 4px 10px 4px 8px;
+    }
+
+    .usuario-widget-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 0.95rem;
+    }
+
+    .usuario-widget-nombre {
+        max-width: 100px;
+        font-size: 0.82rem;
+    }
+
+    .dropdown-usuario-widget {
+        width: 220px;
     }
 
     .btn-menu-hamburguesa {

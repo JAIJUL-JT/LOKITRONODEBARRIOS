@@ -50,7 +50,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261115">
+    <link rel="stylesheet" href="css/style.css?v=20261115b">
     <link rel="stylesheet" href="css/app-bar.css?v=20261114">
     <link rel="stylesheet" href="css/medieval-theme.css?v=20261101">
 
@@ -136,7 +136,7 @@
     <script src="js/legal-config.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261115" defer></script>
+    <script src="js/app.js?v=20261115b" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -188,6 +188,27 @@
         <div id="auth-status" style="display: none; margin-top: 20px;">
             <!-- Carga dinámica -->
         </div>
+
+        <!-- INDICADOR / MENÚ DE USUARIO EN ESQUINA SUPERIOR DERECHA -->
+        <div id="usuario-sesion-widget" class="usuario-sesion-widget" style="display: none;">
+            <button type="button" id="btn-usuario-widget" class="btn-usuario-widget" onclick="toggleMenuUsuarioWidget()" aria-expanded="false" aria-haspopup="true" title="Perfil y opciones de sesión">
+                <span class="usuario-widget-avatar">👤</span>
+                <span id="usuario-widget-nombre" class="usuario-widget-nombre"></span>
+            </button>
+            <div id="dropdown-usuario-widget" class="dropdown-usuario-widget" style="display: none;" role="menu">
+                <div class="dropdown-usuario-header">
+                    <span class="dropdown-usuario-icono">👑</span>
+                    <div class="dropdown-usuario-info">
+                        <strong id="dropdown-usuario-nombre"></strong>
+                        <span id="dropdown-usuario-rol" class="dropdown-usuario-rol"></span>
+                    </div>
+                </div>
+                <div class="dropdown-usuario-separador"></div>
+                <button type="button" class="dropdown-usuario-btn-cerrar" onclick="cerrarSesionDirecta()" role="menuitem">
+                    🚪 Cerrar Sesión
+                </button>
+            </div>
+        </div>
         <!-- Nombre de la edición/competición en curso (bajo la portada) -->
         <p id="subtitulo-juego"
             style="display: none; margin: 16px 0 0; font-family: 'Cinzel', serif; color: var(--oro-brillante); letter-spacing: 0.08em; font-size: 1.05rem;">
@@ -213,10 +234,10 @@
                 <option value="pestana-votacion-barrio" data-tab="tab-votacion-barrio">🗳️ Votar</option>
                 <option value="pestana-clasificacion" data-tab="tab-clasificacion">🏆 Clasificación</option>
                 <option value="pestana-tronistas" data-tab="tab-tronistas">👑 Lokitronistas</option>
-                <option value="pestana-trivial" id="option-menu-trivial" data-tab="tab-trivial" style="display:none;">🧠 Jugar al Trivial</option>
-                <option value="pestana-botxitrono" id="option-menu-botxitrono" data-tab="tab-botxitrono">🎮 Jugar a Botxitrono</option>
+                <option value="pestana-extras" id="option-menu-extras" data-tab="tab-extras">✨ Extras</option>
                 <option value="pestana-creditos" id="option-menu-creditos" data-tab="tab-creditos" style="display:none;">📜 Ver créditos</option>
                 <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
+                <option value="pestana-faq" id="option-menu-faq" data-tab="tab-faq">❓ FAQ</option>
             </optgroup>
             <optgroup label="👑 Administración" id="optgroup-admin-menu" style="display:none;">
                 <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Gestión Usuarios</option>
@@ -283,10 +304,10 @@
                     <div class="presentacion-container video-presentacion-container" style="text-align: center; margin-bottom: 30px;">
                         <div style="margin-bottom: 16px;">
                             <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 6px; font-size: 1.4rem;">
-                                🎬 Tráiler y Presentación del Reino
+                                🎬  Presentación
                             </h3>
                             <p style="color: #d6d3d1; font-size: 0.9rem; margin: 0;">
-                                Conoce el espíritu de LokiTrono de Barrios en imágenes en movimiento.
+                                ¡¡Ongi Etorri!! En este lugar os describimos el espíritu y las reglas del juego. Esperamos que lo disfrutéis, en caso de duda consultar la sección FAQ.
                             </p>
                         </div>
                         <div style="position: relative; max-width: 440px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid var(--oro-real); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(212, 175, 55, 0.25); background: #000;">
@@ -528,6 +549,74 @@
 
                     <h3 style="color: var(--oro-brillante);">Representación Oficial de los Barrios</h3>
                     <div id="lista-tronistas" class="grid-cards"></div>
+                </div>
+            </section>
+
+            <!-- PESTAÑA: Extras (Juegos y Créditos del Reino) -->
+            <section id="pestana-extras" class="tab-content seccion-bg-gala tema-gala" data-tab="tab-extras" style="display: none;">
+                <div class="panel-card" style="max-width: 900px; margin: 0 auto; text-align: center; background: rgba(20, 14, 8, 0.95); border: 2px solid var(--oro-real); border-radius: 16px; padding: 28px 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.85);">
+                    <p style="text-transform: uppercase; letter-spacing: 2px; color: var(--oro-real); font-size: 0.85rem; font-weight: bold; margin-bottom: 6px;">LokiTrono de Barrios</p>
+                    <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); font-size: 2rem; margin: 0 0 12px;">✨ Extras del Reino</h2>
+                    <p style="color: #d6d3d1; font-size: 0.95rem; max-width: 650px; margin: 0 auto 24px;">
+                        Descubre los minijuegos feudales, desafíos de ingenio y la historia detrás de la creación del Trono del Pintxo.
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-bottom: 24px; text-align: left;">
+                        <!-- Tarjeta Botxitrono -->
+                        <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎮 Botxitrono</h3>
+                                <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
+                                    El arcade medieval de plataformas de Aritza. Corre, salta y defiende las torres de la Villa.
+                                </p>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" class="btn-medieval" onclick="cambiarPestana('pestana-botxitrono')" style="padding: 8px 14px; font-size: 0.85rem;">
+                                    🎮 Jugar en el Reino
+                                </button>
+                                <a href="./botxitrono/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 8px 12px; text-decoration: none; font-size: 0.85rem;">
+                                    ↗ Nueva Pestaña
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta Trivial -->
+                        <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🧠 El Trivial del Botxo</h3>
+                                <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
+                                    Pon a prueba tu sabiduría botxera: preguntas sobre barrios, historia y cultura bilbaína.
+                                </p>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" class="btn-medieval" onclick="cambiarPestana('pestana-trivial')" style="padding: 8px 14px; font-size: 0.85rem;">
+                                    🧠 Responder Preguntas
+                                </button>
+                                <a href="./trivial/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 8px 12px; text-decoration: none; font-size: 0.85rem;">
+                                    ↗ Nueva Pestaña
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta Créditos -->
+                        <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">📜 Créditos de la Aventura</h3>
+                                <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
+                                    Conoce a los creadores, la inspiración y los agradecimientos del juego de los 52 barrios de Bilbao.
+                                </p>
+                            </div>
+                            <div>
+                                <button type="button" class="btn-medieval" onclick="cambiarPestana('pestana-creditos')" style="padding: 8px 14px; font-size: 0.85rem;">
+                                    📜 Ver Créditos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-inicio')" style="background: #1e3a8a; padding: 10px 24px; font-size: 0.95rem;">
+                        🏠 Volver a Inicio
+                    </button>
                 </div>
             </section>
 
@@ -1791,6 +1880,11 @@
                                     placeholder="Relata los hechos más destacados de la justa, los ganadores, anécdotas de taberna y proclámalos al reino..."></textarea>
                             </div>
                             <div class="form-group" style="margin-top: 12px;">
+                                <label for="blog-imagen">URL de la Imagen (opcional)</label>
+                                <input type="url" id="blog-imagen" class="input-medieval"
+                                    placeholder="https://ejemplo.com/imagen.jpg o ruta local">
+                            </div>
+                            <div class="form-group" style="margin-top: 12px;">
                                 <label for="blog-autor">Autor / Cronista</label>
                                 <input type="text" id="blog-autor" class="input-medieval"
                                     placeholder="Cronista del Reino">
@@ -2263,9 +2357,101 @@
                             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                                 <button type="submit" class="btn-cuervo" id="btn-guardar-gala" style="flex: 1; min-width: 200px;">👑 Guardar / Editar Gala Final</button>
                                 <button type="button" class="btn-cuervo" id="btn-borrar-gala"
-                                    style="background: #7f1d1d;" onclick="borrarConfiguracionGalaFinal()">🗑️ Borrar / Reiniciar Configuración</button>
+                                     style="background: #7f1d1d;" onclick="borrarConfiguracionGalaFinal()">🗑️ Borrar / Reiniciar Configuración</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PESTAÑA: Preguntas Frecuentes (FAQ) -->
+            <section id="pestana-faq" class="tab-content seccion-bg-gala tema-cronica" data-tab="tab-faq" style="display: none;">
+                <div class="panel-card" style="max-width: 900px; margin: 0 auto; background: rgba(20, 14, 8, 0.95); border: 2px solid var(--oro-real); border-radius: 16px; padding: 28px 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.85);">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <span class="pill-user" style="background: var(--oro-gradiente); color: #000; font-weight: 900; padding: 6px 16px; border-radius: 20px; text-transform: uppercase; letter-spacing: 2px; font-size: 0.85rem;">
+                            ❓ Ayuda y Códice del Reino
+                        </span>
+                        <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); font-size: 2.1rem; margin: 16px 0 8px;">
+                            Preguntas Frecuentes (FAQ)
+                        </h2>
+                        <p style="color: #d6d3d1; font-size: 0.95rem; max-width: 650px; margin: 0 auto;">
+                            Todo lo que necesitas saber sobre el funcionamiento de las justas, votaciones, accesos y normas de LokiTrono de Barrios.
+                        </p>
+                    </div>
+
+                    <div class="faq-accordion" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                        <!-- Item 1: Acceso -->
+                        <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.4); border-radius: 10px; padding: 14px 18px; color: #f4f4f5;">
+                            <summary style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 1.05rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                🔑 ¿Cómo inicio sesión y qué hago si pierdo mi PIN?
+                            </summary>
+                            <div style="margin-top: 10px; line-height: 1.6; color: #d6d3d1; font-size: 0.92rem; border-top: 1px dashed rgba(212,175,55,0.25); padding-top: 10px;">
+                                Para acceder necesitas tu <strong>número de teléfono</strong> y tu <strong>PIN secreto de 6 dígitos</strong>. Si lo olvidas o no dispones de él, contacta con la organización del juego: un administrador puede regenerar tu clave al instante con un nuevo código seguro.
+                            </div>
+                        </details>
+
+                        <!-- Item 2: Cuándo y cómo votar -->
+                        <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.4); border-radius: 10px; padding: 14px 18px; color: #f4f4f5;">
+                            <summary style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 1.05rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                🗳️ ¿Cuándo y cómo puedo emitir mi voto?
+                            </summary>
+                            <div style="margin-top: 10px; line-height: 1.6; color: #d6d3d1; font-size: 0.92rem; border-top: 1px dashed rgba(212,175,55,0.25); padding-top: 10px;">
+                                Cada evento abre una ventana oficial de votación (por defecto entre las <strong>20:30 y las 23:30</strong>). Durante ese horario verás la etiqueta <span style="color:#4ade80; font-weight:bold;">🟢 Abierta</span> y podrás valorar la Casa en la pestaña 🗳️ Votar. Fuera de ese rango o una vez cerrada, no se admiten nuevos juicios.
+                            </div>
+                        </details>
+
+                        <!-- Item 3: Voto único -->
+                        <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.4); border-radius: 10px; padding: 14px 18px; color: #f4f4f5;">
+                            <summary style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 1.05rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                ⚖️ ¿Puedo votar más de una vez a la misma Casa o Barrio?
+                            </summary>
+                            <div style="margin-top: 10px; line-height: 1.6; color: #d6d3d1; font-size: 0.92rem; border-top: 1px dashed rgba(212,175,55,0.25); padding-top: 10px;">
+                                No. Rige la <strong>Ley de Voto Único</strong>: cada Maestre puede emitir un único juicio por cada Casa/Barrio participante. Si intentas valorar un feudo que ya juzgaste, el sistema te avisará de que tu voto ya está sellado en los pergaminos de la corte.
+                            </div>
+                        </details>
+
+                        <!-- Item 4: Criterios -->
+                        <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.4); border-radius: 10px; padding: 14px 18px; color: #f4f4f5;">
+                            <summary style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 1.05rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                🍷 ¿Cuáles son los criterios de valoración y puntuación?
+                            </summary>
+                            <div style="margin-top: 10px; line-height: 1.6; color: #d6d3d1; font-size: 0.92rem; border-top: 1px dashed rgba(212,175,55,0.25); padding-top: 10px;">
+                                Al votar se juzgan 3 pilares según el Códice de la Villa:
+                                <ul style="margin: 8px 0 0 20px; padding: 0;">
+                                    <li><strong>Ocio Hostelero (50%):</strong> Calidad del festín y pócimas en tabernas.</li>
+                                    <li><strong>Accesibilidad y Caminos (20%):</strong> Transporte público (metro/autobús), aparcamiento y solidez de accesos.</li>
+                                    <li><strong>Espíritu y Ambiente de Barrio (30%):</strong> Alegría, animación, acogida popular e identidad de la cuadrilla.</li>
+                                </ul>
+                            </div>
+                        </details>
+
+                        <!-- Item 5: Roles -->
+                        <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.4); border-radius: 10px; padding: 14px 18px; color: #f4f4f5;">
+                            <summary style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 1.05rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                👑 ¿Qué significan los roles del juego (Maestre, Lokitronista, Superadmin)?
+                            </summary>
+                            <div style="margin-top: 10px; line-height: 1.6; color: #d6d3d1; font-size: 0.92rem; border-top: 1px dashed rgba(212,175,55,0.25); padding-top: 10px;">
+                                • <strong>Maestre (jugador):</strong> Participa en las jornadas y emite sus votos imparciales.<br>
+                                • <strong>Lokitronista:</strong> Defensor oficial de un barrio (máximo 2 por barrio). Para garantizar total juego limpio, un Lokitronista <em>no puede votar en el evento de su propio barrio</em>.<br>
+                                • <strong>Superadmin / Master:</strong> Administración de la corte: vela por el orden, modera usuarios y organiza las justas.
+                            </div>
+                        </details>
+
+                        <!-- Item 6: El Papiro del Norte -->
+                        <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.4); border-radius: 10px; padding: 14px 18px; color: #f4f4f5;">
+                            <summary style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 1.05rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                📜 ¿Qué es el PapiroBLOG del Norte y el Oráculo?
+                            </summary>
+                            <div style="margin-top: 10px; line-height: 1.6; color: #d6d3d1; font-size: 0.92rem; border-top: 1px dashed rgba(212,175,55,0.25); padding-top: 10px;">
+                                Es el boletín y crónica oficial del Reino, donde se publican bandos, recetas, entrevistas y resúmenes de cada fiesta barrial. El <strong>Oráculo Imperial</strong> asiste a los cronistas con redacción inspirada en la atmósfera medieval de la Villa.
+                            </div>
+                        </details>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-inicio')" style="background: #1e3a8a; padding: 10px 24px; font-size: 0.95rem;">
+                            🏠 Volver a Inicio
+                        </button>
                     </div>
                 </div>
             </section>

@@ -451,6 +451,7 @@ function cambiarPestana(valor) {
 function actualizarInterfazSesion(usuario) {
     const loginBox = document.getElementById('pantalla-login-inicio');
     const authStatus = document.getElementById('auth-status');
+    const userWidget = document.getElementById('usuario-sesion-widget');
     const nav = document.getElementById('nav-secciones-corte');
     const contenido = document.getElementById('contenido-reino-protegido');
     const optgroupAdmin = document.getElementById('optgroup-admin-menu');
@@ -467,6 +468,21 @@ function actualizarInterfazSesion(usuario) {
                     <button onclick="cerrarSesionDirecta()" class="btn-cuervo" style="padding: 4px 10px; font-size: 0.8rem; background: #7f1d1d;">🚪 Cerrar Sesión</button>
                 </div>
             `;
+        }
+        if (userWidget) {
+            userWidget.style.display = 'block';
+            const nombreEl = document.getElementById('usuario-widget-nombre');
+            const dropNombreEl = document.getElementById('dropdown-usuario-nombre');
+            const dropRolEl = document.getElementById('dropdown-usuario-rol');
+            const nombreMostrar = usuario.name || usuario.phone || 'Maestre';
+            if (nombreEl) nombreEl.textContent = nombreMostrar;
+            if (dropNombreEl) dropNombreEl.textContent = getTituloCompleto(usuario);
+            if (dropRolEl) {
+                const rolTexto = usuario.role === 'master' ? '👑 Administración Master' :
+                    (usuario.role === 'superadmin' ? '🏰 Superadministrador' :
+                    (usuario.role === 'tronista' ? '⚔️ Lokitronista' : '🍺 Maestre'));
+                dropRolEl.textContent = rolTexto;
+            }
         }
         if (nav) nav.style.display = 'block';
         if (contenido) contenido.style.display = 'block';
@@ -539,6 +555,10 @@ function actualizarInterfazSesion(usuario) {
         if (authStatus) {
             authStatus.style.display = 'none';
             authStatus.innerHTML = '';
+        }
+        if (userWidget) {
+            userWidget.style.display = 'none';
+            cerrarMenuUsuarioWidget();
         }
         if (nav) nav.style.display = 'block';
         if (contenido) contenido.style.display = 'none';
@@ -667,6 +687,35 @@ window.abrirMenuHamburguesa = abrirMenuHamburguesa;
 window.cerrarMenuHamburguesa = cerrarMenuHamburguesa;
 window.renderMenuHamburguesa = renderMenuHamburguesa;
 
+
+/* ============================================================
+   WIDGET DE USUARIO (ESQUINA SUPERIOR DERECHA)
+   ============================================================ */
+function toggleMenuUsuarioWidget() {
+    const dropdown = document.getElementById('dropdown-usuario-widget');
+    const btn = document.getElementById('btn-usuario-widget');
+    if (!dropdown) return;
+    const estaVisible = dropdown.style.display === 'block';
+    dropdown.style.display = estaVisible ? 'none' : 'block';
+    if (btn) btn.setAttribute('aria-expanded', !estaVisible ? 'true' : 'false');
+}
+
+function cerrarMenuUsuarioWidget() {
+    const dropdown = document.getElementById('dropdown-usuario-widget');
+    const btn = document.getElementById('btn-usuario-widget');
+    if (dropdown) dropdown.style.display = 'none';
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+document.addEventListener('click', function (event) {
+    const widget = document.getElementById('usuario-sesion-widget');
+    if (widget && !widget.contains(event.target)) {
+        cerrarMenuUsuarioWidget();
+    }
+});
+
+window.toggleMenuUsuarioWidget = toggleMenuUsuarioWidget;
+window.cerrarMenuUsuarioWidget = cerrarMenuUsuarioWidget;
 
 function cerrarSesionDirecta() {
     const usuario = getCurrentUser();
@@ -9861,6 +9910,10 @@ function formatearFechaBlog(fecha) {
 function tarjetaBlog(post, conAcciones) {
     const idSeguro = String(post.id).replace(/'/g, "\\'");
     const contenido = escaparHTML(post.contenido).replace(/\n/g, '<br>');
+    const imagenHtml = post.imagen_url ? `
+                <div style="margin-bottom:12px;border-radius:8px;overflow:hidden;max-height:280px;border:1px solid rgba(212,175,55,0.3);">
+                    <img src="${escaparHTML(post.imagen_url)}" alt="${escaparHTML(post.titulo)}" style="width:100%;height:auto;max-height:280px;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none';">
+                </div>` : '';
     const acciones = conAcciones ? `
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button type="button" class="btn-cuervo" style="padding:4px 10px;font-size:0.8rem;background:#44403c;" onclick="editarBlogPost('${idSeguro}')">✏️ Editar</button>
@@ -9869,6 +9922,7 @@ function tarjetaBlog(post, conAcciones) {
 
     return `
             <article class="blog-post-card" style="background:rgba(15,23,42,0.6);border:1px solid var(--oro-real);border-radius:10px;padding:16px;margin-bottom:16px;">
+                ${imagenHtml}
                 <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:0 0 6px;font-size:1.1rem;">${escaparHTML(post.titulo)}</h4>
                 <div style="color:#d6d3d1;font-size:0.8rem;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <span style="background:rgba(67,56,202,0.35);color:#c7d2fe;padding:2px 8px;border-radius:10px;font-size:0.75rem;">${escaparHTML(etiquetaCategoriaBlog(post.categoria))}</span>
@@ -9943,6 +9997,7 @@ async function guardarBlogPost(event) {
     const titulo = document.getElementById('blog-titulo');
     const fecha = document.getElementById('blog-fecha');
     const categoria = document.getElementById('blog-categoria');
+    const imagen = document.getElementById('blog-imagen');
     const contenido = document.getElementById('blog-contenido');
     const autor = document.getElementById('blog-autor');
 
@@ -9951,6 +10006,7 @@ async function guardarBlogPost(event) {
     const t = titulo.value.trim();
     const f = fecha.value.trim();
     const cat = categoria && CATEGORIAS_BLOG[categoria.value] ? categoria.value : 'cronica';
+    const img = imagen ? imagen.value.trim() : '';
     const c = contenido.value.trim();
     const a = (autor ? autor.value.trim() : '') || 'Cronista del Reino';
 
@@ -9970,6 +10026,7 @@ async function guardarBlogPost(event) {
         }
         try {
             const payload = { titulo: t, fecha: f, categoria: cat, contenido: c, autor: a };
+            if (img) payload.imagen_url = img;
             if (editId) payload.id = editId;
             const { error } = await client.rpc('guardar_blog_post_admin', {
                 p_token: usuario.token,
@@ -9991,7 +10048,7 @@ async function guardarBlogPost(event) {
     if (editId) {
         const idx = posts.findIndex(p => String(p.id) === String(editId));
         if (idx !== -1) {
-            posts[idx] = { ...posts[idx], titulo: t, fecha: f, categoria: cat, contenido: c, autor: a };
+            posts[idx] = { ...posts[idx], titulo: t, fecha: f, categoria: cat, contenido: c, autor: a, imagen_url: img || null };
         }
     } else {
         posts.unshift({
@@ -10001,6 +10058,7 @@ async function guardarBlogPost(event) {
             categoria: cat,
             contenido: c,
             autor: a,
+            imagen_url: img || null,
             fechaCreacion: new Date().toISOString()
         });
     }
@@ -10060,6 +10118,7 @@ function editarBlogPost(id) {
     const titulo = document.getElementById('blog-titulo');
     const fecha = document.getElementById('blog-fecha');
     const categoria = document.getElementById('blog-categoria');
+    const imagen = document.getElementById('blog-imagen');
     const contenido = document.getElementById('blog-contenido');
     const autor = document.getElementById('blog-autor');
 
@@ -10067,6 +10126,7 @@ function editarBlogPost(id) {
     if (titulo) titulo.value = post.titulo || '';
     if (fecha) fecha.value = post.fecha || '';
     if (categoria) categoria.value = CATEGORIAS_BLOG[post.categoria] ? post.categoria : 'otro';
+    if (imagen) imagen.value = post.imagen_url || '';
     if (contenido) contenido.value = post.contenido || '';
     if (autor) autor.value = post.autor || '';
 
@@ -10084,6 +10144,7 @@ function resetFormBlog() {
     const titulo = document.getElementById('blog-titulo');
     const fecha = document.getElementById('blog-fecha');
     const categoria = document.getElementById('blog-categoria');
+    const imagen = document.getElementById('blog-imagen');
     const contenido = document.getElementById('blog-contenido');
     const autor = document.getElementById('blog-autor');
 
@@ -10091,6 +10152,7 @@ function resetFormBlog() {
     if (titulo) titulo.value = '';
     if (fecha) fecha.value = new Date().toISOString().slice(0, 10);
     if (categoria) categoria.value = 'cronica';
+    if (imagen) imagen.value = '';
     if (contenido) contenido.value = '';
     if (autor) autor.value = '';
     actualizarBotonEdicionBlog();

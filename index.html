@@ -136,7 +136,7 @@
     <script src="js/legal-config.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261116h" defer></script>
+    <script src="js/app.js?v=20261116i" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -600,6 +600,50 @@
                                 </button>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- SECCIÓN: BUZÓN DE SUGERENCIAS -->
+                    <div id="buzon-sugerencias-seccion" style="background: rgba(10, 15, 30, 0.92); border: 2px solid var(--oro-real); border-radius: 14px; padding: 24px 20px; margin-bottom: 24px; text-align: left;">
+                        <div style="text-align: center; margin-bottom: 18px;">
+                            <span style="font-size: 2.2rem;">📬</span>
+                            <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 6px 0 6px; font-size: 1.5rem;">Buzón de Sugerencias</h3>
+                            <p style="color: #cbd5e1; font-size: 0.9rem; max-width: 600px; margin: 0 auto;">
+                                ¿Tienes ideas para mejorar el Reino, sugerencias de tabernas o propuestas de justas? Escríbenos y se remitirá directamente a la corte (<strong style="color:var(--oro-real);">afjbilbao@gmail.com</strong>).
+                            </p>
+                        </div>
+
+                        <form id="form-buzon-sugerencias" onsubmit="enviarSugerenciaReino(event)" style="max-width: 650px; margin: 0 auto;">
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+                                <div class="form-group" style="flex: 1 1 240px;">
+                                    <label for="sugerencia-nombre" style="font-size: 0.85rem; color: #fde68a;">Tu Nombre o Alias (opcional):</label>
+                                    <input type="text" id="sugerencia-nombre" class="input-medieval" placeholder="Ej: Maestre Jon de Indautxu">
+                                </div>
+                                <div class="form-group" style="flex: 1 1 240px;">
+                                    <label for="sugerencia-contacto" style="font-size: 0.85rem; color: #fde68a;">Teléfono o Correo (opcional):</label>
+                                    <input type="text" id="sugerencia-contacto" class="input-medieval" placeholder="Para recibir respuesta si lo deseas">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label for="sugerencia-tipo" style="font-size: 0.85rem; color: #fde68a;">Tipo de sugerencia:</label>
+                                <select id="sugerencia-tipo" class="input-medieval">
+                                    <option value="mejora" selected>💡 Propuesta de mejora / Nueva idea</option>
+                                    <option value="taberna">🍷 Sugerencia de taberna o barrio</option>
+                                    <option value="evento">🗓️ Propuesta de justa o evento</option>
+                                    <option value="incidencia">⚠️ Reporte de error o problema</option>
+                                    <option value="felicitacion">✨ Mensaje a los Maestres / Agradecimiento</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label for="sugerencia-mensaje" style="font-size: 0.85rem; color: #fde68a;">Tu Sugerencia o Comentario *:</label>
+                                <textarea id="sugerencia-mensaje" class="input-medieval" rows="4" required placeholder="Describe tu propuesta con todo lujo de detalles feudales..."></textarea>
+                            </div>
+                            <div style="text-align: center;">
+                                <button type="submit" id="btn-enviar-sugerencia" class="btn-cuervo" style="background: #166534; padding: 10px 28px; font-size: 0.95rem; font-weight: bold;">
+                                    📨 Enviar Sugerencia a la Corte
+                                </button>
+                            </div>
+                            <p id="sugerencia-estado" role="status" style="margin-top: 14px; font-size: 0.88rem; text-align: center; min-height: 1.2em;"></p>
+                        </form>
                     </div>
 
                     <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-inicio')" style="background: #1e3a8a; padding: 10px 24px; font-size: 0.95rem;">

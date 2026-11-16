@@ -9919,6 +9919,101 @@ window.ocultarPasoRecuperarPIN = ocultarPasoRecuperarPIN;
 window.solicitarNuevoPIN = solicitarNuevoPIN;
 
 // ============================================================================
+// BUZÓN DE SUGERENCIAS DEL REINO (afjbilbao@gmail.com)
+// ============================================================================
+
+async function enviarSugerenciaReino(event) {
+    if (event) event.preventDefault();
+
+    const nombreInput = document.getElementById('sugerencia-nombre');
+    const contactoInput = document.getElementById('sugerencia-contacto');
+    const tipoSelect = document.getElementById('sugerencia-tipo');
+    const mensajeInput = document.getElementById('sugerencia-mensaje');
+    const estado = document.getElementById('sugerencia-estado');
+    const btn = document.getElementById('btn-enviar-sugerencia');
+
+    const mensaje = mensajeInput ? mensajeInput.value.trim() : '';
+    if (!mensaje) {
+        if (estado) {
+            estado.style.color = '#fca5a5';
+            estado.textContent = 'Por favor escribe tu sugerencia antes de enviar.';
+        }
+        return;
+    }
+
+    const usuario = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    const nombre = (nombreInput ? nombreInput.value.trim() : '') || (usuario ? usuario.name : '') || 'Anónimo';
+    const contacto = (contactoInput ? contactoInput.value.trim() : '') || (usuario ? (usuario.phone || usuario.email) : '') || 'No aportado';
+    const tipo = tipoSelect ? tipoSelect.value : 'mejora';
+    const tipoTexto = tipoSelect && tipoSelect.options[tipoSelect.selectedIndex] ? tipoSelect.options[tipoSelect.selectedIndex].text : tipo;
+
+    const emailCorte = 'afjbilbao@gmail.com';
+    const asuntoEmail = `[LokiTrono Buzón] Nueva sugerencia (${tipo}): ${nombre}`;
+    const cuerpoEmail = `📬 NUEVA SUGERENCIA RECIBIDA EN EL BUZÓN REAL:\n\nRemitente: ${nombre}\nContacto: ${contacto}\nCategoría: ${tipoTexto}\nFecha: ${new Date().toLocaleString('es-ES')}\n\nMENSAJE:\n${mensaje}\n\n---\nLokiTrono de Barrios — Buzón de Sugerencias`;
+
+    if (btn) btn.disabled = true;
+    if (estado) {
+        estado.style.color = '#fbbf24';
+        estado.textContent = '⏳ Enviando sugerencia a la corte...';
+    }
+
+    let resultadoWebhook = null;
+    const webhookUrl = typeof getMakeWebhookUrl === 'function' ? getMakeWebhookUrl() : '';
+
+    if (webhookUrl) {
+        try {
+            const payload = {
+                evento: 'BUZON_SUGERENCIAS',
+                destinatario_email: emailCorte,
+                email_asunto: asuntoEmail,
+                email_cuerpo: cuerpoEmail,
+                nombre,
+                contacto,
+                tipo,
+                tipo_etiqueta: tipoTexto,
+                mensaje,
+                fecha: new Date().toISOString()
+            };
+            resultadoWebhook = await enviarWebhookMake(payload);
+        } catch (e) {
+            console.warn('Fallo al remitir sugerencia por webhook:', e);
+        }
+    }
+
+    // Trazabilidad local
+    try {
+        const guardadas = JSON.parse(localStorage.getItem('lokitrono_sugerencias_enviadas') || '[]');
+        guardadas.push({
+            nombre,
+            contacto,
+            tipo,
+            mensaje,
+            fecha: new Date().toISOString(),
+            enviado: !!(resultadoWebhook && resultadoWebhook.ok)
+        });
+        localStorage.setItem('lokitrono_sugerencias_enviadas', JSON.stringify(guardadas.slice(-30)));
+    } catch (_) {}
+
+    // Fallback mailto si el webhook falló o no está activo
+    if (!resultadoWebhook || !resultadoWebhook.ok) {
+        try {
+            const mailtoUrl = `mailto:${encodeURIComponent(emailCorte)}?subject=${encodeURIComponent(asuntoEmail)}&body=${encodeURIComponent(cuerpoEmail)}`;
+            window.open(mailtoUrl, '_blank');
+        } catch (_) {}
+    }
+
+    if (estado) {
+        estado.style.color = '#4ade80';
+        estado.innerHTML = `✅ ¡Gracias por tu sugerencia! Se ha remitido a la corte imperial (<strong style="color:var(--oro-real);">afjbilbao@gmail.com</strong>).`;
+    }
+
+    if (mensajeInput) mensajeInput.value = '';
+    if (btn) btn.disabled = false;
+}
+
+window.enviarSugerenciaReino = enviarSugerenciaReino;
+
+// ============================================================================
 // EL PAPIRO DEL NORTE — CRÓNICAS Y ANUNCIOS OFICIALES
 // ============================================================================
 

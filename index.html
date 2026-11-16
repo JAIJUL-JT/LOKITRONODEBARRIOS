@@ -125,7 +125,7 @@
         window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
         window.__APP_CONFIG__.SUPABASE_URL = window.__APP_CONFIG__.SUPABASE_URL || 'https://uswikdckptzivsurzrlc.supabase.co';
         window.__APP_CONFIG__.SUPABASE_ANON_KEY = window.__APP_CONFIG__.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzd2lrZGNrcHR6aXZzdXJ6cmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODAwNTEsImV4cCI6MjEwNjU1NjA1MX0.3kovmMBfC_JCGKyJ_1s5iyxtkKyqVMIt77CfHnytLzI';
-        window.__APP_CONFIG__.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL || 'https://hook.eu1.make.com/8gare3elotna39vuqba1t3spp6kk7nb9';
+        window.__APP_CONFIG__.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL || 'https://hook.eu1.make.com/uqb4kqpu9dnu82r3wyep3jegknqlsubk';
         window.MAKE_WEBHOOK_URL = window.__APP_CONFIG__.MAKE_WEBHOOK_URL;
         // Proxy del Oráculo Imperial (Edge Function de Supabase que oculta la
         // clave del proveedor de IA). Si se deja vacío, se deduce de SUPABASE_URL.
@@ -136,7 +136,7 @@
     <script src="js/legal-config.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261116g" defer></script>
+    <script src="js/app.js?v=20261116h" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -1896,11 +1896,23 @@
                                 <textarea id="blog-contenido" class="input-medieval" rows="5" required
                                     placeholder="Relata los hechos más destacados de la justa, los ganadores, anécdotas de taberna y proclámalos al reino..."></textarea>
                             </div>
-                            <div class="form-group" style="margin-top: 12px;">
-                                <label for="blog-imagen">URL de la Imagen (opcional)</label>
-                                <input type="url" id="blog-imagen" class="input-medieval"
-                                    placeholder="https://ejemplo.com/imagen.jpg o ruta local">
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; align-items: flex-end;">
+                                <div class="form-group" style="flex: 2 1 280px;">
+                                    <label for="blog-imagen">URL de la Imagen (opcional)</label>
+                                    <input type="url" id="blog-imagen" class="input-medieval"
+                                        placeholder="https://ejemplo.com/imagen.jpg o ruta local">
+                                </div>
+                                <div class="form-group" style="flex: 1 1 220px;">
+                                    <label for="blog-archivo-imagen">… o cargar archivo</label>
+                                    <input type="file" id="blog-archivo-imagen" class="input-medieval" accept="image/png,image/jpeg,image/webp,image/gif">
+                                </div>
+                                <div id="blog-imagen-preview-contenedor" style="display: none; align-items: center; gap: 8px;">
+                                    <img id="blog-imagen-preview" alt="Vista previa de la crónica"
+                                        style="width: 72px; height: 72px; object-fit: cover; border-radius: 6px; border: 2px solid var(--oro-real);">
+                                    <button type="button" class="btn-cuervo" id="blog-btn-quitar-imagen" onclick="quitarImagenBlog()" style="padding: 4px 8px; font-size: 0.75rem; background: #7f1d1d;" title="Quitar imagen">✕</button>
+                                </div>
                             </div>
+                            <p id="blog-archivo-estado" role="status" style="font-size: 0.8rem; margin: 4px 0 0; min-height: 1.1em; color: #d6d3d1;"></p>
                             <div class="form-group" style="margin-top: 12px;">
                                 <label for="blog-autor">Autor / Cronista</label>
                                 <input type="text" id="blog-autor" class="input-medieval"

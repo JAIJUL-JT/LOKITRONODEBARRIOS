@@ -9868,7 +9868,17 @@ async function solicitarNuevoPIN() {
                     fecha: new Date().toISOString()
                 };
                 resultadoWebhook = await enviarWebhookMake(payload);
-            } catch (e) { /* continuar con fallback */ }
+            } catch (e) {
+                console.warn('Fallo al disparar webhook Make:', e);
+            }
+        }
+
+        // Si el webhook no pudo enviarse o no está disponible, abrir fallback mailto
+        if (!resultadoWebhook || !resultadoWebhook.ok) {
+            try {
+                const mailtoUrl = `mailto:${encodeURIComponent(emailCorte)}?subject=${encodeURIComponent(asuntoEmail)}&body=${encodeURIComponent(cuerpoEmail)}`;
+                window.open(mailtoUrl, '_blank');
+            } catch (_) {}
         }
 
         // 3) WhatsApp directo al primer superadmin/master disponible (fallback / copia)
@@ -9894,16 +9904,10 @@ async function solicitarNuevoPIN() {
         } catch (_) { /* noop */ }
 
         if (mensaje) {
-            mensaje.innerHTML = `✅ Solicitud enviada a la corte (afjbilbao@gmail.com).<br>La administración revisará tu petición y te comunicará el nuevo PIN.`;
+            mensaje.innerHTML = `✅ Solicitud registrada y enviada a la corte (afjbilbao@gmail.com).<br>La administración revisará tu petición y te comunicará el nuevo PIN.`;
             mensaje.style.color = '#4ade80';
         }
         if (input) input.value = '';
-
-        // Si el webhook no está configurado, abrir cliente de correo mailto para asegurar el envío a afjbilbao@gmail.com
-        if (!webhookUrl) {
-            const mailtoUrl = `mailto:${encodeURIComponent(emailCorte)}?subject=${encodeURIComponent(asuntoEmail)}&body=${encodeURIComponent(cuerpoEmail)}`;
-            window.open(mailtoUrl, '_blank');
-        }
     } catch (error) {
         console.error('Error solicitando PIN:', error);
         if (mensaje) { mensaje.textContent = 'Error al procesar la solicitud. Inténtalo de nuevo.'; mensaje.style.color = '#fca5a5'; }
@@ -10215,6 +10219,105 @@ async function eliminarBlogPost(id) {
     estadoBlog('Crónica eliminada del reino.');
 }
 
+async function subirFotoBlog(file) {
+    const estado = document.getElementById('blog-archivo-estado');
+    const inputUrl = document.getElementById('blog-imagen');
+    const client = typeof getSupabaseBarriosClient === 'function' ? getSupabaseBarriosClient() : null;
+
+    if (!file) return;
+
+    if (!client) {
+        if (estado) {
+            estado.style.color = '#fca5a5';
+            estado.textContent = 'Supabase no está disponible para subir la imagen.';
+        }
+        return;
+    }
+
+    if (!/^image\//.test(file.type || '')) {
+        if (estado) {
+            estado.style.color = '#fca5a5';
+            estado.textContent = `«${file.name}» no es una imagen válida.`;
+        }
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        if (estado) {
+            estado.style.color = '#fca5a5';
+            estado.textContent = `«${file.name}» supera el tamaño máximo permitido (5 MB).`;
+        }
+        return;
+    }
+
+    if (estado) {
+        estado.style.color = '#fbbf24';
+        estado.textContent = '⏳ Subiendo archivo de imagen al Papiro...';
+    }
+
+    try {
+        const limpio = String(file.name || 'foto').replace(/[^a-z0-9._-]/gi, '_');
+        const nombre = `blog/${Date.now()}_${limpio}`;
+        const { error } = await client.storage.from('eventos-media').upload(nombre, file, {
+            upsert: false,
+            cacheControl: '31536000',
+            contentType: file.type || undefined
+        });
+        if (error) throw error;
+
+        const { data } = client.storage.from('eventos-media').getPublicUrl(nombre);
+        const publicUrl = data && data.publicUrl ? data.publicUrl : '';
+        if (!publicUrl) throw new Error('No se obtuvo la URL pública.');
+
+        if (inputUrl) {
+            inputUrl.value = publicUrl;
+        }
+        actualizarPreviewFotoBlog();
+        if (estado) {
+            estado.style.color = '#4ade80';
+            estado.textContent = '✅ Imagen cargada correctamente.';
+        }
+    } catch (error) {
+        console.error('Error al subir imagen del blog:', error);
+        if (estado) {
+            estado.style.color = '#fca5a5';
+            estado.textContent = `No se pudo cargar el archivo: ${error?.message || 'error desconocido'}`;
+        }
+    }
+}
+
+function actualizarPreviewFotoBlog() {
+    const inputUrl = document.getElementById('blog-imagen');
+    const contenedor = document.getElementById('blog-imagen-preview-contenedor');
+    const img = document.getElementById('blog-imagen-preview');
+    const url = inputUrl ? inputUrl.value.trim() : '';
+
+    if (!contenedor || !img) return;
+
+    if (url) {
+        img.src = url;
+        contenedor.style.display = 'inline-flex';
+    } else {
+        img.src = '';
+        contenedor.style.display = 'none';
+    }
+}
+
+function quitarImagenBlog() {
+    const inputUrl = document.getElementById('blog-imagen');
+    const inputFile = document.getElementById('blog-archivo-imagen');
+    const estado = document.getElementById('blog-archivo-estado');
+
+    if (inputUrl) inputUrl.value = '';
+    if (inputFile) inputFile.value = '';
+    if (estado) estado.textContent = '';
+    actualizarPreviewFotoBlog();
+}
+
+window.subirFotoBlog = subirFotoBlog;
+window.actualizarPreviewFotoBlog = actualizarPreviewFotoBlog;
+window.quitarImagenBlog = quitarImagenBlog;
+
 function editarBlogPost(id) {
     const posts = blogPostsCache || obtenerBlogPostsLocal();
     const post = posts.find(p => String(p.id) === String(id));
@@ -10236,6 +10339,7 @@ function editarBlogPost(id) {
     if (contenido) contenido.value = post.contenido || '';
     if (autor) autor.value = post.autor || '';
 
+    actualizarPreviewFotoBlog();
     actualizarBotonEdicionBlog();
     if (typeof activarModoEdicion === 'function') activarModoEdicion('form-blog-post', 'crónica de El Papiro del Norte');
 
@@ -10261,6 +10365,11 @@ function resetFormBlog() {
     if (imagen) imagen.value = '';
     if (contenido) contenido.value = '';
     if (autor) autor.value = '';
+    const fileInput = document.getElementById('blog-archivo-imagen');
+    if (fileInput) fileInput.value = '';
+    const estadoArchivo = document.getElementById('blog-archivo-estado');
+    if (estadoArchivo) estadoArchivo.textContent = '';
+    actualizarPreviewFotoBlog();
     actualizarBotonEdicionBlog();
     if (typeof desactivarModoEdicion === 'function') desactivarModoEdicion(form);
 }
@@ -10348,6 +10457,21 @@ function usarCronicaGeneradaEnEditor() {
 
     const fecha = document.getElementById('blog-fecha');
     if (fecha && !fecha.value) fecha.value = new Date().toISOString().slice(0, 10);
+
+    const inputImagenUrl = document.getElementById('blog-imagen');
+    if (inputImagenUrl) {
+        inputImagenUrl.addEventListener('input', actualizarPreviewFotoBlog);
+    }
+
+    const inputImagenFile = document.getElementById('blog-archivo-imagen');
+    if (inputImagenFile) {
+        inputImagenFile.addEventListener('change', () => {
+            const f = inputImagenFile.files && inputImagenFile.files[0];
+            if (f) subirFotoBlog(f);
+        });
+    }
+
+    actualizarPreviewFotoBlog();
     actualizarBotonEdicionBlog();
 })();
 

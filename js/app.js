@@ -4132,6 +4132,23 @@ function poblarSelectBarriosEmpresa() {
     select.innerHTML = barrios.map(b => `<option value="${b}">${b}</option>`).join('');
 }
 
+function descargarPlantillaCSVUsuarios() {
+    const csvContenido = "telefono,nombre,rol,barrio,email\n" +
+        "600123456,Jon de Indautxu,jugador,Indautxu,jon@ejemplo.com\n" +
+        "600234567,Miren de Deusto,jugador,Deusto,miren@ejemplo.com\n" +
+        "600345678,Aitor de Casco Viejo,tronista,Casco Viejo,aitor@ejemplo.com\n";
+    const blob = new Blob(["\ufeff" + csvContenido], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'plantilla_usuarios_lokitrono.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+window.descargarPlantillaCSVUsuarios = descargarPlantillaCSVUsuarios;
+
 async function procesarCSVUsuarios() {
     const input = document.getElementById('input-archivo-csv-usuarios');
     const feedback = document.getElementById('resultado-importacion-csv');
@@ -4139,6 +4156,13 @@ async function procesarCSVUsuarios() {
         alert('Por favor selecciona un archivo .csv antes de procesar.');
         return;
     }
+
+    const currentUser = getCurrentUser();
+    if (!currentUser || !puedeAdministrar(currentUser.role)) {
+        alert('Acceso restringido: solo la administración puede dar de alta usuarios.');
+        return;
+    }
+
     const archivo = input.files[0];
     const texto = await archivo.text();
     const lineas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
@@ -4147,8 +4171,34 @@ async function procesarCSVUsuarios() {
         return;
     }
 
+    // Comprobar conexión y pedir credenciales de administración antes de procesar
+    const client = getSupabaseBarriosClient();
+    let credenciales = null;
+    if (client) {
+        try {
+            credenciales = await pedirCredencialesSuperadmin();
+            if (!credenciales) {
+                if (feedback) {
+                    feedback.style.color = '#fca5a5';
+                    feedback.innerHTML = '❌ Importación cancelada: se requiere el PIN de administración para registrar usuarios en la base de datos oficial.';
+                }
+                return;
+            }
+        } catch (errCred) {
+            console.warn('Error al verificar credenciales:', errCred);
+            alert(`No se pudo autenticar para la importación: ${errCred?.message || 'error desconocido'}`);
+            return;
+        }
+    }
+
+    if (feedback) {
+        feedback.style.color = '#fbbf24';
+        feedback.innerHTML = '⏳ Procesando e importando usuarios a la base de datos oficial...';
+    }
+
     let altasCorrectas = 0;
     let omitidos = 0;
+    const detallesOmitidos = [];
     const usuariosActuales = getUsuariosDelAmbito();
 
     for (let i = 0; i < lineas.length; i++) {
@@ -4158,32 +4208,75 @@ async function procesarCSVUsuarios() {
             continue;
         }
 
-        // Parsear valores por coma o punto y coma
-        const separador = linea.includes(';') ? ';' : ',';
+        // Parsear valores por coma, punto y coma o tabulación
+        const separador = linea.includes(';') ? ';' : (linea.includes('\t') ? '\t' : ',');
         const cols = linea.split(separador).map(c => c.trim().replace(/^["']|["']$/g, ''));
-        const telefono = cols[0] || '';
+        const telefonoCrudo = cols[0] || '';
         const nombre = cols[1] || '';
         const rol = (cols[2] || 'jugador').toLowerCase();
         const barrio = cols[3] || 'Forastero';
         const email = cols[4] || '';
 
-        if (!telefono || !/^\+?[0-9]{7,15}$/.test(telefono.replace(/\s+/g, ''))) {
+        // Limpiar teléfono de espacios, guiones y puntos
+        const telefonoLimpio = telefonoCrudo.replace(/[\s\-\.]/g, '');
+
+        if (!telefonoLimpio || !/^\+?[0-9]{7,15}$/.test(telefonoLimpio)) {
             omitidos++;
+            detallesOmitidos.push(`Fila ${i + 1}: «${telefonoCrudo || 'vacío'}» (teléfono no válido, debe contener 7-15 dígitos)`);
             continue;
         }
 
-        const existe = usuariosActuales.some(u => String(u.phone).trim() === telefono.trim());
+        const existe = usuariosActuales.some(u => String(u.phone).trim().replace(/[\s\-\.]/g, '') === telefonoLimpio);
         if (existe) {
             omitidos++;
+            detallesOmitidos.push(`Fila ${i + 1}: ${telefonoLimpio} ya está registrado`);
             continue;
+        }
+
+        const rolValido = ['superadmin', 'tronista'].includes(rol) ? rol : 'jugador';
+        const pinGenerado = generarPinSeisDigitos();
+
+        // 1. Guardar en Supabase mediante RPC oficial
+        let guardadoSupabase = false;
+        if (credenciales && credenciales.client) {
+            try {
+                const datos = {
+                    phone: telefonoLimpio,
+                    name: nombre || telefonoLimpio,
+                    email: email,
+                    role: rolValido,
+                    barrio_asignado: barrio,
+                    barrio_representado: barrio,
+                    gender: 'M',
+                    pin_code: pinGenerado
+                };
+                const { error } = await credenciales.client.rpc('crear_usuario_superadmin', {
+                    p_phone: credenciales.phone,
+                    p_pin: credenciales.pin,
+                    p_datos: datos
+                });
+                if (!error) {
+                    guardadoSupabase = true;
+                } else {
+                    console.warn(`Error al importar ${telefonoLimpio} en Supabase:`, error.message);
+                    detallesOmitidos.push(`Fila ${i + 1}: ${telefonoLimpio} (${error.message})`);
+                    omitidos++;
+                    continue;
+                }
+            } catch (err) {
+                console.warn(`Error de conexión con Supabase para ${telefonoLimpio}:`, err);
+                detallesOmitidos.push(`Fila ${i + 1}: ${telefonoLimpio} (error de red)`);
+                omitidos++;
+                continue;
+            }
         }
 
         const nuevoUsuario = {
             id: 'usr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-            phone: telefono,
-            name: nombre || telefono,
-            role: ['superadmin', 'tronista'].includes(rol) ? rol : 'jugador',
-            pin_code: generarPinSeisDigitos(),
+            phone: telefonoLimpio,
+            name: nombre || telefonoLimpio,
+            role: rolValido,
+            pin_code: pinGenerado,
             barrio_asignado: barrio,
             barrio_representado: barrio,
             email: email,
@@ -4195,14 +4288,31 @@ async function procesarCSVUsuarios() {
         altasCorrectas++;
     }
 
-    // Guardar en almacenamiento local y refrescar UI
+    // Actualizar localStorage y refrescar la tabla
     try {
         localStorage.setItem(STORAGE_KEYS.usuarios, JSON.stringify(usuariosActuales));
     } catch (_) {}
-
     renderTablaUsuarios();
+    renderListaTronistas();
+
+    // Si se usaron credenciales de Supabase, recargar la lista oficial autoritativa
+    if (credenciales) {
+        try {
+            await recargarUsuariosSupabase(credenciales);
+        } catch (_) {}
+    }
+
     if (feedback) {
-        feedback.innerHTML = `✅ Importación completada: <strong>${altasCorrectas} usuarios añadidos</strong> (${omitidos} omitidos o existentes).`;
+        feedback.style.color = altasCorrectas > 0 ? '#4ade80' : '#fca5a5';
+        let mensaje = altasCorrectas > 0
+            ? `✅ Importación completada: <strong>${altasCorrectas} usuarios añadidos y guardados con éxito</strong> (${omitidos} omitidos).`
+            : `⚠️ No se añadió ningún registro (${omitidos} omitidos de ${lineas.length} líneas procesadas).`;
+        if (detallesOmitidos.length > 0 && omitidos <= 5) {
+            mensaje += `<br><small style="color:#d6d3d1;">Motivos: ${detallesOmitidos.join('; ')}</small>`;
+        } else if (detallesOmitidos.length > 5) {
+            mensaje += `<br><small style="color:#d6d3d1;">Primeros motivos: ${detallesOmitidos.slice(0, 3).join('; ')}... (revisa el formato o teléfonos duplicados)</small>`;
+        }
+        feedback.innerHTML = mensaje;
     }
     input.value = '';
 }

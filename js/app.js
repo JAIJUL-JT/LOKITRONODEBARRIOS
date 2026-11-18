@@ -9849,6 +9849,20 @@ async function solicitarNuevoPIN() {
         const asuntoEmail = `[LokiTrono] Solicitud de nuevo PIN: ${usuario.name || usuario.phone}`;
         const cuerpoEmail = `Solicitud de nuevo PIN por olvido:\n\nUsuario: ${usuario.name || 'Sin nombre'}\nTeléfono: ${usuario.phone}\nBarrio: ${usuario.barrio_representado || 'Forastero'}\nRol: ${usuario.role || 'jugador'}\nFecha: ${new Date().toLocaleString('es-ES')}\n\nPor favor, asigna un nuevo PIN en el panel de administración y comunícaselo al usuario.`;
 
+        // Guardar de forma permanente en Supabase (buzón de solicitudes de PIN)
+        const client = typeof getSupabaseBarriosClient === 'function' ? getSupabaseBarriosClient() : null;
+        if (client) {
+            try {
+                await client.rpc('registrar_solicitud_pin_reino', {
+                    p_telefono: usuario.phone,
+                    p_nombre: usuario.name || usuario.phone,
+                    p_barrio: usuario.barrio_representado || 'Forastero'
+                });
+            } catch (errDb) {
+                console.warn('Registro en BD de solicitud de PIN:', errDb);
+            }
+        }
+
         // 2) Webhook Make (automatización principal con soporte de envío de correo y alerta)
         const webhookUrl = getMakeWebhookUrl();
         if (webhookUrl) {
@@ -9873,22 +9887,17 @@ async function solicitarNuevoPIN() {
             }
         }
 
-        // Si el webhook no pudo enviarse o no está disponible, abrir fallback mailto
-        if (!resultadoWebhook || !resultadoWebhook.ok) {
-            try {
-                const mailtoUrl = `mailto:${encodeURIComponent(emailCorte)}?subject=${encodeURIComponent(asuntoEmail)}&body=${encodeURIComponent(cuerpoEmail)}`;
-                window.open(mailtoUrl, '_blank');
-            } catch (_) {}
-        }
-
-        // 3) WhatsApp directo al primer superadmin/master disponible (fallback / copia)
+        // WhatsApp directo al primer superadmin/master disponible
         if (administradores.length > 0) {
             const admin = administradores[0];
             const textoAdmin = `🔑 *Solicitud de nuevo PIN*\n\nEl maestre *${usuario.name || usuario.phone}* (tel. ${usuario.phone}, barrio ${usuario.barrio_representado || 'Forastero'}) ha olvidado su PIN y solicita que se le genere uno nuevo.\n\nNotificación enviada también a ${emailCorte}.\n\nLokiTrono de Barrios — Corte Imperial`;
             whatsappUrl = generarEnlaceWhatsAppDirecto(admin.phone, textoAdmin);
         }
 
-        // Registrar solicitud para trazabilidad local
+        // Preparar enlace de correo mailto
+        const mailtoUrl = `mailto:${encodeURIComponent(emailCorte)}?subject=${encodeURIComponent(asuntoEmail)}&body=${encodeURIComponent(cuerpoEmail)}`;
+
+        // Trazabilidad local
         try {
             const solicitudes = JSON.parse(localStorage.getItem('lokitrono_solicitudes_pin') || '[]');
             solicitudes.push({
@@ -9904,7 +9913,11 @@ async function solicitarNuevoPIN() {
         } catch (_) { /* noop */ }
 
         if (mensaje) {
-            mensaje.innerHTML = `✅ Solicitud registrada y enviada a la corte (afjbilbao@gmail.com).<br>La administración revisará tu petición y te comunicará el nuevo PIN.`;
+            mensaje.innerHTML = `✅ Solicitud registrada y enviada a la corte (afjbilbao@gmail.com).<br>
+            <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="${mailtoUrl}" class="btn-cuervo" style="text-decoration:none; padding:6px 12px; font-size:0.8rem; background:#1e3a8a;" target="_blank">✉️ Abrir en mi app de correo</a>
+                ${whatsappUrl ? `<a href="${whatsappUrl}" class="btn-cuervo" style="text-decoration:none; padding:6px 12px; font-size:0.8rem; background:#15803d;" target="_blank">📱 Avisar por WhatsApp</a>` : ''}
+            </div>`;
             mensaje.style.color = '#4ade80';
         }
         if (input) input.value = '';
@@ -9957,6 +9970,21 @@ async function enviarSugerenciaReino(event) {
         estado.textContent = '⏳ Enviando sugerencia a la corte...';
     }
 
+    // Guardar en la base de datos de Supabase de forma permanente
+    const client = typeof getSupabaseBarriosClient === 'function' ? getSupabaseBarriosClient() : null;
+    if (client) {
+        try {
+            await client.rpc('registrar_sugerencia_reino', {
+                p_nombre: nombre,
+                p_contacto: contacto,
+                p_tipo: tipo,
+                p_mensaje: mensaje
+            });
+        } catch (errDb) {
+            console.warn('Registro en BD de sugerencia:', errDb);
+        }
+    }
+
     let resultadoWebhook = null;
     const webhookUrl = typeof getMakeWebhookUrl === 'function' ? getMakeWebhookUrl() : '';
 
@@ -9994,17 +10022,14 @@ async function enviarSugerenciaReino(event) {
         localStorage.setItem('lokitrono_sugerencias_enviadas', JSON.stringify(guardadas.slice(-30)));
     } catch (_) {}
 
-    // Fallback mailto si el webhook falló o no está activo
-    if (!resultadoWebhook || !resultadoWebhook.ok) {
-        try {
-            const mailtoUrl = `mailto:${encodeURIComponent(emailCorte)}?subject=${encodeURIComponent(asuntoEmail)}&body=${encodeURIComponent(cuerpoEmail)}`;
-            window.open(mailtoUrl, '_blank');
-        } catch (_) {}
-    }
+    const mailtoUrl = `mailto:${encodeURIComponent(emailCorte)}?subject=${encodeURIComponent(asuntoEmail)}&body=${encodeURIComponent(cuerpoEmail)}`;
 
     if (estado) {
         estado.style.color = '#4ade80';
-        estado.innerHTML = `✅ ¡Gracias por tu sugerencia! Se ha remitido a la corte imperial (<strong style="color:var(--oro-real);">afjbilbao@gmail.com</strong>).`;
+        estado.innerHTML = `✅ ¡Gracias por tu sugerencia! Ha quedado registrada en la corte.<br>
+        <div style="margin-top: 10px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+            <a href="${mailtoUrl}" class="btn-cuervo" style="text-decoration:none; padding:6px 14px; font-size:0.85rem; background:#1e3a8a;" target="_blank">✉️ Enviar copia directa desde mi correo</a>
+        </div>`;
     }
 
     if (mensajeInput) mensajeInput.value = '';

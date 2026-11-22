@@ -560,7 +560,7 @@ function actualizarInterfazSesion(usuario) {
             userWidget.style.display = 'none';
             cerrarMenuUsuarioWidget();
         }
-        if (nav) nav.style.display = 'block';
+        if (nav) nav.style.display = 'none';
         const btnHamburguesa = document.getElementById('btn-menu-hamburguesa');
         if (btnHamburguesa) btnHamburguesa.style.display = 'none';
         const btnBottomHamburguesa = document.getElementById('btn-bottom-menu-hamburguesa');
@@ -5985,9 +5985,7 @@ function initApp() {
     if (typeof cargarGalaFinalDesdeSupabase === 'function') cargarGalaFinalDesdeSupabase();
     if (typeof aplicarNombreJuego === 'function') aplicarNombreJuego();
     const currentUser = getCurrentUser();
-    if (currentUser) {
-        actualizarInterfazSesion(currentUser);
-    }
+    actualizarInterfazSesion(currentUser);
     if (typeof renderEstadisticasCodice === 'function') renderEstadisticasCodice();
     if (typeof detectarCierresVotacion === 'function') detectarCierresVotacion();
     setInterval(() => {

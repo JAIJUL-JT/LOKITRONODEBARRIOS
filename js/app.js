@@ -3125,13 +3125,6 @@ async function guardarEventoBarrio(event) {
         return;
     }
 
-    const yaExisteEventoBarrio = getEventosDelAmbito().find(e =>
-        e.barrio === barrio && String(e.id) !== String(editId || ''));
-    if (yaExisteEventoBarrio) {
-        alert(`El barrio «${barrio}» ya tiene un evento programado ("${yaExisteEventoBarrio.nombre}"). Solo puede existir un evento por barrio.`);
-        return;
-    }
-
     if (fechaFin && fechaFin < fecha) {
         alert('La fecha de finalización del evento no puede ser anterior a la fecha de inicio.');
         return;
@@ -3398,13 +3391,6 @@ async function guardarEventoBarrioDesdePestana(event) {
     if (!String(barrio || '').trim() || barrio === 'Reino'
         || !getBarriosRegistradosDelAmbito().includes(barrio)) {
         alert('Primero da de alta el barrio en «Gestión de Barrios» para poder programar su evento. Ese barrio entrará en el sorteo.');
-        return;
-    }
-
-    const yaExisteEventoBarrio = getEventosDelAmbito().find(e =>
-        e.barrio === barrio && String(e.id) !== String(editId || ''));
-    if (yaExisteEventoBarrio) {
-        alert(`El barrio «${barrio}» ya tiene un evento programado ("${yaExisteEventoBarrio.nombre}"). Solo puede existir un evento por barrio.`);
         return;
     }
 

@@ -10072,6 +10072,7 @@ function normalizarBlogPost(post) {
         categoria: CATEGORIAS_BLOG[categoria] ? categoria : 'otro',
         contenido: String(post.contenido || ''),
         autor: String(post.autor || 'Cronista del Reino'),
+        imagen_url: post.imagen_url ? String(post.imagen_url).trim() : null,
         fechaCreacion: post.fechaCreacion || post.created_at || '',
         actualizadoEn: post.actualizadoEn || post.updated_at || ''
     };
@@ -10112,7 +10113,7 @@ async function cargarBlogPosts() {
     try {
         const { data, error } = await client
             .from('blog_posts')
-            .select('id, titulo, fecha, categoria, contenido, autor, created_at, updated_at')
+            .select('id, titulo, fecha, categoria, contenido, autor, imagen_url, created_at, updated_at')
             .order('fecha', { ascending: false })
             .order('created_at', { ascending: false });
 

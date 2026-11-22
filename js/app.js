@@ -485,6 +485,8 @@ function actualizarInterfazSesion(usuario) {
         if (btnHamburguesa) btnHamburguesa.style.display = '';
         const btnBottomHamburguesa = document.getElementById('btn-bottom-menu-hamburguesa');
         if (btnBottomHamburguesa) btnBottomHamburguesa.style.display = '';
+        const barraInferiorLogin = document.getElementById('barra-inferior-movil');
+        if (barraInferiorLogin) barraInferiorLogin.style.display = '';
         if (contenido) contenido.style.display = 'block';
         const esSuperadmin = puedeAdministrar(usuario.role);
         const esMaster = esRolMaster(usuario.role);
@@ -569,6 +571,13 @@ function actualizarInterfazSesion(usuario) {
         if (optgroupAdmin) optgroupAdmin.style.display = 'none';
         if (typeof cerrarMenuHamburguesa === 'function') cerrarMenuHamburguesa();
         aplicarVisibilidadTrivialMenu();
+
+        // Ocultar barra inferior móvil completa y limpiar el blog
+        const barraInferior = document.getElementById('barra-inferior-movil');
+        if (barraInferior) barraInferior.style.display = 'none';
+        const gridBlog = document.getElementById('grid-blog-posts');
+        if (gridBlog) gridBlog.innerHTML = '';
+        blogPostsCache = null;
 
         cambiarPestana('pestana-clasificacion');
     }
@@ -3364,7 +3373,6 @@ async function guardarEventoBarrioDesdePestana(event) {
         alert('Solo el Superadministrador puede gestionar eventos.');
         return;
     }
-
     const editId = document.getElementById('evento-dedicated-id-edit')?.value;
     const barrio = document.getElementById('evento-dedicated-barrio')?.value || 'Reino';
     const nombre = document.getElementById('evento-dedicated-nombre')?.value?.trim();
@@ -3382,6 +3390,8 @@ async function guardarEventoBarrioDesdePestana(event) {
     const desc = document.getElementById('evento-dedicated-desc')?.value || '';
     const tieneVotacion =
         (document.getElementById('evento-dedicated-tiene-votacion')?.value || 'con') !== 'sin';
+    const qrUrl = document.getElementById('evento-qr-url')?.value?.trim() || '';
+    const qrTipo = document.getElementById('evento-qr-tipo')?.value || 'votacion';
 
     if (!nombre || !fecha || !lugar) {
         alert('Por favor, completa los campos requeridos del evento.');
@@ -3420,6 +3430,8 @@ async function guardarEventoBarrioDesdePestana(event) {
         fecha_fin_votacion: fechaFinVotacion,
         desc,
         tiene_votacion: tieneVotacion,
+        qr_url: qrUrl,
+        qr_tipo: qrTipo,
         cerrado_manualmente: editId
             ? Boolean(getEventosDelAmbito().find(e => String(e.id) === String(editId))?.cerrado_manualmente)
             : false,
@@ -3454,6 +3466,126 @@ function alternarCamposVotacionEvento() {
     });
 }
 
+// ── QR de evento ─────────────────────────────────────────────────────────────
+let qrGeneradoInstancia = null;
+let qrGeneradoDataUrl = null;
+
+function resolverUrlQR(tipo) {
+    const base = typeof getSitioPublico === 'function' ? getSitioPublico() : (window.location.origin + window.location.pathname).replace(/\/$/, '');
+    switch (tipo) {
+        case 'votacion':  return base + '#pestana-votacion-barrio';
+        case 'ranking':   return base + '#pestana-clasificacion';
+        case 'info':      return base + '#pestana-clasificacion';
+        case 'acceso':    return base;
+        case 'entrada':   return base;
+        case 'pago': {
+            const urlPago = document.getElementById('evento-url-pago');
+            return (urlPago && urlPago.value.trim()) ? urlPago.value.trim() : base;
+        }
+        case 'personalizado': {
+            const custom = document.getElementById('evento-qr-url');
+            return (custom && custom.value.trim()) ? custom.value.trim() : base;
+        }
+        default: return base;
+    }
+}
+
+function actualizarUrlQRPredeterminada() {
+    const tipoEl = document.getElementById('evento-qr-tipo');
+    const urlInput = document.getElementById('evento-qr-url');
+    if (!tipoEl || !urlInput) return;
+    const tipo = tipoEl.value || 'votacion';
+    const esPersonalizado = tipo === 'personalizado';
+    urlInput.readOnly = !esPersonalizado;
+    urlInput.style.opacity = esPersonalizado ? '1' : '0.6';
+    if (!esPersonalizado) {
+        urlInput.value = resolverUrlQR(tipo);
+    }
+}
+
+function generarQREvento() {
+    const tipoEl = document.getElementById('evento-qr-tipo');
+    const urlInput = document.getElementById('evento-qr-url');
+    const preview = document.getElementById('evento-qr-preview');
+    const targetInfo = document.getElementById('evento-qr-target-info');
+    const btnDescargar = document.getElementById('btn-descargar-qr');
+    if (!preview) return;
+
+    const tipo = (tipoEl && tipoEl.value) || 'votacion';
+    const url = (urlInput && urlInput.value.trim()) || resolverUrlQR(tipo);
+
+    if (!url) { alert('Indica una URL de destino para el QR.'); return; }
+
+    preview.innerHTML = '';
+    if (qrGeneradoInstancia) { try { qrGeneradoInstancia.clear(); } catch (_) {} }
+    qrGeneradoInstancia = null;
+    qrGeneradoDataUrl = null;
+    if (btnDescargar) btnDescargar.disabled = true;
+
+    if (typeof QRCode === 'undefined') {
+        preview.innerHTML = '<span style="color:#f87171">La librería QR no está cargada. Recarga la página.</span>';
+        return;
+    }
+
+    const wrapper = document.createElement('div');
+    preview.appendChild(wrapper);
+    try {
+        qrGeneradoInstancia = new QRCode(wrapper, {
+            text: url,
+            width: 200,
+            height: 200,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        setTimeout(() => {
+            const canvas = wrapper.querySelector('canvas');
+            if (canvas) {
+                qrGeneradoDataUrl = canvas.toDataURL('image/png');
+                if (btnDescargar) btnDescargar.disabled = false;
+            }
+        }, 150);
+        if (targetInfo) targetInfo.textContent = '🔗 Destino: ' + url;
+    } catch (e) {
+        preview.innerHTML = '<span style="color:#f87171">Error generando QR: ' + (e.message || e) + '</span>';
+    }
+}
+
+function descargarQREvento() {
+    if (!qrGeneradoDataUrl) { alert('Genera primero el QR.'); return; }
+    const nombre = (document.getElementById('evento-dedicated-nombre') || {}).value || 'evento';
+    const tipo = (document.getElementById('evento-qr-tipo') || {}).value || 'qr';
+    const a = document.createElement('a');
+    a.href = qrGeneradoDataUrl;
+    a.download = 'QR_' + nombre.trim().replace(/\s+/g, '_') + '_' + tipo + '.png';
+    a.click();
+}
+
+function copiarUrlQREvento() {
+    const urlInput = document.getElementById('evento-qr-url');
+    const url = urlInput ? urlInput.value.trim() : '';
+    if (!url) { alert('Genera primero el QR o introduce una URL.'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('btn-copiar-url-qr');
+            if (btn) { const orig = btn.textContent; btn.textContent = '✅ Copiado'; setTimeout(() => { btn.textContent = orig; }, 2000); }
+        }).catch(() => { alert('URL: ' + url); });
+    } else {
+        alert('URL: ' + url);
+    }
+}
+
+function generarQRDirectoEvento(eventoId) {
+    editarEventoBarrioDesdePestana(eventoId);
+    setTimeout(() => {
+        const panelQR = document.getElementById('evento-qr-preview-wrapper');
+        if (panelQR) panelQR.scrollIntoView({ behavior: 'smooth' });
+        actualizarUrlQRPredeterminada();
+        generarQREvento();
+    }, 400);
+}
+// ── fin QR ───────────────────────────────────────────────────────────────────
+
 function resetFormEventoDedicated() {
     const form = document.getElementById('form-evento-admin-dedicated');
     if (form) form.reset();
@@ -3468,6 +3600,16 @@ function resetFormEventoDedicated() {
     if (selector) selector.value = 'con';
     alternarCamposVotacionEvento();
     resetMediaEventos();
+    const qrPreview = document.getElementById('evento-qr-preview');
+    if (qrPreview) qrPreview.innerHTML = '— QR aparecerá aquí al pulsar «Generar QR» —';
+    const qrInfo = document.getElementById('evento-qr-target-info');
+    if (qrInfo) qrInfo.textContent = '';
+    const btnDescargarQR = document.getElementById('btn-descargar-qr');
+    if (btnDescargarQR) btnDescargarQR.disabled = true;
+    const qrUrlInput = document.getElementById('evento-qr-url');
+    if (qrUrlInput) qrUrlInput.value = '';
+    qrGeneradoInstancia = null;
+    qrGeneradoDataUrl = null;
 }
 
 function editarEventoBarrioDesdePestana(eventoId) {
@@ -3491,6 +3633,15 @@ function editarEventoBarrioDesdePestana(eventoId) {
     if (selectorVotacion) selectorVotacion.value = evt.tiene_votacion === false ? 'sin' : 'con';
     alternarCamposVotacionEvento();
     aplicarMediaEventoFormulario(evt);
+    if (evt.qr_tipo) {
+        const qrTipoEl = document.getElementById('evento-qr-tipo');
+        if (qrTipoEl) qrTipoEl.value = evt.qr_tipo;
+    }
+    const qrUrlEl = document.getElementById('evento-qr-url');
+    if (qrUrlEl) {
+        qrUrlEl.value = evt.qr_url || '';
+    }
+    actualizarUrlQRPredeterminada();
 
     const btnGuardar = document.getElementById('btn-guardar-evento-dedicated');
     const btnCancelar = document.getElementById('btn-cancelar-evento-dedicated');
@@ -3532,6 +3683,7 @@ function renderEventosGeneradosPestanaAdmin() {
                 ${construirGaleriaMediaEvento(evt)}
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; padding-top: 10px;">
                     <button onclick="editarEventoBarrioDesdePestana('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: #2563eb; flex: 1;">✏️ Editar</button>
+                    <button onclick="generarQRDirectoEvento('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: #15803d; flex: 0.9;" title="Ver y generar QR de este evento">📲 QR</button>
                     ${evt.tiene_votacion === false ? '' : `<button onclick="toggleCerrarVotacionEvento('${evt.id}')" class="btn-cuervo" style="padding: 4px 8px; font-size: 0.78rem; background: ${evt.cerrado_manualmente ? '#166534' : '#d97706'}; flex: 1.2;">
                         ${evt.cerrado_manualmente ? '🟢 Abrir' : '🔒 Cerrar'}
                     </button>`}
@@ -6736,6 +6888,11 @@ window.getBarriosLocal = getBarriosLocal;
 window.getBarriosRegistrados = getBarriosRegistrados;
 window.cargarBarriosDesdeSupabase = cargarBarriosDesdeSupabase;
 window.descargarICSEvento = descargarICSEvento;
+window.generarQREvento = generarQREvento;
+window.descargarQREvento = descargarQREvento;
+window.copiarUrlQREvento = copiarUrlQREvento;
+window.generarQRDirectoEvento = generarQRDirectoEvento;
+window.actualizarUrlQRPredeterminada = actualizarUrlQRPredeterminada;
 
 window.togglePinVisibility = togglePinVisibility;
 window.cambiarPestana = cambiarPestana;

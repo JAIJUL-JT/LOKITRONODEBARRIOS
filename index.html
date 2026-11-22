@@ -134,9 +134,10 @@
 
     <!-- Config legal y consentimiento de cookies (RGPD/LSSI + Consent Mode v2) -->
     <script src="js/legal-config.js"></script>
+    <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261122d" defer></script>
+    <script src="js/app.js?v=20261122e" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -1077,24 +1078,44 @@
                             <!-- GENERAR QR PARA EVENTO -->
                             <div style="background: rgba(20, 40, 20, 0.9); padding: 15px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.5); margin: 15px 0;">
                                 <h4 style="color: #4ade80; margin: 0 0 10px; font-family: 'Cinzel', serif;">📲 Generar QR para Evento</h4>
-                                <p style="font-size: 0.8rem; color: #86efac; margin: 0 0 10px;">Genera un código QR único para este evento, para acceso, votación o información.</p>
+                                <p style="font-size: 0.8rem; color: #86efac; margin: 0 0 10px;">Genera un código QR único para este evento. Configura el tipo de QR o indica la URL personalizada a la que debe dirigirse.</p>
+                                
                                 <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px;">
-                                    <select id="evento-qr-tipo" class="input-medieval" style="flex: 1; min-width: 160px;">
-                                        <option value="acceso">🚪 QR de Acceso</option>
-                                        <option value="votacion">🗳️ QR de Votación</option>
-                                        <option value="info">ℹ️ QR Informativo</option>
-                                        <option value="pago">💳 QR de Pago</option>
-                                        <option value="entrada">🎟️ QR de Entrada</option>
-                                    </select>
+                                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                                        <label for="evento-qr-tipo" style="font-size: 0.8rem; color: #86efac; font-weight: bold; margin-bottom: 4px; display: block;">🎯 Tipo de QR:</label>
+                                        <select id="evento-qr-tipo" class="input-medieval" onchange="actualizarUrlQRPredeterminada()" style="width: 100%;">
+                                            <option value="votacion">🗳️ QR de Votación (Votar en la justa)</option>
+                                            <option value="info">ℹ️ QR Informativo (Detalle del evento)</option>
+                                            <option value="acceso">🚪 QR de Acceso (Entrada al recinto)</option>
+                                            <option value="pago">💳 QR de Pago / Bizum</option>
+                                            <option value="entrada">🎟️ QR de Entrada Digital</option>
+                                            <option value="ranking">🏆 QR de Clasificación en directo</option>
+                                            <option value="personalizado">🔗 URL Personalizada...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex: 2; min-width: 240px; margin-bottom: 0;">
+                                        <label for="evento-qr-url" style="font-size: 0.8rem; color: #86efac; font-weight: bold; margin-bottom: 4px; display: block;">🌐 Enlace / URL de destino del QR:</label>
+                                        <input type="url" id="evento-qr-url" class="input-medieval" placeholder="https://..." style="width: 100%; font-size: 0.85rem;">
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
                                     <button type="button" class="btn-cuervo" onclick="generarQREvento()" style="background: #15803d; padding: 8px 18px;">
                                         📲 Generar QR
                                     </button>
-                                    <button type="button" class="btn-cuervo" onclick="descargarQREvento()" style="background: #1d4ed8; padding: 8px 14px;">
-                                        ⬇️ Descargar
+                                    <button type="button" class="btn-cuervo" id="btn-descargar-qr" onclick="descargarQREvento()" style="background: #1d4ed8; padding: 8px 14px;" disabled>
+                                        ⬇️ Descargar QR
+                                    </button>
+                                    <button type="button" class="btn-cuervo" id="btn-copiar-url-qr" onclick="copiarUrlQREvento()" style="background: #374151; padding: 8px 14px;" title="Copiar enlace al portapapeles">
+                                        📋 Copiar Enlace
                                     </button>
                                 </div>
-                                <div id="evento-qr-preview" style="text-align: center; min-height: 60px; display: flex; align-items: center; justify-content: center; color: #4ade80; font-size: 0.82rem;">
-                                    — QR aparecerá aquí —
+
+                                <div id="evento-qr-preview-wrapper" style="text-align: center; padding: 12px; background: rgba(0, 0, 0, 0.4); border-radius: 8px; border: 1px dashed rgba(74, 222, 128, 0.4); margin-bottom: 8px;">
+                                    <div id="evento-qr-preview" style="text-align: center; min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #4ade80; font-size: 0.82rem;">
+                                        — QR aparecerá aquí al pulsar «Generar QR» —
+                                    </div>
+                                    <p id="evento-qr-target-info" style="font-size: 0.76rem; color: #cbd5e1; margin: 8px 0 0; word-break: break-all;"></p>
                                 </div>
 
                                 <!-- ZONA MAESTRE: ESCANEAR QR Y JUSTIFICANTE (oculta por defecto) -->
@@ -2709,7 +2730,7 @@
     </div>
 
     <!-- Barra de Navegación Móvil Inferior (Web-App Ergonomics) -->
-    <nav class="mobile-bottom-nav" aria-label="Navegación principal móvil" id="barra-inferior-movil">
+    <nav class="mobile-bottom-nav" aria-label="Navegación principal móvil" id="barra-inferior-movil" style="display: none;">
         <button type="button" class="bottom-nav-item active" onclick="cambiarPestana('pestana-inicio')" data-pestana="pestana-inicio" aria-label="Inicio">
             <span class="nav-icon">🏠</span>
             <span class="nav-label">Inicio</span>

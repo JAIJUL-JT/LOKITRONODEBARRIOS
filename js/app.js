@@ -481,6 +481,10 @@ function actualizarInterfazSesion(usuario) {
             }
         }
         if (nav) nav.style.display = 'block';
+        const btnHamburguesa = document.getElementById('btn-menu-hamburguesa');
+        if (btnHamburguesa) btnHamburguesa.style.display = '';
+        const btnBottomHamburguesa = document.getElementById('btn-bottom-menu-hamburguesa');
+        if (btnBottomHamburguesa) btnBottomHamburguesa.style.display = '';
         if (contenido) contenido.style.display = 'block';
         const esSuperadmin = puedeAdministrar(usuario.role);
         const esMaster = esRolMaster(usuario.role);
@@ -557,6 +561,10 @@ function actualizarInterfazSesion(usuario) {
             cerrarMenuUsuarioWidget();
         }
         if (nav) nav.style.display = 'block';
+        const btnHamburguesa = document.getElementById('btn-menu-hamburguesa');
+        if (btnHamburguesa) btnHamburguesa.style.display = 'none';
+        const btnBottomHamburguesa = document.getElementById('btn-bottom-menu-hamburguesa');
+        if (btnBottomHamburguesa) btnBottomHamburguesa.style.display = 'none';
         if (contenido) contenido.style.display = 'none';
         if (optgroupAdmin) optgroupAdmin.style.display = 'none';
         if (typeof cerrarMenuHamburguesa === 'function') cerrarMenuHamburguesa();
@@ -575,6 +583,11 @@ function actualizarInterfazSesion(usuario) {
    opciones que la app oculta o deshabilita por rol/estado.
    ============================================================ */
 function alternarMenuHamburguesa() {
+    const usuario = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    if (!usuario) {
+        cerrarMenuHamburguesa();
+        return;
+    }
     const menu = document.getElementById('menu-hamburguesa');
     if (!menu) return;
     if (menu.hidden) abrirMenuHamburguesa();
@@ -582,6 +595,11 @@ function alternarMenuHamburguesa() {
 }
 
 function abrirMenuHamburguesa() {
+    const usuario = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    if (!usuario) {
+        cerrarMenuHamburguesa();
+        return;
+    }
     const menu = document.getElementById('menu-hamburguesa');
     const boton = document.getElementById('btn-menu-hamburguesa');
     if (!menu) return;

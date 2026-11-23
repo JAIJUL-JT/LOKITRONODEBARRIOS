@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261123d" defer></script>
+    <script src="js/app.js?v=20261123e" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -537,117 +537,227 @@
                 <div class="panel-card" style="max-width: 900px; margin: 0 auto; text-align: center; background: rgba(20, 14, 8, 0.95); border: 2px solid var(--oro-real); border-radius: 16px; padding: 28px 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.85);">
                     <p style="text-transform: uppercase; letter-spacing: 2px; color: var(--oro-real); font-size: 0.85rem; font-weight: bold; margin-bottom: 6px;">LokiTrono de Barrios</p>
                     <h2 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); font-size: 2rem; margin: 0 0 12px;">✨ Extras del Reino</h2>
-                    <p style="color: #d6d3d1; font-size: 0.95rem; max-width: 650px; margin: 0 auto 24px;">
-                        Descubre los minijuegos feudales, desafíos de ingenio y la historia detrás de la creación del Trono del Pintxo.
+                    <p style="color: #d6d3d1; font-size: 0.95rem; max-width: 650px; margin: 0 auto 20px;">
+                        Descubre los minijuegos feudales, crónicas del reino, sabiduría de los barrios y canales directos con la Corte.
                     </p>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-bottom: 24px; text-align: left;">
-                        <!-- Tarjeta Botxitrono -->
-                        <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
-                            <div>
-                                <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎮 Botxitrono</h3>
-                                <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
-                                    El arcade medieval de plataformas. Corre, salta y defiende las torres de la Villa.
-                                </p>
-                            </div>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <a href="./botxitrono/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 8px 12px; text-decoration: none; font-size: 0.85rem; width: 100%; text-align: center;">
-                                    Jugar
-                                </a>
-                            </div>
-                        </div>
+                    <!-- BARRA DE SUBMENÚS DE EXTRAS -->
+                    <nav class="extras-subnav" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px;">
+                        <button type="button" id="btn-subtab-extras-juegos" class="btn-cuervo subtab-extras-btn activo" onclick="cambiarSubpestanaExtras('juegos')" style="background: #1e3a8a; border: 1.5px solid var(--oro-brillante); color: var(--oro-brillante); padding: 8px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer;">
+                            🎮 Minijuegos y Ecos
+                        </button>
+                        <button type="button" id="btn-subtab-extras-blog" class="btn-cuervo subtab-extras-btn" onclick="cambiarSubpestanaExtras('blog')" style="background: rgba(0,0,0,0.6); border: 1.5px solid rgba(212,175,55,0.4); color: #d6d3d1; padding: 8px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer;">
+                            📜 PapiroBLOG del Norte
+                        </button>
+                        <button type="button" id="btn-subtab-extras-tronistas" class="btn-cuervo subtab-extras-btn" onclick="cambiarSubpestanaExtras('tronistas')" style="background: rgba(0,0,0,0.6); border: 1.5px solid rgba(212,175,55,0.4); color: #d6d3d1; padding: 8px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer;">
+                            👑 Lokitronistas
+                        </button>
+                        <button type="button" id="btn-subtab-extras-faq" class="btn-cuervo subtab-extras-btn" onclick="cambiarSubpestanaExtras('faq')" style="background: rgba(0,0,0,0.6); border: 1.5px solid rgba(212,175,55,0.4); color: #d6d3d1; padding: 8px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer;">
+                            ❓ FAQ
+                        </button>
+                        <button type="button" id="btn-subtab-extras-buzon" class="btn-cuervo subtab-extras-btn" onclick="cambiarSubpestanaExtras('buzon')" style="background: rgba(0,0,0,0.6); border: 1.5px solid rgba(212,175,55,0.4); color: #d6d3d1; padding: 8px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer;">
+                            📬 Buzón de Sugerencias
+                        </button>
+                    </nav>
 
-                        <!-- Tarjeta Trivial -->
-                        <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
-                            <div>
-                                <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🧠 El Trivial del Botxo</h3>
-                                <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
-                                    Pon a prueba tu sabiduría botxera: preguntas sobre barrios, historia y cultura bilbaína.
-                                </p>
+                    <!-- SUBSECCIÓN 1: MINIJUEGOS Y ECOS (Activa por defecto) -->
+                    <div id="extras-subseccion-juegos" class="extras-subseccion" style="display: block;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-bottom: 24px; text-align: left;">
+                            <!-- Tarjeta Botxitrono -->
+                            <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎮 Botxitrono</h3>
+                                    <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
+                                        El arcade medieval de plataformas. Corre, salta y defiende las torres de la Villa.
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <a href="./botxitrono/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 8px 12px; text-decoration: none; font-size: 0.85rem; width: 100%; text-align: center;">
+                                        Jugar
+                                    </a>
+                                </div>
                             </div>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <a href="./trivial/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 8px 12px; text-decoration: none; font-size: 0.85rem; width: 100%; text-align: center;">
-                                    Jugar
-                                </a>
-                            </div>
-                        </div>
 
-                        <!-- Tarjeta Himno Feudal -->
-                        <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
-                            <div>
-                                <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎵 Ecos del Diskotrono</h3>
-                                <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
-                                    Escucha los temas oficiales del Reino que hacen vibrar los feudos de Bilbao.
-                                </p>
+                            <!-- Tarjeta Trivial -->
+                            <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🧠 El Trivial del Botxo</h3>
+                                    <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
+                                        Pon a prueba tu sabiduría botxera: preguntas sobre barrios, historia y cultura bilbaína.
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <a href="./trivial/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 8px 12px; text-decoration: none; font-size: 0.85rem; width: 100%; text-align: center;">
+                                        Jugar
+                                    </a>
+                                </div>
                             </div>
-                            <div style="display: flex; gap: 8px; flex-direction: column;">
-                                <button type="button" id="btn-audio-himno" class="btn-medieval inicio-cta-btn" onclick="toggleAudioHimno('himno')" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
-                                    🎵 Himno Lokitrono
-                                </button>
-                                <button type="button" id="btn-audio-cancion" class="btn-medieval inicio-cta-btn" onclick="toggleAudioCancion()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
-                                    🎵 Canción del Juego
-                                </button>
-                            </div>
-                        </div>
 
-                        <!-- Tarjeta Danza de Dragones -->
-                        <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
-                            <div>
-                                <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🐉 Danza de Dragones</h3>
-                                <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
-                                    Convoca el vuelo acrobático de los tres dragones legendarios cruzando el firmamento con fuegos artificiales.
-                                </p>
+                            <!-- Tarjeta Himno Feudal -->
+                            <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎵 Ecos del Diskotrono</h3>
+                                    <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
+                                        Escucha los temas oficiales del Reino que hacen vibrar los feudos de Bilbao.
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-direction: column;">
+                                    <button type="button" id="btn-audio-himno" class="btn-medieval inicio-cta-btn" onclick="toggleAudioHimno('himno')" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
+                                        🎵 Himno Lokitrono
+                                    </button>
+                                    <button type="button" id="btn-audio-cancion" class="btn-medieval inicio-cta-btn" onclick="toggleAudioCancion()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
+                                        🎵 Canción del Juego
+                                    </button>
+                                </div>
                             </div>
-                            <div>
-                                <button type="button" class="btn-medieval" onclick="window.toggleBaileDragones && window.toggleBaileDragones()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%; background: #1e3a8a; color: var(--oro-brillante, #fef08a); border: 1px solid var(--oro-real, #d4af37); font-weight: bold;">
-                                    🔥 Iniciar Danza de Dragones
-                                </button>
+
+                            <!-- Tarjeta Danza de Dragones -->
+                            <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🐉 Danza de Dragones</h3>
+                                    <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
+                                        Convoca el vuelo acrobático de los tres dragones legendarios cruzando el firmamento con fuegos artificiales.
+                                    </p>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn-medieval" onclick="window.toggleBaileDragones && window.toggleBaileDragones()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%; background: #1e3a8a; color: var(--oro-brillante, #fef08a); border: 1px solid var(--oro-real, #d4af37); font-weight: bold;">
+                                        🔥 Iniciar Danza de Dragones
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- SECCIÓN: BUZÓN DE SUGERENCIAS -->
-                    <div id="buzon-sugerencias-seccion" style="background: rgba(10, 15, 30, 0.92); border: 2px solid var(--oro-real); border-radius: 14px; padding: 24px 20px; margin-bottom: 24px; text-align: left;">
-                        <div style="text-align: center; margin-bottom: 18px;">
-                            <span style="font-size: 2.2rem;">📬</span>
-                            <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 6px 0 6px; font-size: 1.5rem;">Buzón de Sugerencias</h3>
-                            <p style="color: #cbd5e1; font-size: 0.9rem; max-width: 600px; margin: 0 auto;">
-                                ¿Tienes ideas para mejorar el Reino, sugerencias de tabernas o propuestas de justas? Escríbenos y se remitirá directamente a la corte (<strong style="color:var(--oro-real);">afjbilbao@gmail.com</strong>).
-                            </p>
-                        </div>
-
-                        <form id="form-buzon-sugerencias" onsubmit="enviarSugerenciaReino(event)" style="max-width: 650px; margin: 0 auto;">
-                            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
-                                <div class="form-group" style="flex: 1 1 240px;">
-                                    <label for="sugerencia-nombre" style="font-size: 0.85rem; color: #fde68a;">Tu Nombre o Alias (opcional):</label>
-                                    <input type="text" id="sugerencia-nombre" class="input-medieval" placeholder="Ej: Maestre Jon de Indautxu">
-                                </div>
-                                <div class="form-group" style="flex: 1 1 240px;">
-                                    <label for="sugerencia-contacto" style="font-size: 0.85rem; color: #fde68a;">Teléfono o Correo (opcional):</label>
-                                    <input type="text" id="sugerencia-contacto" class="input-medieval" placeholder="Para recibir respuesta si lo deseas">
-                                </div>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 12px;">
-                                <label for="sugerencia-tipo" style="font-size: 0.85rem; color: #fde68a;">Tipo de sugerencia:</label>
-                                <select id="sugerencia-tipo" class="input-medieval">
-                                    <option value="mejora" selected>💡 Propuesta de mejora / Nueva idea</option>
-                                    <option value="taberna">🍷 Sugerencia de taberna o barrio</option>
-                                    <option value="evento">🗓️ Propuesta de justa o evento</option>
-                                    <option value="incidencia">⚠️ Reporte de error o problema</option>
-                                    <option value="felicitacion">✨ Mensaje a los Maestres / Agradecimiento</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 14px;">
-                                <label for="sugerencia-mensaje" style="font-size: 0.85rem; color: #fde68a;">Tu Sugerencia o Comentario *:</label>
-                                <textarea id="sugerencia-mensaje" class="input-medieval" rows="4" required placeholder="Describe tu propuesta con todo lujo de detalles feudales..."></textarea>
-                            </div>
-                            <div style="text-align: center;">
-                                <button type="submit" id="btn-enviar-sugerencia" class="btn-cuervo" style="background: #1e3a8a; padding: 10px 28px; font-size: 0.95rem; font-weight: bold;">
-                                    ✉️ Enviar
+                    <!-- SUBSECCIÓN 2: PAPIROBLOG DEL NORTE -->
+                    <div id="extras-subseccion-blog" class="extras-subseccion" style="display: none; text-align: left;">
+                        <div style="background: rgba(10, 15, 30, 0.92); border: 2px solid var(--oro-real); border-radius: 14px; padding: 24px 20px; margin-bottom: 24px;">
+                            <div style="text-align: center; margin-bottom: 18px;">
+                                <span style="font-size: 2.2rem;">📜</span>
+                                <h3 style="color: var(--oro-brillante); margin: 6px 0 6px; font-size: 1.5rem;">PapiroBLOG del Norte</h3>
+                                <p style="color: #cbd5e1; font-size: 0.9rem; max-width: 600px; margin: 0 auto 16px;">
+                                    Crónicas de las justas, entrevistas con taberneros, bandos reales y relatos de las Casas de Bilbao.
+                                </p>
+                                <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-blog')" style="background: #1e3a8a; padding: 10px 24px; font-size: 0.92rem; font-weight: bold;">
+                                    📜 Ir a la Sala Completa del Papiro del Norte
                                 </button>
                             </div>
-                            <p id="sugerencia-estado" role="status" style="margin-top: 14px; font-size: 0.88rem; text-align: center; min-height: 1.2em;"></p>
-                        </form>
+                            <div id="extras-blog-preview-grid" style="margin-top: 16px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- SUBSECCIÓN 3: LOKITRONISTAS -->
+                    <div id="extras-subseccion-tronistas" class="extras-subseccion" style="display: none; text-align: left;">
+                        <div style="background: rgba(10, 15, 30, 0.92); border: 2px solid var(--oro-real); border-radius: 14px; padding: 24px 20px; margin-bottom: 24px;">
+                            <div style="text-align: center; margin-bottom: 18px;">
+                                <span style="font-size: 2.2rem;">👑</span>
+                                <h3 style="color: var(--oro-brillante); margin: 6px 0 6px; font-size: 1.5rem;">Lokitronistas de los Barrios</h3>
+                                <p style="color: #cbd5e1; font-size: 0.9rem; max-width: 600px; margin: 0 auto 16px;">
+                                    Representantes oficiales de los 8 feudos barriales y Consejeros de la Corte Imperial.
+                                </p>
+                                <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-tronistas')" style="background: #1e3a8a; padding: 10px 24px; font-size: 0.92rem; font-weight: bold;">
+                                    👑 Ir a la Corte de Lokitronistas
+                                </button>
+                            </div>
+                            <div id="extras-tronistas-preview-grid" style="margin-top: 16px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- SUBSECCIÓN 4: FAQ -->
+                    <div id="extras-subseccion-faq" class="extras-subseccion" style="display: none; text-align: left;">
+                        <div style="background: rgba(10, 15, 30, 0.92); border: 2px solid var(--oro-real); border-radius: 14px; padding: 24px 20px; margin-bottom: 24px;">
+                            <div style="text-align: center; margin-bottom: 18px;">
+                                <span style="font-size: 2.2rem;">❓</span>
+                                <h3 style="color: var(--oro-brillante); margin: 6px 0 6px; font-size: 1.5rem;">Preguntas Frecuentes (FAQ)</h3>
+                                <p style="color: #cbd5e1; font-size: 0.9rem; max-width: 600px; margin: 0 auto 16px;">
+                                    Respuestas a las cuestiones más comunes sobre el Trono del Pintxo y las leyes del Reino.
+                                </p>
+                                <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-faq')" style="background: #1e3a8a; padding: 10px 24px; font-size: 0.92rem; font-weight: bold;">
+                                    ❓ Ver Guía Completa de Preguntas y Respuestas
+                                </button>
+                            </div>
+                            <div class="faq-accordion" style="display: flex; flex-direction: column; gap: 10px; margin-top: 16px;">
+                                <details class="faq-item" style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 8px; padding: 12px 14px;">
+                                    <summary style="color: var(--oro-real); font-size: 1rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                        ⚖️ ¿Cómo funciona el cálculo del ranking (Ley II de Bilbao)?
+                                    </summary>
+                                    <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin: 10px 0 0;">
+                                        La puntuación final de cada barrio se calcula aplicando la <strong>Ley II de Bilbao</strong> con una ponderación fija: <strong>50% Festín</strong> (calidad gastronómica), <strong>20% Caminos</strong> (acceso y comodidad) y <strong>30% Espíritu</strong> (ambiente e identidad feudal). Además se aplica un factor bayesiano (K=3.0) para asegurar equilibrio y justicia entre barrios.
+                                    </p>
+                                </details>
+                                <details class="faq-item" style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 8px; padding: 12px 14px;">
+                                    <summary style="color: var(--oro-real); font-size: 1rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                        👑 ¿Qué roles existen en el juego?
+                                    </summary>
+                                    <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin: 10px 0 0;">
+                                        • <strong>Maestre (Jugador):</strong> Puede catar pintxos y emitir juicios.<br>
+                                        • <strong>Lokitronista:</strong> Defensor oficial de un barrio (máximo 2 por barrio). Por juego limpio, no puede votar en el evento de su propio barrio.<br>
+                                        • <strong>Superadmin / Master:</strong> Autoridades de la Corte que gestionan tabernas, usuarios y eventos.
+                                    </p>
+                                </details>
+                                <details class="faq-item" style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 8px; padding: 12px 14px;">
+                                    <summary style="color: var(--oro-real); font-size: 1rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                        🎫 ¿Cómo obtengo el Pase VIP Dorado?
+                                    </summary>
+                                    <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin: 10px 0 0;">
+                                        Al emitir votos válidos en los eventos de los diferentes barrios, conquistarás los sellos feudales en tu Pasaporte Real. Al completar 5 sellos, desbloquearás automáticamente el <strong>Pase VIP Dorado</strong> para la Gran Gala Final.
+                                    </p>
+                                </details>
+                                <details class="faq-item" style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 8px; padding: 12px 14px;">
+                                    <summary style="color: var(--oro-real); font-size: 1rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                        🔑 ¿Qué hago si olvido mi PIN de acceso?
+                                    </summary>
+                                    <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin: 10px 0 0;">
+                                        En la pantalla de inicio de sesión dispones del botón «🔑 ¿Olvidaste tu PIN?». Al pulsarlo tras indicar tu teléfono, se enviará una solicitud directa a los administradores para asignarte un nuevo PIN.
+                                    </p>
+                                </details>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBSECCIÓN 5: BUZÓN DE SUGERENCIAS (MOVIDO AQUÍ) -->
+                    <div id="extras-subseccion-buzon" class="extras-subseccion" style="display: none; text-align: left;">
+                        <div id="buzon-sugerencias-seccion" style="background: rgba(10, 15, 30, 0.92); border: 2px solid var(--oro-real); border-radius: 14px; padding: 24px 20px; margin-bottom: 24px; text-align: left;">
+                            <div style="text-align: center; margin-bottom: 18px;">
+                                <span style="font-size: 2.2rem;">📬</span>
+                                <h3 style="color: var(--oro-brillante); margin: 6px 0 6px; font-size: 1.5rem;">Buzón de Sugerencias</h3>
+                                <p style="color: #cbd5e1; font-size: 0.9rem; max-width: 600px; margin: 0 auto;">
+                                    ¿Tienes ideas para mejorar el Reino, sugerencias de tabernas o propuestas de justas? Escríbenos y se remitirá directamente a la corte (<strong style="color:var(--oro-real);">afjbilbao@gmail.com</strong>).
+                                </p>
+                            </div>
+
+                            <form id="form-buzon-sugerencias" onsubmit="enviarSugerenciaReino(event)" style="max-width: 650px; margin: 0 auto;">
+                                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+                                    <div class="form-group" style="flex: 1 1 240px;">
+                                        <label for="sugerencia-nombre" style="font-size: 0.85rem; color: #fde68a;">Tu Nombre o Alias (opcional):</label>
+                                        <input type="text" id="sugerencia-nombre" class="input-medieval" placeholder="Ej: Maestre Jon de Indautxu">
+                                    </div>
+                                    <div class="form-group" style="flex: 1 1 240px;">
+                                        <label for="sugerencia-contacto" style="font-size: 0.85rem; color: #fde68a;">Teléfono o Correo (opcional):</label>
+                                        <input type="text" id="sugerencia-contacto" class="input-medieval" placeholder="Para recibir respuesta si lo deseas">
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <label for="sugerencia-tipo" style="font-size: 0.85rem; color: #fde68a;">Tipo de sugerencia:</label>
+                                    <select id="sugerencia-tipo" class="input-medieval">
+                                        <option value="mejora" selected>💡 Propuesta de mejora / Nueva idea</option>
+                                        <option value="taberna">🍷 Sugerencia de taberna o barrio</option>
+                                        <option value="evento">🗓️ Propuesta de justa o evento</option>
+                                        <option value="incidencia">⚠️ Reporte de error o problema</option>
+                                        <option value="felicitacion">✨ Mensaje a los Maestres / Agradecimiento</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 14px;">
+                                    <label for="sugerencia-mensaje" style="font-size: 0.85rem; color: #fde68a;">Tu Sugerencia o Comentario *:</label>
+                                    <textarea id="sugerencia-mensaje" class="input-medieval" rows="4" required placeholder="Describe tu propuesta con todo lujo de detalles feudales..."></textarea>
+                                </div>
+                                <div style="text-align: center;">
+                                    <button type="submit" id="btn-enviar-sugerencia" class="btn-cuervo" style="background: #1e3a8a; padding: 10px 28px; font-size: 0.95rem; font-weight: bold;">
+                                        ✉️ Enviar
+                                    </button>
+                                </div>
+                                <p id="sugerencia-estado" role="status" style="margin-top: 14px; font-size: 0.88rem; text-align: center; min-height: 1.2em;"></p>
+                            </form>
+                        </div>
                     </div>
 
                     <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-inicio')" style="background: #1e3a8a; padding: 10px 24px; font-size: 0.95rem;">

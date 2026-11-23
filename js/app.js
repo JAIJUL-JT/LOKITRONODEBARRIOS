@@ -357,7 +357,7 @@ window.juegoConcluidoAutomaticamente = juegoConcluidoAutomaticamente;
 window.restriccionFinDeJuegoActiva = restriccionFinDeJuegoActiva;
 
 
-function cambiarPestana(valor) {
+function cambiarPestana(valor, subpestana) {
     const usuario = getCurrentUser();
     const esSuperadmin = !!(usuario && puedeAdministrar(usuario.role));
     const esMaster = !!(usuario && esRolMaster(usuario.role));
@@ -434,6 +434,11 @@ function cambiarPestana(valor) {
         || valor === 'pestana-blog-editor' || valor === 'tab-blog-editor') {
         if (typeof renderBlogPosts === 'function') renderBlogPosts();
         if (typeof renderPresentacionSlide === 'function') renderPresentacionSlide();
+    }
+    if (valor === 'pestana-extras' || valor === 'tab-extras') {
+        if (typeof cambiarSubpestanaExtras === 'function' && typeof subpestana !== 'undefined') {
+            cambiarSubpestanaExtras(subpestana);
+        }
     }
     if (typeof sincronizarEstadoMenuHamburguesa === 'function') {
         sincronizarEstadoMenuHamburguesa(valor);
@@ -11041,6 +11046,91 @@ function cerrarBotxitrono() {
 
 window.abrirBotxitrono = abrirBotxitrono;
 window.cerrarBotxitrono = cerrarBotxitrono;
+
+/* ==========================================================================
+   SUBMENÚS DE LA SECCIÓN EXTRAS (Minijuegos, PapiroBLOG, Lokitronistas, FAQ, Buzón)
+   ========================================================================== */
+
+function cambiarSubpestanaExtras(subpestana) {
+    const pestanas = ['juegos', 'blog', 'tronistas', 'faq', 'buzon'];
+    const destino = pestanas.includes(subpestana) ? subpestana : 'juegos';
+
+    pestanas.forEach(p => {
+        const sec = document.getElementById(`extras-subseccion-${p}`);
+        const btn = document.getElementById(`btn-subtab-extras-${p}`);
+        if (sec) sec.style.display = (p === destino) ? 'block' : 'none';
+        if (btn) {
+            if (p === destino) {
+                btn.style.background = '#1e3a8a';
+                btn.style.borderColor = 'var(--oro-brillante)';
+                btn.style.color = 'var(--oro-brillante)';
+            } else {
+                btn.style.background = 'rgba(0,0,0,0.6)';
+                btn.style.borderColor = 'rgba(212,175,55,0.4)';
+                btn.style.color = '#d6d3d1';
+            }
+        }
+    });
+
+    if (destino === 'blog') {
+        renderizarBlogPreviewExtras();
+    } else if (destino === 'tronistas') {
+        renderizarTronistasPreviewExtras();
+    }
+}
+
+function renderizarBlogPreviewExtras() {
+    const grid = document.getElementById('extras-blog-preview-grid');
+    if (!grid) return;
+    const posts = (typeof blogPostsCache !== 'undefined' && Array.isArray(blogPostsCache) && blogPostsCache.length > 0)
+        ? blogPostsCache
+        : (typeof obtenerBlogPostsLocales === 'function' ? obtenerBlogPostsLocales() : []);
+
+    if (!posts || posts.length === 0) {
+        grid.innerHTML = '<p style="text-align:center;color:#9ca3af;font-size:0.9rem;">Cargando crónicas del Reino...</p>';
+        if (typeof cargarBlogPostsPublicos === 'function') {
+            cargarBlogPostsPublicos().then(() => renderizarBlogPreviewExtras()).catch(() => {});
+        }
+        return;
+    }
+
+    const ultimos = posts.slice(0, 3);
+    grid.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">` +
+        ultimos.map(post => `
+            <div style="background:rgba(0,0,0,0.5);border:1px solid var(--oro-real);border-radius:10px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                    <span style="font-size:0.75rem;color:var(--oro-brillante);text-transform:uppercase;">${(typeof etiquetaCategoriaBlog === 'function') ? etiquetaCategoriaBlog(post.categoria) : '📜 Crónica'}</span>
+                    <h4 style="color:var(--oro-brillante);margin:6px 0 8px;font-size:1.05rem;">${escaparHTML(post.titulo || 'Sin título')}</h4>
+                    <p style="color:#d6d3d1;font-size:0.85rem;line-height:1.4;margin:0 0 10px;">${escaparHTML((post.contenido || '').substring(0, 110))}...</p>
+                </div>
+                <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-blog')" style="background:#1e3a8a;padding:6px 12px;font-size:0.8rem;width:100%;text-align:center;">
+                    📖 Leer Crónica
+                </button>
+            </div>
+        `).join('') + `</div>`;
+}
+
+function renderizarTronistasPreviewExtras() {
+    const grid = document.getElementById('extras-tronistas-preview-grid');
+    if (!grid) return;
+    const origen = document.getElementById('lista-tronistas');
+    if (origen && origen.children.length > 0) {
+        grid.innerHTML = origen.innerHTML;
+    } else {
+        grid.innerHTML = '<p style="text-align:center;color:#9ca3af;font-size:0.9rem;">Consulta la corte de Lokitronistas de los 8 barrios.</p>';
+        if (typeof renderizarTronistas === 'function') {
+            renderizarTronistas();
+            setTimeout(() => {
+                const updated = document.getElementById('lista-tronistas');
+                if (updated && updated.children.length > 0) grid.innerHTML = updated.innerHTML;
+            }, 300);
+        }
+    }
+}
+
+window.cambiarSubpestanaExtras = cambiarSubpestanaExtras;
+window.renderizarBlogPreviewExtras = renderizarBlogPreviewExtras;
+window.renderizarTronistasPreviewExtras = renderizarTronistasPreviewExtras;
 
 /* ==========================================================================
    GESTIÓN Y APLICACIÓN DE TEMAS VISUALES DEL REINO

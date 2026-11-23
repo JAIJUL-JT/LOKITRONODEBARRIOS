@@ -10268,15 +10268,26 @@ async function cargarBlogPosts() {
     }
 
     try {
-        const { data, error } = await client
+        let queryResult = await client
             .from('blog_posts')
             .select('id, titulo, fecha, categoria, contenido, autor, imagen_url, created_at, updated_at')
             .order('fecha', { ascending: false })
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        // Si la columna imagen_url aún no existe en Supabase (migración pendiente),
+        // reintentamos sin ella para que la carga y la publicación sigan funcionando.
+        if (queryResult.error && String(queryResult.error.message || '').includes('imagen_url')) {
+            console.warn('Columna imagen_url no encontrada en blog_posts; reintentando sin ella.', queryResult.error);
+            queryResult = await client
+                .from('blog_posts')
+                .select('id, titulo, fecha, categoria, contenido, autor, created_at, updated_at')
+                .order('fecha', { ascending: false })
+                .order('created_at', { ascending: false });
+        }
 
-        const remotos = ordenarBlogPosts((Array.isArray(data) ? data : [])
+        if (queryResult.error) throw queryResult.error;
+
+        const remotos = ordenarBlogPosts((Array.isArray(queryResult.data) ? queryResult.data : [])
             .map(normalizarBlogPost)
             .filter(Boolean));
 
@@ -10414,22 +10425,41 @@ async function guardarBlogPost(event) {
             estadoBlog('Inicia sesión como administrador para publicar en El Papiro del Norte.', true);
             return;
         }
+        // Verificar que el token tenga formato UUID válido antes de enviar
+        const tokenStr = String(usuario.token || '');
+        const esUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tokenStr);
+        if (!esUUID) {
+            estadoBlog('La sesión no es válida (token incorrecto). Cierra sesión, vuelve a iniciarla e inténtalo de nuevo.', true);
+            console.error('Token de sesión inválido para publicar en el blog:', tokenStr);
+            return;
+        }
         try {
             const payload = { titulo: t, fecha: f, categoria: cat, contenido: c, autor: a };
             if (img) payload.imagen_url = img;
             if (editId) payload.id = editId;
-            const { error } = await client.rpc('guardar_blog_post_admin', {
-                p_token: usuario.token,
+            estadoBlog('⏳ Publicando crónica en el reino...');
+            const { data: rpcData, error } = await client.rpc('guardar_blog_post_admin', {
+                p_token: tokenStr,
                 p_post: payload
             });
             if (error) throw error;
+            console.log('Crónica guardada en Supabase:', rpcData);
             resetFormBlog();
             await renderBlogPosts();
-            estadoBlog('Crónica guardada con éxito.');
+            estadoBlog('✅ Crónica guardada con éxito.');
             return;
         } catch (error) {
             console.error('No se pudo guardar la crónica en Supabase:', error);
-            estadoBlog(`No se pudo guardar la crónica: ${error.message || error}`, true);
+            const msg = error.message || String(error);
+            if (msg.includes('Solo la administración') || msg.includes('No autorizado')) {
+                estadoBlog('Sin permisos: solo master/superadmin pueden publicar crónicas. Verifica tu sesión.', true);
+            } else if (msg.includes('function') && msg.includes('does not exist')) {
+                estadoBlog('La función de publicación no está disponible en el servidor. Aplica la migración 202611230001 en Supabase.', true);
+            } else if (msg.includes('token')) {
+                estadoBlog('Sesión caducada. Cierra sesión y vuelve a iniciarla.', true);
+            } else {
+                estadoBlog(`No se pudo guardar la crónica: ${msg}`, true);
+            }
             return;
         }
     }

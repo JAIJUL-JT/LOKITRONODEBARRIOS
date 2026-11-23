@@ -3152,3 +3152,26 @@ body[data-tema="burocratico"] {
     --tema-fondo-grad: linear-gradient(180deg, rgba(20, 28, 40, 0.94), rgba(6, 10, 15, 0.98));
 }
 
+/* ==========================================================================
+   CRÓNICA Y EVENTOS DEL CALENDARIO: COLOR BLANCO PARA LECTURA ÓPTIMA
+   ========================================================================== */
+#lista-eventos .card-item,
+#lista-eventos .card-item p,
+#lista-eventos .card-item span:not(.pill-user),
+#lista-eventos .card-item div,
+#lista-eventos-generados-admin .card-item,
+#lista-eventos-generados-admin .card-item p,
+#lista-eventos-generados-admin .card-item span:not(.pill-user),
+#lista-eventos-generados-admin .card-item div,
+.calendario-papiro-card #lista-eventos .card-item,
+.calendario-papiro-card #lista-eventos .card-item p,
+.calendario-papiro-card #lista-eventos .card-item span:not(.pill-user) {
+    color: #ffffff !important;
+}
+
+#lista-eventos .card-item h3,
+#lista-eventos-generados-admin .card-item h4 {
+    color: var(--oro-real) !important;
+}
+
+

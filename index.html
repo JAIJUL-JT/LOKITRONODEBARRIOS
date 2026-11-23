@@ -50,7 +50,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&family=Uncial+Antiqua&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261123c">
+    <link rel="stylesheet" href="css/style.css?v=20261123d">
     <link rel="stylesheet" href="css/app-bar.css?v=20261123">
     <link rel="stylesheet" href="css/medieval-theme.css?v=20261123">
 
@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261123g" defer></script>
+    <script src="js/app.js?v=20261123h" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -230,13 +230,13 @@
             tabindex="-1" aria-hidden="true">
             <optgroup label="📜 Menú de Maestres">
                 <option value="pestana-inicio" data-tab="tab-inicio" selected>🏠 Inicio</option>
-                <option value="pestana-blog" data-tab="tab-blog">📜 PapiroBLOG del Norte</option>
+                <option value="pestana-blog" data-tab="tab-blog" style="display:none;">📜 PapiroBLOG del Norte</option>
                 <option value="tab-calendario" data-tab="tab-calendario">📅 Calendario</option>
                 <option value="pestana-votacion-barrio" data-tab="tab-votacion-barrio">🗳️ Votar</option>
                 <option value="pestana-clasificacion" data-tab="tab-clasificacion">🏆 Clasificación</option>
                 <option value="pestana-extras" id="option-menu-extras" data-tab="tab-extras">✨ Extras</option>
                 <option value="pestana-creditos" id="option-menu-creditos" data-tab="tab-creditos" style="display:none;">📜 Ver créditos</option>
-                <option value="pestana-evento-final" data-tab="tab-evento-final">🎉 Gala Final</option>
+                <option value="pestana-evento-final" data-tab="tab-evento-final" style="display:none;">🎉 Gala Final</option>
             </optgroup>
             <optgroup label="👑 Administración" id="optgroup-admin-menu" style="display:none;">
                 <option value="pestana-usuarios" id="option-menu-usuarios" data-tab="tab-usuarios">👥 Gestión Usuarios</option>
@@ -2892,9 +2892,9 @@
             <span class="nav-icon">🏆</span>
             <span class="nav-label">Ranking</span>
         </button>
-        <button type="button" class="bottom-nav-item" onclick="cambiarPestana('pestana-blog')" data-pestana="pestana-blog" aria-label="PapiroBLOG del Norte">
-            <span class="nav-icon">📜</span>
-            <span class="nav-label">PapiroBLOG</span>
+        <button type="button" class="bottom-nav-item" onclick="cambiarPestana('pestana-extras')" data-pestana="pestana-extras" aria-label="Extras">
+            <span class="nav-icon">✨</span>
+            <span class="nav-label">Extras</span>
         </button>
         <button type="button" id="btn-bottom-menu-hamburguesa" class="bottom-nav-item" onclick="alternarMenuHamburguesa()" aria-label="Abrir Menú de la Corte" style="display: none;">
             <span class="nav-icon">☰</span>

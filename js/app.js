@@ -2741,12 +2741,12 @@ function renderEventos() {
                 ${relojHTML}
 
                 <h3 style="color: var(--oro-real); font-family: 'Cinzel', serif; margin: 6px 0 8px; font-size: 1.15rem;">${evt.nombre}</h3>
-                <p style="font-size: 0.88rem; color: #d6d3d1; margin-bottom: 6px;"><strong>📍 Lugar:</strong> ${evt.lugar || 'Bilbao'}</p>
-                ${esSinVotacion ? `<p style="font-size: 0.82rem; color: #cbd5e1; margin-bottom: 10px;">📜 <strong>Evento informativo:</strong> no admite votación ni puntuación.</p>` : `<p style="font-size: 0.82rem; color: #a1a1aa; margin-bottom: 10px;">
+                <p style="font-size: 0.88rem; color: #ffffff; margin-bottom: 6px;"><strong>📍 Lugar:</strong> ${evt.lugar || 'Bilbao'}</p>
+                ${esSinVotacion ? `<p style="font-size: 0.82rem; color: #ffffff; margin-bottom: 10px;">📜 <strong>Evento informativo:</strong> no admite votación ni puntuación.</p>` : `<p style="font-size: 0.82rem; color: #ffffff; margin-bottom: 10px;">
                     ⏰ <strong>Franja Votación:</strong> ${estadoVot.horaInicio} hs a ${estadoVot.horaFin} hs
                 </p>`}
 
-                ${evt.desc ? `<p style="font-size: 0.85rem; color: #a1a1aa; font-style: italic; margin-bottom: 10px;">"${evt.desc}"</p>` : ''}
+                ${evt.desc ? `<p style="font-size: 0.85rem; color: #ffffff; font-style: italic; margin-bottom: 10px;">"${evt.desc}"</p>` : ''}
 
                 ${construirGaleriaMediaEvento(evt)}
 
@@ -3679,10 +3679,10 @@ function renderEventosGeneradosPestanaAdmin() {
                     <span style="font-size: 0.82rem; color: var(--oro-brillante); font-weight: bold;">📅 ${evt.fecha} (${evt.hora || '20:00'})${evt.fecha_fin || evt.hora_fin ? ` → ${evt.fecha_fin || evt.fecha}${evt.hora_fin ? ` (${evt.hora_fin})` : ''}` : ''}</span>
                 </div>
                 <h4 style="color: var(--oro-real); font-family: 'Cinzel', serif; margin: 4px 0;">${evt.nombre}</h4>
-                <p style="font-size: 0.85rem; color: #d6d3d1; margin-bottom: 4px;"><strong>📍 Lugar:</strong> ${evt.lugar || 'N/A'}</p>
+                <p style="font-size: 0.85rem; color: #ffffff; margin-bottom: 4px;"><strong>📍 Lugar:</strong> ${evt.lugar || 'N/A'}</p>
                 ${evt.tiene_votacion === false
-                    ? `<p style="font-size: 0.82rem; color: #cbd5e1; margin-bottom: 10px;">📜 <strong>Tipo:</strong> Evento informativo (sin votación)</p>`
-                    : `<p style="font-size: 0.82rem; color: #a1a1aa; margin-bottom: 10px;">
+                    ? `<p style="font-size: 0.82rem; color: #ffffff; margin-bottom: 10px;">📜 <strong>Tipo:</strong> Evento informativo (sin votación)</p>`
+                    : `<p style="font-size: 0.82rem; color: #ffffff; margin-bottom: 10px;">
                     🗳️ <strong>Tipo:</strong> Con votación · ⏰ ${estadoVot.horaInicio} a ${estadoVot.horaFin} hs (${estadoVot.texto})
                 </p>`}
                 ${construirGaleriaMediaEvento(evt)}

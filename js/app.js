@@ -10183,11 +10183,15 @@ async function enviarSugerenciaReino(event) {
 
     const mailtoUrl = `mailto:${encodeURIComponent(emailCorte)}?subject=${encodeURIComponent(asuntoEmail)}&body=${encodeURIComponent(cuerpoEmail)}`;
 
+    try {
+        window.open(mailtoUrl, '_blank');
+    } catch (_) {}
+
     if (estado) {
         estado.style.color = '#4ade80';
         estado.innerHTML = `✅ ¡Gracias por tu sugerencia! Ha quedado registrada en la corte.<br>
         <div style="margin-top: 10px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
-            <a href="${mailtoUrl}" class="btn-cuervo" style="text-decoration:none; padding:6px 14px; font-size:0.85rem; background:#1e3a8a;" target="_blank">✉️ Enviar copia directa desde mi correo</a>
+            <a href="${mailtoUrl}" class="btn-cuervo" style="text-decoration:none; padding:6px 14px; font-size:0.85rem; background:#1e3a8a;" target="_blank">✉️ Enviar</a>
         </div>`;
     }
 
@@ -10872,40 +10876,92 @@ if (document.readyState === 'loading') {
 }
 
 /* ==========================================================================
-   REPRODUCTOR DE HIMNO FEUDAL (SECCIÓN INICIO)
+   REPRODUCTOR DE HIMNO FEUDAL Y CANCIÓN DEL JUEGO (SECCIÓN INICIO)
    ========================================================================== */
-function toggleAudioHimno() {
-    const audio = document.getElementById('audio-himno-inicio');
-    const btn = document.getElementById('btn-audio-himno');
-    if (!audio) return;
+function toggleAudioHimno(tipo) {
+    const audioHimno = document.getElementById('audio-himno-inicio');
+    const audioCancion = document.getElementById('audio-cancion-inicio');
+    const btnHimno = document.getElementById('btn-audio-himno');
+    const btnCancion = document.getElementById('btn-audio-cancion');
 
-    if (audio.paused) {
-        audio.play().then(() => {
-            if (btn) {
-                btn.innerHTML = '⏸️ Pausar Ecos del Diskotrono';
-                btn.classList.add('audio-reproduciendo');
+    const canal = (tipo === 'cancion') ? 'cancion' : 'himno';
+
+    if (canal === 'himno') {
+        if (!audioHimno) return;
+        if (audioCancion && !audioCancion.paused) {
+            audioCancion.pause();
+            if (btnCancion) {
+                btnCancion.innerHTML = '🎵 Canción del Juego';
+                btnCancion.classList.remove('audio-reproduciendo');
             }
-        }).catch(err => {
-            console.warn('Error al reproducir audio del himno:', err);
-        });
+        }
+        if (audioHimno.paused) {
+            audioHimno.play().then(() => {
+                if (btnHimno) {
+                    btnHimno.innerHTML = '⏸️ Pausar Himno Lokitrono';
+                    btnHimno.classList.add('audio-reproduciendo');
+                }
+            }).catch(err => {
+                console.warn('Error al reproducir audio del himno:', err);
+            });
+        } else {
+            audioHimno.pause();
+            if (btnHimno) {
+                btnHimno.innerHTML = '🎵 Himno Lokitrono';
+                btnHimno.classList.remove('audio-reproduciendo');
+            }
+        }
     } else {
-        audio.pause();
-        if (btn) {
-            btn.innerHTML = '🎵 Reproducir Ecos del Diskotrono';
-            btn.classList.remove('audio-reproduciendo');
+        if (!audioCancion) return;
+        if (audioHimno && !audioHimno.paused) {
+            audioHimno.pause();
+            if (btnHimno) {
+                btnHimno.innerHTML = '🎵 Himno Lokitrono';
+                btnHimno.classList.remove('audio-reproduciendo');
+            }
+        }
+        if (audioCancion.paused) {
+            audioCancion.play().then(() => {
+                if (btnCancion) {
+                    btnCancion.innerHTML = '⏸️ Pausar Canción del Juego';
+                    btnCancion.classList.add('audio-reproduciendo');
+                }
+            }).catch(err => {
+                console.warn('Error al reproducir canción del juego:', err);
+            });
+        } else {
+            audioCancion.pause();
+            if (btnCancion) {
+                btnCancion.innerHTML = '🎵 Canción del Juego';
+                btnCancion.classList.remove('audio-reproduciendo');
+            }
         }
     }
 }
 
-function alTerminarAudioHimno() {
-    const btn = document.getElementById('btn-audio-himno');
-    if (btn) {
-        btn.innerHTML = '🎵 Reproducir Ecos del Diskotrono';
-        btn.classList.remove('audio-reproduciendo');
+function alTerminarAudioHimno(tipo) {
+    if (!tipo || tipo === 'himno') {
+        const btnHimno = document.getElementById('btn-audio-himno');
+        if (btnHimno) {
+            btnHimno.innerHTML = '🎵 Himno Lokitrono';
+            btnHimno.classList.remove('audio-reproduciendo');
+        }
+    }
+    if (!tipo || tipo === 'cancion') {
+        const btnCancion = document.getElementById('btn-audio-cancion');
+        if (btnCancion) {
+            btnCancion.innerHTML = '🎵 Canción del Juego';
+            btnCancion.classList.remove('audio-reproduciendo');
+        }
     }
 }
 
+function toggleAudioCancion() {
+    toggleAudioHimno('cancion');
+}
+
 window.toggleAudioHimno = toggleAudioHimno;
+window.toggleAudioCancion = toggleAudioCancion;
 window.alTerminarAudioHimno = alTerminarAudioHimno;
 
 // El Trivial del Botxo vive en su propia sección embebida, separada del arcade Botxitrono.

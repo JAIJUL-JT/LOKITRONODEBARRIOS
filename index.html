@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261123b" defer></script>
+    <script src="js/app.js?v=20261123c" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -298,9 +298,12 @@
                             «Cinco reinos, las más nobles tabernas de la Villa y un solo Trono Imperial. Cata, juzga según la Ley II de Bilbao y corona a tu barrio como Campeón Supremo.»
                         </p>
 
-                        <audio id="audio-himno-inicio" preload="metadata" onended="window.alTerminarAudioHimno && window.alTerminarAudioHimno()">
+                        <audio id="audio-himno-inicio" preload="metadata" onended="window.alTerminarAudioHimno && window.alTerminarAudioHimno('himno')">
                             <source src="assets/audio/ecos-del-diskotrono.m4a" type="audio/mp4">
                             <source src="assets/audio/WhatsApp%20Video%202026-11-10%20at%2019.25.48.mp4" type="video/mp4">
+                        </audio>
+                        <audio id="audio-cancion-inicio" preload="metadata" onended="window.alTerminarAudioHimno && window.alTerminarAudioHimno('cancion')">
+                            <source src="assets/audio/himno-lokitrono.m4a" type="audio/mp4">
                         </audio>
                     </div>
 
@@ -574,12 +577,15 @@
                             <div>
                                 <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎵 Ecos del Diskotrono</h3>
                                 <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
-                                    Escucha el nuevo tema oficial del Diskotrono que hace vibrar los feudos de Bilbao.
+                                    Escucha los temas oficiales del Reino que hacen vibrar los feudos de Bilbao.
                                 </p>
                             </div>
-                            <div>
-                                <button type="button" id="btn-audio-himno" class="btn-medieval inicio-cta-btn" onclick="toggleAudioHimno()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
-                                    🎵 Reproducir Ecos del Diskotrono
+                            <div style="display: flex; gap: 8px; flex-direction: column;">
+                                <button type="button" id="btn-audio-himno" class="btn-medieval inicio-cta-btn" onclick="toggleAudioHimno('himno')" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
+                                    🎵 Himno Lokitrono
+                                </button>
+                                <button type="button" id="btn-audio-cancion" class="btn-medieval inicio-cta-btn" onclick="toggleAudioHimno('cancion')" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
+                                    🎵 Canción del Juego
                                 </button>
                             </div>
                         </div>
@@ -593,7 +599,7 @@
                                 </p>
                             </div>
                             <div>
-                                <button type="button" class="btn-medieval" onclick="window.toggleBaileDragones && window.toggleBaileDragones()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%; background: linear-gradient(135deg, #7f1d1d, #450a0a);">
+                                <button type="button" class="btn-medieval" onclick="window.toggleBaileDragones && window.toggleBaileDragones()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%; background: #1e3a8a; color: var(--oro-brillante, #fef08a); border: 1px solid var(--oro-real, #d4af37); font-weight: bold;">
                                     🔥 Iniciar Danza de Dragones
                                 </button>
                             </div>
@@ -636,8 +642,8 @@
                                 <textarea id="sugerencia-mensaje" class="input-medieval" rows="4" required placeholder="Describe tu propuesta con todo lujo de detalles feudales..."></textarea>
                             </div>
                             <div style="text-align: center;">
-                                <button type="submit" id="btn-enviar-sugerencia" class="btn-cuervo" style="background: #166534; padding: 10px 28px; font-size: 0.95rem; font-weight: bold;">
-                                    📨 Enviar Sugerencia a la Corte
+                                <button type="submit" id="btn-enviar-sugerencia" class="btn-cuervo" style="background: #1e3a8a; padding: 10px 28px; font-size: 0.95rem; font-weight: bold;">
+                                    ✉️ Enviar
                                 </button>
                             </div>
                             <p id="sugerencia-estado" role="status" style="margin-top: 14px; font-size: 0.88rem; text-align: center; min-height: 1.2em;"></p>

@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261123e" defer></script>
+    <script src="js/app.js?v=20261123f" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -544,7 +544,10 @@
                     <!-- BARRA DE SUBMENÚS DE EXTRAS -->
                     <nav class="extras-subnav" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px;">
                         <button type="button" id="btn-subtab-extras-juegos" class="btn-cuervo subtab-extras-btn activo" onclick="cambiarSubpestanaExtras('juegos')" style="background: #1e3a8a; border: 1.5px solid var(--oro-brillante); color: var(--oro-brillante); padding: 8px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer;">
-                            🎮 Minijuegos y Ecos
+                            🎮 MINI-JUEGOS
+                        </button>
+                        <button type="button" id="btn-subtab-extras-multimedia" class="btn-cuervo subtab-extras-btn" onclick="cambiarSubpestanaExtras('multimedia')" style="background: rgba(0,0,0,0.6); border: 1.5px solid rgba(212,175,55,0.4); color: #d6d3d1; padding: 8px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer;">
+                            🎬 MULTI-MEDIA
                         </button>
                         <button type="button" id="btn-subtab-extras-blog" class="btn-cuervo subtab-extras-btn" onclick="cambiarSubpestanaExtras('blog')" style="background: rgba(0,0,0,0.6); border: 1.5px solid rgba(212,175,55,0.4); color: #d6d3d1; padding: 8px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer;">
                             📜 PapiroBLOG del Norte
@@ -560,13 +563,13 @@
                         </button>
                     </nav>
 
-                    <!-- SUBSECCIÓN 1: MINIJUEGOS Y ECOS (Activa por defecto) -->
+                    <!-- SUBSECCIÓN 1: MINI-JUEGOS (Activa por defecto) -->
                     <div id="extras-subseccion-juegos" class="extras-subseccion" style="display: block;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-bottom: 24px; text-align: left;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 24px; text-align: left;">
                             <!-- Tarjeta Botxitrono -->
                             <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
                                 <div>
-                                    <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎮 Botxitrono</h3>
+                                    <h3 style="color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎮 Botxitrono</h3>
                                     <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
                                         El arcade medieval de plataformas. Corre, salta y defiende las torres de la Villa.
                                     </p>
@@ -581,7 +584,7 @@
                             <!-- Tarjeta Trivial -->
                             <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
                                 <div>
-                                    <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🧠 El Trivial del Botxo</h3>
+                                    <h3 style="color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🧠 El Trivial del Botxo</h3>
                                     <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
                                         Pon a prueba tu sabiduría botxera: preguntas sobre barrios, historia y cultura bilbaína.
                                     </p>
@@ -592,11 +595,16 @@
                                     </a>
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
+                    <!-- SUBSECCIÓN 2: MULTI-MEDIA -->
+                    <div id="extras-subseccion-multimedia" class="extras-subseccion" style="display: none;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 24px; text-align: left;">
                             <!-- Tarjeta Himno Feudal -->
                             <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
                                 <div>
-                                    <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎵 Ecos del Diskotrono</h3>
+                                    <h3 style="color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎵 Ecos del Diskotrono</h3>
                                     <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
                                         Escucha los temas oficiales del Reino que hacen vibrar los feudos de Bilbao.
                                     </p>
@@ -614,7 +622,7 @@
                             <!-- Tarjeta Danza de Dragones -->
                             <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
                                 <div>
-                                    <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🐉 Danza de Dragones</h3>
+                                    <h3 style="color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🐉 Danza de Dragones</h3>
                                     <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
                                         Convoca el vuelo acrobático de los tres dragones legendarios cruzando el firmamento con fuegos artificiales.
                                     </p>
@@ -686,12 +694,26 @@
                                 </details>
                                 <details class="faq-item" style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 8px; padding: 12px 14px;">
                                     <summary style="color: var(--oro-real); font-size: 1rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                        🧭 ¿Qué encontraré en la sección Extras?
+                                    </summary>
+                                    <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin: 10px 0 0;">
+                                        La sección <strong>Extras</strong> agrupa contenidos adicionales divididos en submenús:<br><br>
+                                        • <strong>🎮 MINI-JUEGOS:</strong> Botxitrono y Trivial del Botxo.<br>
+                                        • <strong>🎬 MULTI-MEDIA:</strong> Ecos del Diskotrono y Danza de Dragones.<br>
+                                        • <strong>📰 PapiroBLOG:</strong> Crónicas y boletín oficial del Reino.<br>
+                                        • <strong>🏰 Lokitronistas:</strong> Defensores oficiales de cada barrio.<br>
+                                        • <strong>❓ FAQ:</strong> Guía completa de preguntas frecuentes.<br>
+                                        • <strong>📬 Buzón:</strong> Canal para enviar sugerencias a la Corte.
+                                    </p>
+                                </details>
+                                <details class="faq-item" style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 8px; padding: 12px 14px;">
+                                    <summary style="color: var(--oro-real); font-size: 1rem; font-weight: bold; cursor: pointer; user-select: none;">
                                         👑 ¿Qué roles existen en el juego?
                                     </summary>
                                     <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin: 10px 0 0;">
                                         • <strong>Maestre (Jugador):</strong> Puede catar pintxos y emitir juicios.<br>
                                         • <strong>Lokitronista:</strong> Defensor oficial de un barrio (máximo 2 por barrio). Por juego limpio, no puede votar en el evento de su propio barrio.<br>
-                                        • <strong>Superadmin / Master:</strong> Autoridades de la Corte que gestionan tabernas, usuarios y eventos.
+                                        • <strong>Superadmin:</strong> Autoridades de la Corte que gestionan tabernas, usuarios y eventos.
                                     </p>
                                 </details>
                                 <details class="faq-item" style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 8px; padding: 12px 14px;">
@@ -2635,6 +2657,22 @@
                             </div>
                         </details>
 
+                        <!-- Item 5b: Sección Extras -->
+                        <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.4); border-radius: 10px; padding: 14px 18px; color: #f4f4f5;">
+                            <summary style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 1.05rem; font-weight: bold; cursor: pointer; user-select: none;">
+                                🧭 ¿Qué encontraré en la sección Extras?
+                            </summary>
+                            <div style="margin-top: 10px; line-height: 1.6; color: #d6d3d1; font-size: 0.92rem; border-top: 1px dashed rgba(212,175,55,0.25); padding-top: 10px;">
+                                La sección <strong>Extras</strong> agrupa contenidos adicionales divididos en submenús:<br><br>
+                                • <strong>🎮 MINI-JUEGOS:</strong> Acceso a los juegos complementarios del reino: <em>Botxitrono</em> (el juego del botxo en versión digital) y <em>Trivial del Botxo</em> (preguntas sobre la cultura, historia y gastronomía bilbaína).<br>
+                                • <strong>🎬 MULTI-MEDIA:</strong> Contenidos audiovisuales del Reino: <em>Ecos del Diskotrono</em> (la banda sonora oficial de la app) y la <em>Danza de Dragones</em> (vídeo épico del juego).<br>
+                                • <strong>📰 PapiroBLOG:</strong> El boletín y crónica oficial del Reino, con bandos, recetas, entrevistas y resúmenes de cada jornada barrial.<br>
+                                • <strong>🏰 Lokitronistas:</strong> Consulta quiénes son los defensores oficiales de cada barrio, sus insignias y su palmarés en el juego.<br>
+                                • <strong>❓ FAQ:</strong> Preguntas frecuentes y guía completa del juego.<br>
+                                • <strong>📬 Buzón de Sugerencias:</strong> Canal directo para enviar propuestas, quejas o ideas a la Corte del Reino.
+                            </div>
+                        </details>
+
                         <!-- Item 5: Roles -->
                         <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.4); border-radius: 10px; padding: 14px 18px; color: #f4f4f5;">
                             <summary style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 1.05rem; font-weight: bold; cursor: pointer; user-select: none;">
@@ -2643,17 +2681,17 @@
                             <div style="margin-top: 10px; line-height: 1.6; color: #d6d3d1; font-size: 0.92rem; border-top: 1px dashed rgba(212,175,55,0.25); padding-top: 10px;">
                                 • <strong>Maestre (jugador):</strong> Participa en las jornadas y emite sus votos imparciales.<br>
                                 • <strong>Lokitronista:</strong> Defensor oficial de un barrio (máximo 2 por barrio). Para garantizar total juego limpio, un Lokitronista <em>no puede votar en el evento de su propio barrio</em>.<br>
-                                • <strong>Superadmin / Master:</strong> Administración de la corte: vela por el orden, modera usuarios y organiza las justas.
+                                • <strong>Superadmin:</strong> Administración de la corte: vela por el orden, modera usuarios y organiza las justas.
                             </div>
                         </details>
 
                         <!-- Item 6: El Papiro del Norte -->
                         <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(212,175,55,0.4); border-radius: 10px; padding: 14px 18px; color: #f4f4f5;">
                             <summary style="font-family: 'Cinzel', serif; color: var(--oro-real); font-size: 1.05rem; font-weight: bold; cursor: pointer; user-select: none;">
-                                📜 ¿Qué es el PapiroBLOG del Norte y el Oráculo?
+                                📜 ¿Qué es el PapiroBLOG del Norte?
                             </summary>
                             <div style="margin-top: 10px; line-height: 1.6; color: #d6d3d1; font-size: 0.92rem; border-top: 1px dashed rgba(212,175,55,0.25); padding-top: 10px;">
-                                Es el boletín y crónica oficial del Reino, donde se publican bandos, recetas, entrevistas y resúmenes de cada fiesta barrial. El <strong>Oráculo Imperial</strong> asiste a los cronistas con redacción inspirada en la atmósfera medieval de la Villa.
+                                Es el boletín y crónica oficial del Reino, donde se publican bandos, recetas, entrevistas y resúmenes de cada fiesta barrial.
                             </div>
                         </details>
                     </div>

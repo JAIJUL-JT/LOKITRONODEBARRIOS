@@ -11052,7 +11052,7 @@ window.cerrarBotxitrono = cerrarBotxitrono;
    ========================================================================== */
 
 function cambiarSubpestanaExtras(subpestana) {
-    const pestanas = ['juegos', 'blog', 'tronistas', 'faq', 'buzon'];
+    const pestanas = ['juegos', 'multimedia', 'blog', 'tronistas', 'faq', 'buzon'];
     const destino = pestanas.includes(subpestana) ? subpestana : 'juegos';
 
     pestanas.forEach(p => {

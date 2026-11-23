@@ -50,9 +50,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&family=Uncial+Antiqua&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261123b">
-    <link rel="stylesheet" href="css/app-bar.css?v=20261114">
-    <link rel="stylesheet" href="css/medieval-theme.css?v=20261101">
+    <link rel="stylesheet" href="css/style.css?v=20261123c">
+    <link rel="stylesheet" href="css/app-bar.css?v=20261123">
+    <link rel="stylesheet" href="css/medieval-theme.css?v=20261123">
 
     <link rel="stylesheet" href="css/legal.css">
     <!-- Leaflet: mapas interactivos de ciudades/distritos/barrios -->
@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261123c" defer></script>
+    <script src="js/app.js?v=20261123d" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -298,11 +298,11 @@
                             «Cinco reinos, las más nobles tabernas de la Villa y un solo Trono Imperial. Cata, juzga según la Ley II de Bilbao y corona a tu barrio como Campeón Supremo.»
                         </p>
 
-                        <audio id="audio-himno-inicio" preload="metadata" onended="window.alTerminarAudioHimno && window.alTerminarAudioHimno('himno')">
+                        <audio id="audio-himno-inicio" preload="metadata" src="assets/audio/ecos-del-diskotrono.m4a" onended="window.alTerminarAudioHimno && window.alTerminarAudioHimno('himno')">
                             <source src="assets/audio/ecos-del-diskotrono.m4a" type="audio/mp4">
                             <source src="assets/audio/WhatsApp%20Video%202026-11-10%20at%2019.25.48.mp4" type="video/mp4">
                         </audio>
-                        <audio id="audio-cancion-inicio" preload="metadata" onended="window.alTerminarAudioHimno && window.alTerminarAudioHimno('cancion')">
+                        <audio id="audio-cancion-inicio" preload="metadata" src="assets/audio/himno-lokitrono.m4a" onended="window.alTerminarAudioHimno && window.alTerminarAudioHimno('cancion')">
                             <source src="assets/audio/himno-lokitrono.m4a" type="audio/mp4">
                         </audio>
                     </div>
@@ -584,7 +584,7 @@
                                 <button type="button" id="btn-audio-himno" class="btn-medieval inicio-cta-btn" onclick="toggleAudioHimno('himno')" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
                                     🎵 Himno Lokitrono
                                 </button>
-                                <button type="button" id="btn-audio-cancion" class="btn-medieval inicio-cta-btn" onclick="toggleAudioHimno('cancion')" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
+                                <button type="button" id="btn-audio-cancion" class="btn-medieval inicio-cta-btn" onclick="toggleAudioCancion()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
                                     🎵 Canción del Juego
                                 </button>
                             </div>

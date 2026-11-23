@@ -10896,6 +10896,9 @@ function toggleAudioHimno(tipo) {
             }
         }
         if (audioHimno.paused) {
+            if (!audioHimno.getAttribute('src')) {
+                audioHimno.src = 'assets/audio/ecos-del-diskotrono.m4a';
+            }
             audioHimno.play().then(() => {
                 if (btnHimno) {
                     btnHimno.innerHTML = '⏸️ Pausar Himno Lokitrono';
@@ -10921,6 +10924,10 @@ function toggleAudioHimno(tipo) {
             }
         }
         if (audioCancion.paused) {
+            // Asegurar que la ruta al archivo himno-lokitrono.m4a esté explícita
+            if (!audioCancion.getAttribute('src') || !audioCancion.src.includes('himno-lokitrono.m4a')) {
+                audioCancion.src = 'assets/audio/himno-lokitrono.m4a';
+            }
             audioCancion.play().then(() => {
                 if (btnCancion) {
                     btnCancion.innerHTML = '⏸️ Pausar Canción del Juego';
@@ -10928,6 +10935,16 @@ function toggleAudioHimno(tipo) {
                 }
             }).catch(err => {
                 console.warn('Error al reproducir canción del juego:', err);
+                try {
+                    audioCancion.src = 'assets/audio/himno-lokitrono.m4a';
+                    audioCancion.load();
+                    audioCancion.play().then(() => {
+                        if (btnCancion) {
+                            btnCancion.innerHTML = '⏸️ Pausar Canción del Juego';
+                            btnCancion.classList.add('audio-reproduciendo');
+                        }
+                    }).catch(err2 => console.warn('Error en reintento canción del juego:', err2));
+                } catch (_) {}
             });
         } else {
             audioCancion.pause();

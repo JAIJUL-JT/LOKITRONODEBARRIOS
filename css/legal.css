@@ -27,7 +27,7 @@
     box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.9);
     transform: translateY(120%);
     transition: transform 0.35s ease;
-    font-family: 'MedievalSharp', Georgia, serif;
+    font-family: 'Uncial Antiqua', cursive, Georgia, serif;
     color: #f4f4f5;
 }
 
@@ -52,7 +52,7 @@
 
 .cookie-banner__titulo {
     margin: 0 0 6px;
-    font-family: 'Cinzel', Georgia, serif;
+    font-family: 'Uncial Antiqua', cursive, Georgia, serif;
     color: var(--oro-brillante, #f59e0b);
     font-size: 1.15rem;
 }
@@ -185,7 +185,7 @@
 }
 
 .legal-hero h1 {
-    font-family: 'Cinzel', Georgia, serif;
+    font-family: 'Uncial Antiqua', cursive, Georgia, serif;
     color: var(--oro-real, #d4af37);
     font-size: clamp(1.6rem, 4vw, 2.4rem);
     margin: 0 0 8px;
@@ -214,7 +214,7 @@
 }
 
 .legal-card h2 {
-    font-family: 'Cinzel', Georgia, serif;
+    font-family: 'Uncial Antiqua', cursive, Georgia, serif;
     color: var(--oro-brillante, #f59e0b);
     font-size: 1.2rem;
     margin: 28px 0 10px;

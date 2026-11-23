@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261123a" defer></script>
+    <script src="js/app.js?v=20261123b" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -298,7 +298,10 @@
                             «Cinco reinos, las más nobles tabernas de la Villa y un solo Trono Imperial. Cata, juzga según la Ley II de Bilbao y corona a tu barrio como Campeón Supremo.»
                         </p>
 
-                        <audio id="audio-himno-inicio" preload="metadata" src="assets/audio/himno-lokitrono.m4a" onended="window.alTerminarAudioHimno && window.alTerminarAudioHimno()"></audio>
+                        <audio id="audio-himno-inicio" preload="metadata" onended="window.alTerminarAudioHimno && window.alTerminarAudioHimno()">
+                            <source src="assets/audio/ecos-del-diskotrono.m4a" type="audio/mp4">
+                            <source src="assets/audio/WhatsApp%20Video%202026-11-10%20at%2019.25.48.mp4" type="video/mp4">
+                        </audio>
                     </div>
 
                     <!-- VÍDEO DE PRESENTACIÓN OFICIAL -->
@@ -545,11 +548,8 @@
                                 </p>
                             </div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button type="button" class="btn-medieval" onclick="cambiarPestana('pestana-botxitrono')" style="padding: 8px 14px; font-size: 0.85rem;">
-                                    🎮 Jugar en el Reino
-                                </button>
-                                <a href="./botxitrono/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 8px 12px; text-decoration: none; font-size: 0.85rem;">
-                                    ↗ Nueva Pestaña
+                                <a href="./botxitrono/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 8px 12px; text-decoration: none; font-size: 0.85rem; width: 100%; text-align: center;">
+                                    Jugar
                                 </a>
                             </div>
                         </div>
@@ -563,11 +563,8 @@
                                 </p>
                             </div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button type="button" class="btn-medieval" onclick="cambiarPestana('pestana-trivial')" style="padding: 8px 14px; font-size: 0.85rem;">
-                                    🧠 Responder Preguntas
-                                </button>
-                                <a href="./trivial/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 8px 12px; text-decoration: none; font-size: 0.85rem;">
-                                    ↗ Nueva Pestaña
+                                <a href="./trivial/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 8px 12px; text-decoration: none; font-size: 0.85rem; width: 100%; text-align: center;">
+                                    Jugar
                                 </a>
                             </div>
                         </div>
@@ -577,12 +574,12 @@
                             <div>
                                 <h3 style="font-family: 'Cinzel', serif; color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🎵 Ecos del Diskotrono</h3>
                                 <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
-                                    Escucha la marcha oficial que inspira las justas y el honor en los feudos de Bilbao.
+                                    Escucha el nuevo tema oficial del Diskotrono que hace vibrar los feudos de Bilbao.
                                 </p>
                             </div>
                             <div>
                                 <button type="button" id="btn-audio-himno" class="btn-medieval inicio-cta-btn" onclick="toggleAudioHimno()" style="padding: 8px 14px; font-size: 0.85rem; width: 100%;">
-                                    🎵 Escuchar Himno
+                                    🎵 Reproducir Ecos del Diskotrono
                                 </button>
                             </div>
                         </div>

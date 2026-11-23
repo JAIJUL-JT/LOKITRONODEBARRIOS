@@ -10882,7 +10882,7 @@ function toggleAudioHimno() {
     if (audio.paused) {
         audio.play().then(() => {
             if (btn) {
-                btn.innerHTML = '⏸️ Pausar Himno';
+                btn.innerHTML = '⏸️ Pausar Ecos del Diskotrono';
                 btn.classList.add('audio-reproduciendo');
             }
         }).catch(err => {
@@ -10891,7 +10891,7 @@ function toggleAudioHimno() {
     } else {
         audio.pause();
         if (btn) {
-            btn.innerHTML = '🎵 Escuchar Himno';
+            btn.innerHTML = '🎵 Reproducir Ecos del Diskotrono';
             btn.classList.remove('audio-reproduciendo');
         }
     }
@@ -10900,7 +10900,7 @@ function toggleAudioHimno() {
 function alTerminarAudioHimno() {
     const btn = document.getElementById('btn-audio-himno');
     if (btn) {
-        btn.innerHTML = '🎵 Escuchar Himno';
+        btn.innerHTML = '🎵 Reproducir Ecos del Diskotrono';
         btn.classList.remove('audio-reproduciendo');
     }
 }

@@ -49,12 +49,12 @@ function puedeGestionarEventosBarrio(role) {
 
 /*
  * Jerarquía feudal de la corte:
- *   master > superadmin > tronista (lokitronista) / jugador (maestre)
+ *   master > superadmin > tronista (lokitronista) / suplente_tronista / jugador (maestre)
  *
  * El master (Administración) y los superadmins gestionan usuarios, barrios y eventos.
- * Maestres y lokitronistas no crean roles, barrios ni eventos.
+ * Maestres, suplentes y lokitronistas no crean roles, barrios ni eventos.
  */
-const ROLES_VALIDOS = ['jugador', 'tronista', 'superadmin', 'master'];
+const ROLES_VALIDOS = ['jugador', 'tronista', 'suplente_tronista', 'superadmin', 'master'];
 
 function esRolMaster(role) {
     if (role === 'master') return true;
@@ -94,16 +94,24 @@ function puedeGestionarSorteo(usuario) {
 
 // ¿Puede el actor asignar/crear el rol indicado?
 function puedeAsignarRol(actorRole, targetRole) {
-    if (actorRole === 'master') return targetRole === 'jugador' || targetRole === 'tronista' || targetRole === 'superadmin' || targetRole === 'master';
-    if (actorRole === 'superadmin') return targetRole === 'jugador' || targetRole === 'tronista';
+    if (actorRole === 'master') return targetRole === 'jugador' || targetRole === 'tronista' || targetRole === 'suplente_tronista' || targetRole === 'superadmin' || targetRole === 'master';
+    if (actorRole === 'superadmin') return targetRole === 'jugador' || targetRole === 'tronista' || targetRole === 'suplente_tronista';
     return false;
 }
 
 // ¿Puede el actor editar o eliminar a un usuario que ya tiene cierto rol?
 function puedeGestionarRolDe(actorRole, targetRole) {
     if (actorRole === 'master') return true;
-    if (actorRole === 'superadmin') return targetRole === 'jugador' || targetRole === 'tronista';
+    if (actorRole === 'superadmin') return targetRole === 'jugador' || targetRole === 'tronista' || targetRole === 'suplente_tronista';
     return false;
+}
+
+// Privilegio feudal de acceso libre a todas las secciones del menú sin sellar el pasaporte:
+// Master, Administradores, Lokitronistas titulares y Suplentes de Lokitronista.
+function tienePrivilegioAccesoLibre(usuario) {
+    if (!usuario || !usuario.role) return false;
+    const r = usuario.role;
+    return r === 'master' || r === 'superadmin' || r === 'tronista' || r === 'suplente_tronista' || r === 'suplente' || puedeAdministrar(r);
 }
 
 // Un lokitronista (tronista) no vota en eventos celebrados en su propio barrio.
@@ -481,7 +489,8 @@ function actualizarInterfazSesion(usuario) {
             if (dropRolEl) {
                 const rolTexto = usuario.role === 'master' ? '👑 Administración Master' :
                     (usuario.role === 'superadmin' ? '🏰 Superadministrador' :
-                    (usuario.role === 'tronista' ? '⚔️ Lokitronista' : '🍺 Maestre'));
+                    (usuario.role === 'tronista' ? '⚔️ Lokitronista' :
+                    (usuario.role === 'suplente_tronista' ? '🛡️ Suplente de Lokitronista' : '🍺 Maestre')));
                 dropRolEl.textContent = rolTexto;
             }
         }
@@ -4581,7 +4590,7 @@ function renderOpcionesRolUsuario() {
     const actor = currentUser && currentUser.role;
     const opcionesPermitidas = ROLES_VALIDOS.filter(rol => puedeAsignarRol(actor, rol));
     const valorPrevio = select.value;
-    const etiquetas = { master: '👑 Master', superadmin: '🏰 Superadmin', tronista: '👑 Lokitronista', jugador: '⚔️ Maestre' };
+    const etiquetas = { master: '👑 Master', superadmin: '🏰 Superadmin', tronista: '👑 Lokitronista', suplente_tronista: '🛡️ Suplente de Lokitronista', jugador: '⚔️ Maestre' };
     select.innerHTML = opcionesPermitidas
         .map(rol => `<option value="${rol}">${etiquetas[rol] || rol}</option>`)
         .join('');
@@ -5117,7 +5126,7 @@ function renderListaTronistas() {
     container.style.display = 'block';
 
     const usuarios = getUsuariosDelAmbito();
-    const tronistas = usuarios.filter(u => u.role === 'tronista');
+    const tronistas = usuarios.filter(u => u.role === 'tronista' || u.role === 'suplente_tronista');
     // Consejeros del Lokitrono (usuarios especiales): 605676002 y 663366786.
     const veladores = [];
     const vistoConsejero = new Set();
@@ -5144,14 +5153,18 @@ function renderListaTronistas() {
     }
     function tarjetaLokitronista(user) {
         const telefono = String(user.phone || '');
+        const esSuplente = user.role === 'suplente_tronista';
         const fechaDesig = user.fecha_designacion
             ? `<div style="text-align:center;font-size:0.78rem;color:#a1a1aa;">📅 Designado/a: ${new Date(user.fecha_designacion).toLocaleDateString('es-ES')}</div>`
             : '';
-        return `<div class="card-item" style="background:rgba(30,24,8,0.95);border:2px solid var(--oro-real);padding:18px;border-radius:10px;">
-            <div style="text-align:center;margin-bottom:10px;"><span style="font-size:2.5rem;">👑</span></div>
+        const badgeHTML = esSuplente
+            ? `<span class="pill-user" style="background:rgba(30,58,138,0.85);color:#93c5fd;border:1px solid #3b82f6;padding:2px 8px;border-radius:12px;font-size:0.78rem;">🛡️ Suplente de Barrio</span>`
+            : `<span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 8px;border-radius:12px;font-size:0.78rem;">👑 Lokitronista de Barrio</span>`;
+        return `<div class="card-item" style="background:rgba(30,24,8,0.95);border:2px solid ${esSuplente ? '#3b82f6' : 'var(--oro-real)'};padding:18px;border-radius:10px;">
+            <div style="text-align:center;margin-bottom:10px;"><span style="font-size:2.5rem;">${esSuplente ? '🛡️' : '👑'}</span></div>
             <div style="text-align:center;margin-bottom:8px;"><strong style="color:var(--oro-brillante);font-family:'Cinzel',serif;font-size:1.05rem;">${getTituloCompleto(user)}</strong></div>
             <div style="text-align:center;font-size:0.82rem;color:#a1a1aa;margin-bottom:6px;">📱 ${phoneMask(telefono)}</div>
-            <div style="text-align:center;margin-bottom:6px;"><span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 8px;border-radius:12px;font-size:0.78rem;">👑 Lokitronista de Barrio</span></div>
+            <div style="text-align:center;margin-bottom:6px;">${badgeHTML}</div>
             <div style="text-align:center;font-size:0.82rem;color:#d6d3d1;margin-bottom:6px;">⚔️ Votos emitidos: <strong>${votosDe(telefono)}</strong></div>
             ${fechaDesig}
             <hr style="border-color:var(--oro-real);opacity:0.3;margin:12px 0 0 0;">

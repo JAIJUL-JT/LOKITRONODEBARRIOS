@@ -50,7 +50,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&family=Uncial+Antiqua&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261123d">
+    <link rel="stylesheet" href="css/style.css?v=20261124a">
     <link rel="stylesheet" href="css/app-bar.css?v=20261123">
     <link rel="stylesheet" href="css/medieval-theme.css?v=20261123">
 
@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261123h" defer></script>
+    <script src="js/app.js?v=20261124a" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -514,12 +514,12 @@
                 </div>
             </section>
 
-            <!-- PESTAÑA 1: Lokitronistas de Barrios (Solo lectura general, lista de Lokitronistas Barriales y asignación) -->
+            <!-- PESTAÑA 1: El Consejo de los Barrios (Solo lectura general, lista de Lokitronistas, Suplentes y asignación) -->
             <section id="pestana-tronistas" class="tab-content seccion-bg-tronistas tema-corte-admin" style="display: none; background-image: url('assets/img/fondo-tronistas.svg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
                 <div class="panel-card">
-                    <h2>👑 Lokitronistas de los Barrios y Consejeros del Lokitrono</h2>
+                    <h2>👑 El Consejo de los Barrios y Consejeros del Lokitrono</h2>
                     <p>Representantes oficiales del Lokitrono por cada reino barrial, agrupados por barrio
-                        (Máximo 2 Lokitronistas por barrio). En esta corte figuran también los
+                        (Lokitronistas y Suplentes de Barrio). En esta corte figuran también los
                         <strong>Consejeros del Lokitrono</strong>.
                     </p>
 
@@ -551,7 +551,7 @@
                             📜 PapiroBLOG del Norte
                         </button>
                         <button type="button" id="btn-subtab-extras-tronistas" class="btn-cuervo subtab-extras-btn" onclick="cambiarSubpestanaExtras('tronistas')" style="background: rgba(0,0,0,0.6); border: 1.5px solid rgba(212,175,55,0.4); color: #d6d3d1; padding: 8px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer;">
-                            👑 Lokitronistas
+                            👑 El Consejo
                         </button>
                         <button type="button" id="btn-subtab-extras-faq" class="btn-cuervo subtab-extras-btn" onclick="cambiarSubpestanaExtras('faq')" style="background: rgba(0,0,0,0.6); border: 1.5px solid rgba(212,175,55,0.4); color: #d6d3d1; padding: 8px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer;">
                             ❓ FAQ
@@ -651,17 +651,17 @@
                         </div>
                     </div>
 
-                    <!-- SUBSECCIÓN 3: LOKITRONISTAS -->
+                    <!-- SUBSECCIÓN 3: EL CONSEJO -->
                     <div id="extras-subseccion-tronistas" class="extras-subseccion" style="display: none; text-align: left;">
                         <div style="background: rgba(10, 15, 30, 0.92); border: 2px solid var(--oro-real); border-radius: 14px; padding: 24px 20px; margin-bottom: 24px;">
                             <div style="text-align: center; margin-bottom: 18px;">
                                 <span style="font-size: 2.2rem;">👑</span>
-                                <h3 style="color: var(--oro-brillante); margin: 6px 0 6px; font-size: 1.5rem;">Lokitronistas de los Barrios</h3>
+                                <h3 style="color: var(--oro-brillante); margin: 6px 0 6px; font-size: 1.5rem;">El Consejo de los Barrios</h3>
                                 <p style="color: #cbd5e1; font-size: 0.9rem; max-width: 600px; margin: 0 auto 16px;">
-                                    Representantes oficiales de los 8 feudos barriales y Consejeros de la Corte Imperial.
+                                    Representantes oficiales de los 8 feudos barriales (Lokitronistas y Suplentes) y Consejeros de la Corte Imperial.
                                 </p>
                                 <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-tronistas')" style="background: #1e3a8a; padding: 10px 24px; font-size: 0.92rem; font-weight: bold;">
-                                    👑 Ir a la Corte de Lokitronistas
+                                    👑 Ir a la Corte del Consejo
                                 </button>
                             </div>
                             <div id="extras-tronistas-preview-grid" style="margin-top: 16px;"></div>
@@ -2191,6 +2191,7 @@
                             <select id="usuario-role" class="input-medieval">
                                 <option value="jugador">Jugador / Maestre</option>
                                 <option value="tronista">👑 Lokitronista de Barrio</option>
+                                <option value="suplente_tronista">🛡️ Suplente de Lokitronista</option>
                                 <option value="superadmin">Superadmin (Administrador del Sistema)</option>
                             </select>
                         </div>

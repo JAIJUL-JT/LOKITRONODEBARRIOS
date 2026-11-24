@@ -5287,22 +5287,27 @@ function renderListaTronistas() {
         </div>`;
     }
 
-    // Agrupado por cada barrio representado (máximo 2 Lokitronistas por barrio).
+    // Agrupado por barrio: titulares primero, suplentes junto a ellos.
     const porBarrio = new Map();
     tronistas.forEach(u => {
         const barrio = barrioEfectivoDe(u);
-        if (!porBarrio.has(barrio)) porBarrio.set(barrio, []);
-        if (porBarrio.get(barrio).length < 2) porBarrio.get(barrio).push(u);
+        if (!porBarrio.has(barrio)) porBarrio.set(barrio, { titulares: [], suplentes: [] });
+        if (u.role === 'suplente_tronista') {
+            porBarrio.get(barrio).suplentes.push(u);
+        } else {
+            if (porBarrio.get(barrio).titulares.length < 2) porBarrio.get(barrio).titulares.push(u);
+        }
     });
 
-    porBarrio.forEach((lista, barrio) => {
+    porBarrio.forEach(({ titulares, suplentes }, barrio) => {
+        const contadorPill = `${titulares.length}/2 Lokitronistas${suplentes.length > 0 ? ` · ${suplentes.length} Suplente${suplentes.length > 1 ? 's' : ''}` : ''}`;
         html += `<div style="margin-bottom:8px;">
             <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:18px 0 12px;flex-wrap:wrap;">
                 <span style="font-size:1.5rem;">🏰</span>
                 <h4 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:0;font-size:1.15rem;">${barrio}</h4>
-                <span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 10px;border-radius:12px;font-size:0.78rem;">${lista.length}/2 Lokitronistas</span>
+                <span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 10px;border-radius:12px;font-size:0.78rem;">${contadorPill}</span>
             </div>
-            <div style="${GRID}">${lista.map(tarjetaLokitronista).join('')}</div>
+            <div style="${GRID}">${[...titulares, ...suplentes].map(tarjetaLokitronista).join('')}</div>
         </div>`;
     });
 

@@ -2791,22 +2791,19 @@ function renderEventos() {
 
         const relojHTML = evt.tiene_votacion === false ? '' : construirHTMLRelojCuentaAtras(evt);
         const esSinVotacion = evt.tiene_votacion === false;
-        const colorBadge = estadoVot.estado === 'ABIERTA' ? '#15803d'
-            : estadoVot.estado === 'FINALIZADA' ? '#7f1d1d'
-            : estadoVot.estado === 'SIN_VOTACION' ? '#334155'
-            : '#854d0e';
+        const colorBadge = 'rgba(0,0,0,0.85)';
 
         return `
             <div class="card-item" style="position: relative;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                    <span class="pill-user" style="background: rgba(185,28,28,0.8); color: #fff; font-weight: bold; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem;">
+                    <span class="pill-user" style="background: rgba(0,0,0,0.85); color: var(--oro-brillante); border: 1px solid #fff; font-weight: bold; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem;">
                         🏰 ${evt.barrio || 'Reino'}
                     </span>
                     <span style="font-size: 0.82rem; color: var(--oro-brillante); font-weight: bold;">📅 ${evt.fecha} (${evt.hora || '20:00'})${evt.fecha_fin || evt.hora_fin ? ` → ${evt.fecha_fin || evt.fecha}${evt.hora_fin ? ` (${evt.hora_fin})` : ''}` : ''}</span>
                 </div>
 
                 <div style="margin-bottom: 6px;">
-                    <span class="pill-user" style="font-size: 0.75rem; font-weight: bold; padding: 4px 10px; background: ${colorBadge}; color: #ffffff; display: inline-block;">
+                    <span class="pill-user" style="font-size: 0.75rem; font-weight: bold; padding: 4px 10px; background: ${colorBadge}; color: var(--oro-brillante); border: 1px solid #ffffff; display: inline-block;">
                         ${estadoVot.texto}
                     </span>
                 </div>
@@ -2815,6 +2812,7 @@ function renderEventos() {
                 ${relojHTML}
 
                 <h3 style="color: var(--oro-real); font-family: 'Cinzel', serif; margin: 6px 0 8px; font-size: 1.15rem;">${evt.nombre}</h3>
+                ${evt.logo_url ? `<img src="${evt.logo_url}" alt="Logo ${escaparHTML(evt.nombre)}" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;margin:0 0 10px;" loading="lazy">` : ''}
                 <p style="font-size: 0.88rem; color: #ffffff; margin-bottom: 6px;"><strong>📍 Lugar:</strong> ${evt.lugar || 'Bilbao'}</p>
                 ${esSinVotacion ? `<p style="font-size: 0.82rem; color: #ffffff; margin-bottom: 10px;">📜 <strong>Evento informativo:</strong> no admite votación ni puntuación.</p>` : `<p style="font-size: 0.82rem; color: #ffffff; margin-bottom: 10px;">
                     ⏰ <strong>Franja Votación:</strong> ${estadoVot.horaInicio} hs a ${estadoVot.horaFin} hs
@@ -2826,7 +2824,7 @@ function renderEventos() {
 
                 ${resumenResultadosHTML}
 
-                <button onclick='descargarICSEvento(${JSON.stringify(evt)})' class="btn-cuervo" style="padding: 6px 12px; font-size: 0.85rem; background: #15803d; width: 100%; margin-top: 4px;">
+                <button onclick='descargarICSEvento(${JSON.stringify(evt)})' class="btn-cuervo" style="padding: 6px 12px; font-size: 0.85rem; background: #1d4ed8; color: #ffffff; width: 100%; margin-top: 4px;">
                     📅 Añadir a Google Calendar (.ics)
                 </button>
             </div>
@@ -3414,7 +3412,7 @@ function aplicarMediaEventoFormulario(evt) {
 
 function construirGaleriaMediaEvento(evt) {
     if (!evt) return '';
-    const medios = EVENTO_MEDIA_CAMPOS.filter(campo => evt[`${campo}_url`]);
+    const medios = EVENTO_MEDIA_CAMPOS.filter(campo => evt[`${campo}_url`] && campo !== 'logo');
     if (!medios.length) return '';
     return '<div class="evento-media-galeria">' + medios.map(campo => {
         const url = String(evt[`${campo}_url`]).replace(/"/g, '&quot;');
@@ -10430,6 +10428,13 @@ function tarjetaBlog(post, conAcciones) {
                 <div style="margin-bottom:12px;border-radius:8px;overflow:hidden;max-height:280px;border:1px solid rgba(212,175,55,0.3);">
                     <img src="${escaparHTML(post.imagen_url)}" alt="${escaparHTML(post.titulo)}" style="width:100%;height:auto;max-height:280px;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none';">
                 </div>` : '';
+    const urlArticulo = encodeURIComponent(window.location.origin + window.location.pathname + '#pestana-blog');
+    const textoCompartir = encodeURIComponent((post.titulo || 'Crónica del Reino') + ' — ' + (window.location.origin + window.location.pathname));
+    const botonesCompartir = `
+                <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                    <a href="https://api.whatsapp.com/send?text=${textoCompartir}" target="_blank" rel="noopener" class="btn-cuervo" style="text-decoration:none;padding:5px 12px;font-size:0.82rem;background:#25D366;color:#fff;border-radius:6px;flex:1;text-align:center;min-width:110px;">📲 WhatsApp</a>
+                    <button type="button" class="btn-cuervo" style="padding:5px 12px;font-size:0.82rem;background:#E1306C;color:#fff;border-radius:6px;flex:1;min-width:110px;" onclick="navigator.clipboard.writeText(window.location.origin+window.location.pathname+'#pestana-blog').then(function(){alert('🔗 Enlace copiado — pégalo en Instagram para compartir la crónica')}).catch(function(){})">📸 Instagram</button>
+                </div>`;
     const acciones = conAcciones ? `
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button type="button" class="btn-cuervo" style="padding:4px 10px;font-size:0.8rem;background:#44403c;" onclick="editarBlogPost('${idSeguro}')">✏️ Editar</button>
@@ -10445,7 +10450,8 @@ function tarjetaBlog(post, conAcciones) {
                     <span style="font-weight:bold;">📅 ${escaparHTML(formatearFechaBlog(post.fecha))}</span>
                     ${post.autor ? ' · ✍️ ' + escaparHTML(post.autor) : ''}
                 </div>
-                <div style="color:#e5e7eb;font-size:0.9rem;line-height:1.5;margin-bottom:10px;">${contenido}</div>
+                <div style="color:#e5e7eb;font-size:0.9rem;line-height:1.7;margin-bottom:10px;">${contenido}</div>
+                ${botonesCompartir}
                 ${acciones}
             </article>`;
 }

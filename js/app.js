@@ -664,7 +664,7 @@ function actualizarInterfazSesion(usuario) {
         if (gridBlog) gridBlog.innerHTML = '';
         blogPostsCache = null;
 
-        cambiarPestana('pestana-clasificacion');
+        cambiarPestana('pestana-inicio');
     }
 
     if (typeof renderMenuHamburguesa === 'function') renderMenuHamburguesa();

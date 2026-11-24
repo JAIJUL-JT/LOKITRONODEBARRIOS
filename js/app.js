@@ -504,6 +504,8 @@ function cambiarPestana(valor, subpestana) {
     if (valor === 'pestana-extras' || valor === 'tab-extras') {
         if (typeof cambiarSubpestanaExtras === 'function' && typeof subpestana !== 'undefined') {
             cambiarSubpestanaExtras(subpestana);
+        } else if (typeof actualizarIndicadoresSubpestanasExtras === 'function') {
+            actualizarIndicadoresSubpestanasExtras();
         }
     }
     if (typeof sincronizarEstadoMenuHamburguesa === 'function') {
@@ -618,6 +620,7 @@ function actualizarInterfazSesion(usuario) {
         if (typeof aplicarNombreJuego === 'function') aplicarNombreJuego();
         if (typeof actualizarVisibilidadTutorialConfig === 'function') actualizarVisibilidadTutorialConfig(usuario);
         if (typeof iniciarGuiasPrimerUso === 'function') iniciarGuiasPrimerUso(usuario);
+        if (typeof actualizarIndicadoresSubpestanasExtras === 'function') actualizarIndicadoresSubpestanasExtras();
     } else {
         detenerAutoRefreshUsuarios();
         const bannerVot = document.getElementById('banner-votacion-abierta');
@@ -750,11 +753,16 @@ function crearBotonMenuHamburguesa(option, valorActivo) {
     boton.dataset.valor = option.value;
     const usuario = getCurrentUser();
     const acceso = puedeAccederPorPasaporte(option.value, usuario);
+    const textoBase = option.textContent.trim();
     if (!acceso.permitido) {
-        boton.textContent = `🔒 ${option.textContent.trim()} (${acceso.sellosActuales}/${acceso.sellosRequeridos} sellos)`;
+        boton.textContent = `🔒 ${textoBase} (${acceso.sellosActuales}/${acceso.sellosRequeridos} sellos)`;
         boton.style.opacity = '0.75';
     } else {
-        boton.textContent = option.textContent.trim();
+        if (acceso.sellosRequeridos > 0) {
+            boton.textContent = `🔑 ${textoBase}`;
+        } else {
+            boton.textContent = textoBase;
+        }
     }
     if (option.value === valorActivo) boton.classList.add('activo');
     boton.addEventListener('click', function () {
@@ -954,6 +962,7 @@ function getIconoRango(rol, phone) {
     if (rol === 'master') return '🌟';
     if (rol === 'superadmin') return '🏰';
     if (rol === 'tronista') return '👑';
+    if (rol === 'suplente_tronista') return '🛡️';
     return '⚔️';
 }
 
@@ -988,6 +997,8 @@ function getTituloCompleto(usuario) {
         titulo = gender === 'F' ? config.superadmin_femenino : config.superadmin_masculino;
     } else if (rol === 'tronista') {
         titulo = gender === 'F' ? config.tronista_femenino : config.tronista_masculino;
+    } else if (rol === 'suplente_tronista') {
+        titulo = gender === 'F' ? 'Suplente Lady' : 'Suplente Lord';
     } else {
         titulo = gender === 'F' ? config.jugador_femenino : config.jugador_masculino;
     }
@@ -3888,20 +3899,195 @@ function renderGalaFinal() {
     // Acreditación Pase VIP Dorado en la Gala Final (Punto 3: 5 sellos o rol privilegiado)
     const acreditacionVip = document.getElementById('acreditacion-vip-gala');
     const textoVip = document.getElementById('acreditacion-vip-texto');
+    const titularVip = document.getElementById('vip-tarjeta-titular');
+    const rangoVip = document.getElementById('vip-tarjeta-rango');
+    const lugarVip = document.getElementById('vip-tarjeta-lugar');
+    const fechaVip = document.getElementById('vip-tarjeta-fecha');
+
     if (acreditacionVip) {
         const tienePrivilegio = tienePrivilegioAccesoLibre(currentUser);
         const totalSellos = currentUser ? obtenerTotalSellosUsuario(currentUser.phone || currentUser.id || '') : 0;
         const mereceVip = tienePrivilegio || totalSellos >= 5;
         acreditacionVip.style.display = mereceVip ? 'block' : 'none';
-        if (mereceVip && textoVip) {
-            if (tienePrivilegio) {
-                textoVip.innerHTML = `Como miembro distinguido de la <strong>Corte Imperial</strong> (${currentUser.name || 'Noble Maestre'}), gozáis de <strong>Acreditación de Honor y Acceso Libre</strong> a la Gran Gala Final.`;
-            } else {
-                textoVip.innerHTML = `¡Enhorabuena, noble Maestre <strong>${escaparHTML(currentUser.name || 'Maestre')}</strong>! Habéis completado los <strong>5 sellos del Pasaporte</strong> y conquistado el <strong>Pase VIP Dorado</strong> con acceso preferente a la Gran Gala.`;
+        if (mereceVip) {
+            const nombreTitular = currentUser ? getTituloCompleto(currentUser) : 'Noble Maestre';
+            if (titularVip) titularVip.textContent = nombreTitular;
+            if (lugarVip) lugarVip.textContent = config.lugar || GALA_FINAL_DEFAULT.lugar;
+            if (fechaVip) {
+                const dateObj = config.fecha ? new Date(config.fecha) : new Date('2026-10-20T20:30');
+                fechaVip.textContent = !isNaN(dateObj) ? dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '20 Oct 2026';
+            }
+            if (textoVip) {
+                if (tienePrivilegio) {
+                    if (rangoVip) rangoVip.textContent = `Acreditación de Honor · Rol: ${currentUser.role}`;
+                    textoVip.innerHTML = `Como miembro distinguido de la <strong>Corte Imperial</strong> (${currentUser.name || 'Noble Maestre'}), gozáis de <strong>Acreditación de Honor y Pase VIP Dorado</strong> para la Gran Gala Final.`;
+                } else {
+                    if (rangoVip) rangoVip.textContent = 'Acreditación Oficial · 5 Sellos Completados';
+                    textoVip.innerHTML = `¡Enhorabuena, noble Maestre <strong>${escaparHTML(currentUser.name || 'Maestre')}</strong>! Habéis completado los <strong>5 sellos del Pasaporte</strong> y conquistado el <strong>Pase VIP Dorado</strong> con acceso preferente a la Gran Gala.`;
+                }
             }
         }
     }
 }
+
+function imprimirPaseVipGala() {
+    const usuario = getCurrentUser();
+    const config = typeof getGalaFinalConfig === 'function' ? getGalaFinalConfig() : GALA_FINAL_DEFAULT;
+    const nombre = usuario ? getTituloCompleto(usuario) : 'Noble Maestre';
+    const rol = usuario ? (usuario.role || 'jugador') : 'jugador';
+    const sellos = usuario ? obtenerTotalSellosUsuario(usuario.phone || usuario.id || '') : 0;
+    const lugar = config.lugar || GALA_FINAL_DEFAULT.lugar;
+    const fecha = config.fecha || '2026-10-20 20:30';
+
+    const ventana = window.open('', '_blank', 'width=800,height=600');
+    if (!ventana) {
+        alert('Por favor, permite ventanas emergentes para imprimir tu Pase VIP Dorado.');
+        return;
+    }
+
+    ventana.document.write(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Pase VIP Dorado — LokiTrono de Barrios</title>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Uncial+Antiqua&display=swap');
+                body {
+                    margin: 0;
+                    padding: 40px 20px;
+                    background: #111;
+                    font-family: 'Cinzel', Georgia, serif;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    box-sizing: border-box;
+                }
+                .ticket {
+                    width: 680px;
+                    background: radial-gradient(circle at 50% 30%, #2a2010 0%, #0e0a05 100%);
+                    border: 4px double #d4af37;
+                    border-radius: 16px;
+                    padding: 32px;
+                    color: #fff;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+                    position: relative;
+                }
+                .ticket-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-bottom: 2px dashed rgba(212,175,55,0.4);
+                    padding-bottom: 16px;
+                    margin-bottom: 20px;
+                }
+                .titulo-juego {
+                    font-family: 'Uncial Antiqua', serif;
+                    font-size: 22px;
+                    color: #fef08a;
+                    letter-spacing: 2px;
+                    text-align: center;
+                }
+                .sub-juego {
+                    font-size: 11px;
+                    color: #d6d3d1;
+                    letter-spacing: 1px;
+                    text-align: center;
+                    text-transform: uppercase;
+                }
+                .titular-box {
+                    text-align: center;
+                    margin: 24px 0;
+                }
+                .badge-vip {
+                    display: inline-block;
+                    background: linear-gradient(135deg, #d4af37, #fef08a, #b45309);
+                    color: #000;
+                    font-weight: 900;
+                    font-size: 13px;
+                    letter-spacing: 2px;
+                    padding: 6px 16px;
+                    border-radius: 20px;
+                    text-transform: uppercase;
+                    margin-bottom: 12px;
+                }
+                .nombre-titular {
+                    font-size: 26px;
+                    color: #fef08a;
+                    margin: 6px 0;
+                    text-shadow: 0 0 10px rgba(212,175,55,0.5);
+                }
+                .rango-titular {
+                    color: #d6d3d1;
+                    font-size: 14px;
+                    margin-bottom: 14px;
+                }
+                .detalles {
+                    display: flex;
+                    justify-content: space-around;
+                    background: rgba(0,0,0,0.5);
+                    border: 1px solid rgba(212,175,55,0.3);
+                    border-radius: 8px;
+                    padding: 14px;
+                    margin-top: 20px;
+                    font-size: 13px;
+                }
+                .detalles div { text-align: center; }
+                .detalles strong { display: block; color: #fef08a; margin-top: 4px; font-size: 15px; }
+                .firma {
+                    text-align: center;
+                    margin-top: 24px;
+                    font-size: 11px;
+                    color: #a1a1aa;
+                    font-style: italic;
+                    border-top: 1px dashed rgba(212,175,55,0.3);
+                    padding-top: 14px;
+                }
+                @media print {
+                    body { background: #fff; padding: 0; }
+                    .ticket { border-color: #000; color: #000; background: #fff; box-shadow: none; }
+                    .titulo-juego, .nombre-titular, .badge-vip, .detalles strong { color: #000 !important; }
+                    .badge-vip { background: #eee; border: 1px solid #000; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="ticket">
+                <div class="ticket-header">
+                    <span style="font-size: 32px;">👑</span>
+                    <div>
+                        <div class="titulo-juego">LokiTrono de Barrios</div>
+                        <div class="sub-juego">Corte Imperial de la Villa de Bilbao</div>
+                    </div>
+                    <span style="font-size: 32px;">🎟️</span>
+                </div>
+                <div class="titular-box">
+                    <div class="badge-vip">✨ Pase VIP Dorado Oficial ✨</div>
+                    <div class="nombre-titular">${nombre}</div>
+                    <div class="rango-titular">Acreditación Oficial · Rol: ${rol.toUpperCase()}</div>
+                </div>
+                <div class="detalles">
+                    <div>Bastión Convocado<strong>${lugar}</strong></div>
+                    <div>Fecha y Hora<strong>${fecha}</strong></div>
+                    <div>Sellos del Pasaporte<strong>${sellos >= 5 ? '5/5 (Completado)' : 'Pase Imperial de Honor'}</strong></div>
+                </div>
+                <div class="firma">
+                    «Por decreto del Consejo y las Leyes de la Corte, se convoca a todas las Casas Feudales a la Gran Ceremonia de cierre del Lokitrono Txapelketa.»
+                </div>
+            </div>
+            <script>
+                window.onload = function() {
+                    window.print();
+                };
+            </script>
+        </body>
+        </html>
+    `);
+    ventana.document.close();
+}
+window.imprimirPaseVipGala = imprimirPaseVipGala;
 
 async function guardarEventoFinal(event) {
     if (event) event.preventDefault();
@@ -4728,6 +4914,8 @@ function renderTablaUsuarios() {
             rolBadge = `<span class="pill-user" style="background:rgba(22,101,52,0.8);color:#86efac;border:1px solid #4ade80;padding:2px 8px;border-radius:12px;font-size:0.78rem;">🏰 Superadmin</span>`;
         } else if (rolVisible === 'tronista') {
             rolBadge = `<span class="pill-user" style="background:rgba(120,53,15,0.8);color:var(--oro-brillante);border:1px solid var(--oro-real);padding:2px 8px;border-radius:12px;font-size:0.78rem;">👑 Lokitronista</span>`;
+        } else if (rolVisible === 'suplente_tronista') {
+            rolBadge = `<span class="pill-user" style="background:rgba(30,58,138,0.85);color:#93c5fd;border:1px solid #3b82f6;padding:2px 8px;border-radius:12px;font-size:0.78rem;">🛡️ Suplente de Lokitronista</span>`;
         } else {
             rolBadge = `<span class="pill-user" style="background:rgba(63,63,70,0.8);color:#d4d4d8;border:1px solid #52525b;padding:2px 8px;border-radius:12px;font-size:0.78rem;">⚔️ Jugador</span>`;
         }
@@ -11168,10 +11356,80 @@ window.cerrarBotxitrono = cerrarBotxitrono;
    SUBMENÚS DE LA SECCIÓN EXTRAS (Minijuegos, PapiroBLOG, Lokitronistas, FAQ, Buzón)
    ========================================================================== */
 
+function actualizarIndicadoresSubpestanasExtras() {
+    const usuario = getCurrentUser();
+    const subtabs = [
+        { id: 'btn-subtab-extras-juegos', clave: 'juegos', base: '🎮 MINI-JUEGOS' },
+        { id: 'btn-subtab-extras-multimedia', clave: 'multimedia', base: '🎬 MULTI-MEDIA' },
+        { id: 'btn-subtab-extras-blog', clave: 'blog', base: '📜 PapiroBLOG del Norte' },
+        { id: 'btn-subtab-extras-tronistas', clave: 'tronistas', base: '👑 El Consejo' },
+        { id: 'btn-subtab-extras-faq', clave: null, base: '❓ FAQ' },
+        { id: 'btn-subtab-extras-buzon', clave: null, base: '📬 Buzón de Sugerencias' }
+    ];
+
+    subtabs.forEach(item => {
+        const btn = document.getElementById(item.id);
+        if (!btn) return;
+        if (item.clave) {
+            const acceso = puedeAccederPorPasaporte(item.clave, usuario);
+            if (!acceso.permitido) {
+                btn.textContent = `🔒 ${item.base} (${acceso.sellosActuales}/${acceso.sellosRequeridos} sellos)`;
+                btn.style.opacity = '0.75';
+            } else {
+                btn.textContent = `🔑 ${item.base}`;
+                btn.style.opacity = '1';
+            }
+        } else {
+            btn.textContent = item.base;
+            btn.style.opacity = '1';
+        }
+    });
+
+    // Control de visibilidad / candado directo sobre la subsección de juegos
+    const secJuegos = document.getElementById('extras-subseccion-juegos');
+    if (secJuegos) {
+        const accesoJuegos = puedeAccederPorPasaporte('juegos', usuario);
+        let avisoBloqueo = document.getElementById('aviso-bloqueo-minijuegos');
+        const gridTarjetas = secJuegos.querySelector('div[style*="display: grid"]') || secJuegos.firstElementChild;
+        if (!accesoJuegos.permitido) {
+            if (!avisoBloqueo) {
+                avisoBloqueo = document.createElement('div');
+                avisoBloqueo.id = 'aviso-bloqueo-minijuegos';
+                avisoBloqueo.style.cssText = 'background:rgba(20,14,8,0.9);border:2px dashed var(--oro-real);border-radius:12px;padding:30px 20px;text-align:center;margin-bottom:24px;';
+                secJuegos.insertBefore(avisoBloqueo, secJuegos.firstChild);
+            }
+            avisoBloqueo.style.display = 'block';
+            avisoBloqueo.innerHTML = `
+                <div style="font-size:3rem;margin-bottom:10px;">🔒</div>
+                <h3 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:0 0 10px;">Mini-Juegos Bloqueados</h3>
+                <p style="color:#d6d3d1;font-size:0.92rem;max-width:550px;margin:0 auto 16px;line-height:1.6;">
+                    Los juegos <strong>Botxitrono</strong> y <strong>El Trivial del Botxo</strong> requieren conseguir al menos <strong>4 sellos</strong> en tu Pasaporte Real para poder verlos y disfrutarlos.
+                </p>
+                <div style="display:inline-block;background:rgba(180,83,9,0.3);border:1px solid #b45309;color:#fde68a;padding:6px 14px;border-radius:20px;font-size:0.85rem;font-weight:bold;margin-bottom:14px;">
+                    Sellos actuales: ${accesoJuegos.sellosActuales} / ${accesoJuegos.sellosRequeridos}
+                </div>
+                <div>
+                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-votacion-barrio')" style="background:#1e3a8a;padding:8px 18px;font-size:0.88rem;">
+                        🗳️ Ir a Votar para sellar Pasaporte
+                    </button>
+                </div>
+            `;
+            if (gridTarjetas && gridTarjetas !== avisoBloqueo) {
+                gridTarjetas.style.display = 'none';
+            }
+        } else {
+            if (avisoBloqueo) avisoBloqueo.style.display = 'none';
+            if (gridTarjetas) gridTarjetas.style.display = 'grid';
+        }
+    }
+}
+
 function cambiarSubpestanaExtras(subpestana) {
     const pestanas = ['juegos', 'multimedia', 'blog', 'tronistas', 'faq', 'buzon'];
     const destino = pestanas.includes(subpestana) ? subpestana : 'juegos';
     const usuario = getCurrentUser();
+
+    actualizarIndicadoresSubpestanasExtras();
 
     // Verificación de reglas del pasaporte (Punto 3)
     const acceso = puedeAccederPorPasaporte(destino, usuario);

@@ -50,7 +50,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&family=Uncial+Antiqua&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261124e">
+    <link rel="stylesheet" href="css/style.css?v=20261124f">
     <link rel="stylesheet" href="css/app-bar.css?v=20261123">
     <link rel="stylesheet" href="css/medieval-theme.css?v=20261123">
 
@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261124e" defer></script>
+    <script src="js/app.js?v=20261124f" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -2533,7 +2533,7 @@
                         </h2>
 
                         <p style="font-style: italic; color: #e5c36a; font-size: 1.1rem; max-width: 650px; margin: 0 auto 25px;">
-                            «Por decreto de los Maestres y las Leyes de la Corte, se convoca a todas las Casas Feudales a la Gran Ceremonia de Cierre y Coronación del Pintxo Txapeldun.»
+                            «Por decreto del Consejo y las Leyes de la Corte, se convoca a todas las Casas Feudales a la Gran Ceremonia de cierre del Lokitrono Txapelketa.»
                         </p>
 
                         <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 25px;">
@@ -2557,16 +2557,39 @@
 
                         <!-- ACREDITACIÓN PASE VIP DORADO (DESBLOQUEADA CON 5 SELLOS O ROL PRIVILEGIADO) -->
                         <div id="acreditacion-vip-gala" style="display: none; background: linear-gradient(135deg, rgba(212,175,55,0.25), rgba(20,15,5,0.95)); border: 2px solid var(--oro-brillante); border-radius: 14px; padding: 20px; max-width: 650px; margin: 0 auto 25px; box-shadow: 0 0 25px rgba(212,175,55,0.35);">
-                            <div style="font-size: 2.2rem; margin-bottom: 6px;">🎟️ 👑</div>
-                            <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin: 0 0 6px; font-size: 1.35rem; text-transform: uppercase; letter-spacing: 1px;">
-                                Acreditación Oficial: Pase VIP Dorado
-                            </h3>
-                            <p id="acreditacion-vip-texto" style="color: #ffffff; font-size: 0.95rem; margin: 0 0 10px; line-height: 1.5;">
-                                ¡Enhorabuena, noble Maestre! Habéis completado los 5 sellos del Pasaporte y contáis con <strong>Acceso Preferente de Honor</strong> a la Gran Gala Final.
-                            </p>
-                            <span class="pill-user" style="background: var(--oro-gradiente); color: #000; font-weight: bold; padding: 5px 14px; border-radius: 20px; font-size: 0.85rem;">
-                                ✨ ACCESO PREFERENTE CONFIRMADO ✨
-                            </span>
+                            <!-- CREDENCIAL VIP DORADA OFICIAL -->
+                            <div id="tarjeta-credencial-vip" style="background: radial-gradient(circle at 50% 30%, #2a2010 0%, #120d06 100%); border: 3px double var(--oro-real); border-radius: 12px; padding: 24px; position: relative; box-shadow: inset 0 0 20px rgba(212,175,55,0.3), 0 8px 25px rgba(0,0,0,0.8); margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(212,175,55,0.4); padding-bottom: 10px; margin-bottom: 14px;">
+                                    <div style="font-size: 1.8rem;">👑</div>
+                                    <div style="text-align: center;">
+                                        <div style="font-family: 'Uncial Antiqua', serif; font-size: 0.95rem; color: var(--oro-brillante); letter-spacing: 2px;">LOKITRONO DE BARRIOS</div>
+                                        <div style="font-family: 'Cinzel', serif; font-size: 0.72rem; color: #a1a1aa; letter-spacing: 1px;">CORTE IMPERIAL DE BILBAO</div>
+                                    </div>
+                                    <div style="font-size: 1.8rem;">🎟️</div>
+                                </div>
+                                <div style="text-align: center; margin-bottom: 14px;">
+                                    <div style="font-size: 0.8rem; text-transform: uppercase; color: #fde68a; letter-spacing: 2px; margin-bottom: 4px;">Pase VIP Dorado Oficial</div>
+                                    <h3 id="vip-tarjeta-titular" style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin: 0 0 6px; font-size: 1.45rem; text-transform: uppercase;">
+                                        Noble Maestre
+                                    </h3>
+                                    <div id="vip-tarjeta-rango" style="display: inline-block; background: rgba(180,83,9,0.35); border: 1px solid #b45309; color: #fde68a; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: bold; margin-bottom: 6px;">
+                                        Acceso Preferente de Honor
+                                    </div>
+                                </div>
+                                <p id="acreditacion-vip-texto" style="color: #ffffff; font-size: 0.92rem; margin: 0 0 14px; line-height: 1.5; text-align: center;">
+                                    ¡Enhorabuena, noble Maestre! Habéis completado los 5 sellos del Pasaporte y contáis con <strong>Acceso Preferente de Honor</strong> a la Gran Gala Final.
+                                </p>
+                                <div style="display: flex; justify-content: space-around; align-items: center; border-top: 1px dashed rgba(212,175,55,0.4); padding-top: 12px; font-size: 0.8rem; color: #d6d3d1;">
+                                    <div>🏛️ <strong id="vip-tarjeta-lugar">Teatro Arriaga</strong></div>
+                                    <div>📆 <strong id="vip-tarjeta-fecha">20 Oct 2026</strong></div>
+                                    <div style="color: var(--oro-brillante);">✨ <strong>5/5 Sellos</strong></div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                                <button type="button" onclick="imprimirPaseVipGala()" class="btn-cuervo" style="padding: 8px 18px; font-size: 0.9rem; background: #b45309; border: 1px solid var(--oro-brillante); color: #fff; border-radius: 20px; font-weight: bold; cursor: pointer;">
+                                    🖨️ Imprimir Pase VIP Dorado
+                                </button>
+                            </div>
                         </div>
 
                         <button type="button" onclick="descargarICSGalaFinal()" class="btn-cuervo" style="padding: 10px 24px; font-size: 1rem; background: #166534; border-radius: 30px; box-shadow: 0 4px 15px rgba(22, 101, 52, 0.5);">

@@ -114,6 +114,58 @@ function tienePrivilegioAccesoLibre(usuario) {
     return r === 'master' || r === 'superadmin' || r === 'tronista' || r === 'suplente_tronista' || r === 'suplente' || puedeAdministrar(r);
 }
 
+// Conteo total de sellos únicos (barrios/eventos distintos en los que ha votado)
+function obtenerTotalSellosUsuario(userId) {
+    if (!userId) return 0;
+    try {
+        const sellos = typeof obtenerPasaporteUsuario === 'function' ? obtenerPasaporteUsuario(userId) : [];
+        return Array.isArray(sellos) ? sellos.length : 0;
+    } catch (e) {
+        return 0;
+    }
+}
+
+// Comprueba si el usuario tiene acceso a una sección según las Reglas del Pasaporte (Punto 3):
+// - 1 sello: Clasificación y El Consejo
+// - 2 sellos: PapiroBLOG del Norte
+// - 3 sellos: Multi-Media
+// - 4 sellos: Mini-Juegos
+// - 5 sellos: Gala Final (Pase VIP Dorado)
+// Master, Superadmin, Tronistas y Suplentes gozan de acceso libre total sin sellos.
+function puedeAccederPorPasaporte(seccion, usuario) {
+    if (tienePrivilegioAccesoLibre(usuario)) return { permitido: true, sellosRequeridos: 0, sellosActuales: 5 };
+    const userId = usuario ? String(usuario.phone || usuario.id || '') : '';
+    const sellosActuales = obtenerTotalSellosUsuario(userId);
+
+    let sellosRequeridos = 0;
+    let nombreSeccion = '';
+
+    if (seccion === 'pestana-clasificacion' || seccion === 'tab-clasificacion') {
+        sellosRequeridos = 1;
+        nombreSeccion = 'la Clasificación del Reino';
+    } else if (seccion === 'tronistas' || seccion === 'pestana-tronistas' || seccion === 'tab-tronistas') {
+        sellosRequeridos = 1;
+        nombreSeccion = 'El Consejo de los Barrios';
+    } else if (seccion === 'blog' || seccion === 'pestana-blog' || seccion === 'tab-blog') {
+        sellosRequeridos = 2;
+        nombreSeccion = 'el PapiroBLOG del Norte';
+    } else if (seccion === 'multimedia') {
+        sellosRequeridos = 3;
+        nombreSeccion = 'la Sala Multi-Media';
+    } else if (seccion === 'juegos' || seccion === 'pestana-botxitrono' || seccion === 'pestana-trivial' || seccion === 'tab-botxitrono' || seccion === 'tab-trivial') {
+        sellosRequeridos = 4;
+        nombreSeccion = 'los Mini-Juegos Feudales';
+    } else if (seccion === 'pestana-evento-final' || seccion === 'tab-evento-final') {
+        sellosRequeridos = 5;
+        nombreSeccion = 'la Gran Gala Final';
+    }
+
+    if (sellosActuales >= sellosRequeridos) {
+        return { permitido: true, sellosRequeridos, sellosActuales, nombreSeccion };
+    }
+    return { permitido: false, sellosRequeridos, sellosActuales, nombreSeccion };
+}
+
 // Un lokitronista (tronista) no vota en eventos celebrados en su propio barrio.
 function lokitronistaNoPuedeVotarEn(evento, usuario) {
     if (!usuario || usuario.role !== 'tronista' || !evento) return false;
@@ -413,6 +465,12 @@ function cambiarPestana(valor, subpestana) {
     if (esLocalesPromocion && esMaster && typeof cargarLocalesPromocion === 'function') {
         cargarLocalesPromocion();
     }
+    // Reglas del Pasaporte (Punto 3): verificación de sellos para secciones de acceso progresivo
+    const accesoPasaporte = puedeAccederPorPasaporte(valor, usuario);
+    if (!accesoPasaporte.permitido) {
+        alert(`🔒 Sección bloqueada por la Ley del Pasaporte:\nPara acceder a ${accesoPasaporte.nombreSeccion} necesitas al menos ${accesoPasaporte.sellosRequeridos} sello(s) en tu Pasaporte Real.\n\nActualmente posees: ${accesoPasaporte.sellosActuales} sello(s).\n¡Participa y vota en los eventos feudales para desbloquearla!`);
+        valor = 'pestana-votacion-barrio';
+    }
     if (valor === 'pestana-sorteo-eventos' || valor === 'pestana-restaurar') {
         cambiarPestana('tab-superadmin');
         return;
@@ -690,7 +748,14 @@ function crearBotonMenuHamburguesa(option, valorActivo) {
     boton.type = 'button';
     boton.className = 'menu-hamburguesa__item';
     boton.dataset.valor = option.value;
-    boton.textContent = option.textContent.trim();
+    const usuario = getCurrentUser();
+    const acceso = puedeAccederPorPasaporte(option.value, usuario);
+    if (!acceso.permitido) {
+        boton.textContent = `🔒 ${option.textContent.trim()} (${acceso.sellosActuales}/${acceso.sellosRequeridos} sellos)`;
+        boton.style.opacity = '0.75';
+    } else {
+        boton.textContent = option.textContent.trim();
+    }
     if (option.value === valorActivo) boton.classList.add('activo');
     boton.addEventListener('click', function () {
         seleccionarSeccionMenuHamburguesa(option.value);
@@ -3757,8 +3822,19 @@ async function cargarGalaFinalDesdeSupabase() {
 function aplicarVisibilidadGalaFinal() {
     const usuario = getCurrentUser();
     const esAdmin = Boolean(usuario && puedeAdministrar(usuario.role));
+    const tienePrivilegio = tienePrivilegioAccesoLibre(usuario);
+    const sellos = usuario ? obtenerTotalSellosUsuario(usuario.phone || usuario.id || '') : 0;
+    const tienePaseVipGala = tienePrivilegio || sellos >= 5;
     const option = document.querySelector('#select-seccion-corte option[value="pestana-evento-final"]');
-    if (option) option.style.display = esAdmin ? '' : 'none';
+    if (option) {
+        // La Gala se muestra a administradores o a maestres que hayan conseguido los 5 sellos (Pase VIP Dorado)
+        option.style.display = (esAdmin || tienePaseVipGala) ? '' : 'none';
+        if (tienePaseVipGala && !esAdmin) {
+            option.textContent = '🎉 Gala Final 👑 VIP';
+        } else {
+            option.textContent = '🎉 Gala Final';
+        }
+    }
 }
 
 // El Trivial en el Menú de la Corte es accesible tras emitir al menos un voto (o para la administración).
@@ -3810,6 +3886,23 @@ function renderGalaFinal() {
     if (inputLugar) inputLugar.value = config.lugar || '';
     if (inputFecha && !inputFecha.value) inputFecha.value = config.fecha || '2026-10-20T20:30';
     if (inputPremio) inputPremio.value = config.premio || '';
+
+    // Acreditación Pase VIP Dorado en la Gala Final (Punto 3: 5 sellos o rol privilegiado)
+    const acreditacionVip = document.getElementById('acreditacion-vip-gala');
+    const textoVip = document.getElementById('acreditacion-vip-texto');
+    if (acreditacionVip) {
+        const tienePrivilegio = tienePrivilegioAccesoLibre(currentUser);
+        const totalSellos = currentUser ? obtenerTotalSellosUsuario(currentUser.phone || currentUser.id || '') : 0;
+        const mereceVip = tienePrivilegio || totalSellos >= 5;
+        acreditacionVip.style.display = mereceVip ? 'block' : 'none';
+        if (mereceVip && textoVip) {
+            if (tienePrivilegio) {
+                textoVip.innerHTML = `Como miembro distinguido de la <strong>Corte Imperial</strong> (${currentUser.name || 'Noble Maestre'}), gozáis de <strong>Acreditación de Honor y Acceso Libre</strong> a la Gran Gala Final.`;
+            } else {
+                textoVip.innerHTML = `¡Enhorabuena, noble Maestre <strong>${escaparHTML(currentUser.name || 'Maestre')}</strong>! Habéis completado los <strong>5 sellos del Pasaporte</strong> y conquistado el <strong>Pase VIP Dorado</strong> con acceso preferente a la Gran Gala.`;
+            }
+        }
+    }
 }
 
 async function guardarEventoFinal(event) {
@@ -11067,6 +11160,15 @@ window.cerrarBotxitrono = cerrarBotxitrono;
 function cambiarSubpestanaExtras(subpestana) {
     const pestanas = ['juegos', 'multimedia', 'blog', 'tronistas', 'faq', 'buzon'];
     const destino = pestanas.includes(subpestana) ? subpestana : 'juegos';
+    const usuario = getCurrentUser();
+
+    // Verificación de reglas del pasaporte (Punto 3)
+    const acceso = puedeAccederPorPasaporte(destino, usuario);
+    if (!acceso.permitido) {
+        alert(`🔒 Sección bloqueada por la Ley del Pasaporte:\nPara acceder a ${acceso.nombreSeccion} necesitas al menos ${acceso.sellosRequeridos} sello(s) en tu Pasaporte Real.\n\nActualmente posees: ${acceso.sellosActuales} sello(s).\n¡Vota en los eventos feudales para sellar tu pasaporte y desbloquearla!`);
+        cambiarPestana('pestana-votacion-barrio');
+        return;
+    }
 
     pestanas.forEach(p => {
         const sec = document.getElementById(`extras-subseccion-${p}`);

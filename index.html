@@ -50,7 +50,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&family=Uncial+Antiqua&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261124a">
+    <link rel="stylesheet" href="css/style.css?v=20261124b">
     <link rel="stylesheet" href="css/app-bar.css?v=20261123">
     <link rel="stylesheet" href="css/medieval-theme.css?v=20261123">
 
@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261124a" defer></script>
+    <script src="js/app.js?v=20261124b" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -2553,6 +2553,20 @@
                             <p id="display-gala-premio" style="color: #fef08a; font-size: 1rem; margin: 0; line-height: 1.5;">
                                 El Barril de Oro Imperial, el Trono Feudal de Bilbao y Pase VIP Dorado para la Gran Gala Final para todos sus Maestres de Honor.
                             </p>
+                        </div>
+
+                        <!-- ACREDITACIÓN PASE VIP DORADO (DESBLOQUEADA CON 5 SELLOS O ROL PRIVILEGIADO) -->
+                        <div id="acreditacion-vip-gala" style="display: none; background: linear-gradient(135deg, rgba(212,175,55,0.25), rgba(20,15,5,0.95)); border: 2px solid var(--oro-brillante); border-radius: 14px; padding: 20px; max-width: 650px; margin: 0 auto 25px; box-shadow: 0 0 25px rgba(212,175,55,0.35);">
+                            <div style="font-size: 2.2rem; margin-bottom: 6px;">🎟️ 👑</div>
+                            <h3 style="color: var(--oro-brillante); font-family: 'Cinzel', serif; margin: 0 0 6px; font-size: 1.35rem; text-transform: uppercase; letter-spacing: 1px;">
+                                Acreditación Oficial: Pase VIP Dorado
+                            </h3>
+                            <p id="acreditacion-vip-texto" style="color: #ffffff; font-size: 0.95rem; margin: 0 0 10px; line-height: 1.5;">
+                                ¡Enhorabuena, noble Maestre! Habéis completado los 5 sellos del Pasaporte y contáis con <strong>Acceso Preferente de Honor</strong> a la Gran Gala Final.
+                            </p>
+                            <span class="pill-user" style="background: var(--oro-gradiente); color: #000; font-weight: bold; padding: 5px 14px; border-radius: 20px; font-size: 0.85rem;">
+                                ✨ ACCESO PREFERENTE CONFIRMADO ✨
+                            </span>
                         </div>
 
                         <button type="button" onclick="descargarICSGalaFinal()" class="btn-cuervo" style="padding: 10px 24px; font-size: 1rem; background: #166534; border-radius: 30px; box-shadow: 0 4px 15px rgba(22, 101, 52, 0.5);">

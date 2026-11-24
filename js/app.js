@@ -541,10 +541,15 @@ function actualizarInterfazSesion(usuario) {
         if (userWidget) {
             userWidget.style.display = 'block';
             const nombreEl = document.getElementById('usuario-widget-nombre');
+            const avatarEl = document.getElementById('usuario-widget-avatar');
+            const dropIconoEl = document.getElementById('dropdown-usuario-icono');
             const dropNombreEl = document.getElementById('dropdown-usuario-nombre');
             const dropRolEl = document.getElementById('dropdown-usuario-rol');
             const nombreMostrar = usuario.name || usuario.phone || 'Maestre';
             if (nombreEl) nombreEl.textContent = nombreMostrar;
+            const iconoUsuario = typeof getIconoRango === 'function' ? getIconoRango(usuario.role, usuario.phone) : '👤';
+            if (avatarEl) avatarEl.textContent = iconoUsuario;
+            if (dropIconoEl) dropIconoEl.textContent = iconoUsuario;
             if (dropNombreEl) dropNombreEl.textContent = getTituloCompleto(usuario);
             if (dropRolEl) {
                 const rolTexto = usuario.role === 'master' ? '👑 Administración Master' :
@@ -552,6 +557,9 @@ function actualizarInterfazSesion(usuario) {
                     (usuario.role === 'tronista' ? '⚔️ Lokitronista' :
                     (usuario.role === 'suplente_tronista' ? '🛡️ Suplente de Lokitronista' : '🍺 Maestre')));
                 dropRolEl.textContent = rolTexto;
+            }
+            if (typeof sincronizarSelectorEmblemaMaster === 'function') {
+                sincronizarSelectorEmblemaMaster(usuario);
             }
         }
         if (nav) nav.style.display = 'block';
@@ -600,6 +608,8 @@ function actualizarInterfazSesion(usuario) {
         if (accionesCredenciales) accionesCredenciales.style.display = esMaster ? 'block' : 'none';
         const panelOraculoMaster = document.getElementById('panel-acceso-oraculo-master');
         if (panelOraculoMaster) panelOraculoMaster.style.display = esMaster ? 'block' : 'none';
+        const panelMakeMaster = document.getElementById('seccion-configuracion-make');
+        if (panelMakeMaster) panelMakeMaster.style.display = esMaster ? 'block' : 'none';
 
         if (typeof renderOpcionesRolUsuario === 'function') renderOpcionesRolUsuario();
         if (typeof actualizarBadgeMake === 'function') actualizarBadgeMake();
@@ -957,9 +967,89 @@ function guardarTitulosConfig(config) {
     } catch (e) { /* noop */ }
 }
 
+const LS_EMBLEMA_MASTER = 'lokitrono_emblema_master';
+const EMBLEMAS_REINO_DEF = [
+    { icono: '🌟', nombre: 'Estrella Real (Por Defecto)' },
+    { icono: '👑', nombre: 'Corona imperial' },
+    { icono: '🏰', nombre: 'Castillo feudal' },
+    { icono: '⚔️', nombre: 'Espadas cruzadas' },
+    { icono: '🛡️', nombre: 'Escudo heráldico' },
+    { icono: '🍷', nombre: 'Copa de la corte' },
+    { icono: '🐉', nombre: 'Dragón del reino' },
+    { icono: '🦁', nombre: 'León rampante' },
+    { icono: '🐺', nombre: 'Lobo guerrero' },
+    { icono: '🦅', nombre: 'Águila real' },
+    { icono: '⚓', nombre: 'Ancla de la ría' },
+    { icono: '🏹', nombre: 'Arco del guardián' },
+    { icono: '🗡️', nombre: 'Daga de la guardia' },
+    { icono: '🐎', nombre: 'Corcel de batalla' },
+    { icono: '🐻', nombre: 'Oso protector' },
+    { icono: '🦌', nombre: 'Ciervo noble' },
+    { icono: '🦉', nombre: 'Búho sabio' },
+    { icono: '🐦‍⬛', nombre: 'Cuervo mensajero' },
+    { icono: '🌙', nombre: 'Luna del reino' },
+    { icono: '☀️', nombre: 'Sol de la victoria' },
+    { icono: '🔥', nombre: 'Llama eterna' },
+    { icono: '🌳', nombre: 'Árbol ancestral' },
+    { icono: '🌹', nombre: 'Rosa de la nobleza' },
+    { icono: '⚜️', nombre: 'Flor de lis' },
+    { icono: '🔱', nombre: 'Tridente soberano' },
+    { icono: '🪶', nombre: 'Pluma del cronista' },
+    { icono: '🗝️', nombre: 'Llave de la fortaleza' },
+    { icono: '🏆', nombre: 'Trofeo de los campeones' },
+    { icono: '💎', nombre: 'Gema de la corona' },
+    { icono: '🌊', nombre: 'Olas de la ría' }
+];
+
+function getEmblemaMasterGuardado() {
+    try {
+        const val = localStorage.getItem(LS_EMBLEMA_MASTER);
+        if (val) return val;
+    } catch (_) {}
+    return '🌟';
+}
+
+function cambiarEmblemaMaster(nuevoEmblema) {
+    const usuario = getCurrentUser();
+    if (!usuario || !esRolMaster(usuario.role)) return;
+    const emblema = nuevoEmblema || '🌟';
+    try {
+        localStorage.setItem(LS_EMBLEMA_MASTER, emblema);
+    } catch (_) {}
+    actualizarInterfazSesion(usuario);
+}
+window.cambiarEmblemaMaster = cambiarEmblemaMaster;
+
+function sincronizarSelectorEmblemaMaster(usuario) {
+    const esMaster = !!(usuario && esRolMaster(usuario.role));
+    const contenedorWidget = document.getElementById('dropdown-usuario-master-emblema');
+    const selectWidget = document.getElementById('selector-emblema-master');
+    const selectPanel = document.getElementById('selector-emblema-master-panel');
+
+    if (contenedorWidget) contenedorWidget.style.display = esMaster ? 'block' : 'none';
+
+    if (!esMaster) return;
+
+    const emblemaActivo = getEmblemaMasterGuardado();
+
+    const poblarSelect = (sel) => {
+        if (!sel) return;
+        if (sel.options.length === 0) {
+            sel.innerHTML = EMBLEMAS_REINO_DEF.map(e =>
+                `<option value="${e.icono}">${e.icono} ${e.nombre}</option>`
+            ).join('');
+        }
+        sel.value = emblemaActivo;
+    };
+
+    poblarSelect(selectWidget);
+    poblarSelect(selectPanel);
+}
+window.sincronizarSelectorEmblemaMaster = sincronizarSelectorEmblemaMaster;
+
 function getIconoRango(rol, phone) {
     if (phone && CONSEJEROS_ESPECIALES.includes(String(phone))) return '💎';
-    if (rol === 'master') return '🌟';
+    if (rol === 'master') return getEmblemaMasterGuardado();
     if (rol === 'superadmin') return '🏰';
     if (rol === 'tronista') return '👑';
     if (rol === 'suplente_tronista') return '🛡️';
@@ -4234,6 +4324,11 @@ function actualizarBadgeMake() {
 }
 
 function guardarWebhookMakeConfig() {
+    const usuario = getCurrentUser();
+    if (!usuario || !esRolMaster(usuario.role)) {
+        alert('Solo el usuario MASTER puede configurar la integración de Make.com.');
+        return;
+    }
     const input = document.getElementById('input-make-webhook-url');
     const estado = document.getElementById('make-webhook-test-status');
     const url = (input?.value || '').trim();
@@ -4316,6 +4411,11 @@ async function enviarBienvenidaWhatsApp({ phone, name, pin, role }) {
 }
 
 async function probarEnvioWebhookMake() {
+    const usuario = getCurrentUser();
+    if (!usuario || !esRolMaster(usuario.role)) {
+        alert('Solo el usuario MASTER puede probar el envío del webhook de Make.com.');
+        return;
+    }
     const estado = document.getElementById('make-webhook-test-status');
     if (!getMakeWebhookUrl()) {
         if (estado) estado.textContent = 'Configura y guarda una URL de webhook antes de probar.';

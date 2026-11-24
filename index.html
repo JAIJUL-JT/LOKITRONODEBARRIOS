@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261124f" defer></script>
+    <script src="js/app.js?v=20261124h" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -193,16 +193,24 @@
         <!-- INDICADOR / MENÚ DE USUARIO EN ESQUINA SUPERIOR DERECHA -->
         <div id="usuario-sesion-widget" class="usuario-sesion-widget" style="display: none;">
             <button type="button" id="btn-usuario-widget" class="btn-usuario-widget" onclick="toggleMenuUsuarioWidget()" aria-expanded="false" aria-haspopup="true" title="Perfil y opciones de sesión">
-                <span class="usuario-widget-avatar">👤</span>
+                <span id="usuario-widget-avatar" class="usuario-widget-avatar">👤</span>
                 <span id="usuario-widget-nombre" class="usuario-widget-nombre"></span>
             </button>
             <div id="dropdown-usuario-widget" class="dropdown-usuario-widget" style="display: none;" role="menu">
                 <div class="dropdown-usuario-header">
-                    <span class="dropdown-usuario-icono">👑</span>
+                    <span id="dropdown-usuario-icono" class="dropdown-usuario-icono">👑</span>
                     <div class="dropdown-usuario-info">
                         <strong id="dropdown-usuario-nombre"></strong>
                         <span id="dropdown-usuario-rol" class="dropdown-usuario-rol"></span>
                     </div>
+                </div>
+                <div id="dropdown-usuario-master-emblema" style="display: none; padding: 8px 4px; border-top: 1px solid rgba(212, 175, 55, 0.25); margin-top: 6px;">
+                    <label for="selector-emblema-master" style="display: block; font-size: 0.75rem; color: var(--oro-real); margin-bottom: 4px; font-weight: bold;">
+                        🛡️ Emblema de la Corte (MASTER):
+                    </label>
+                    <select id="selector-emblema-master" class="input-medieval" style="width: 100%; font-size: 0.8rem; padding: 4px 6px;" onchange="cambiarEmblemaMaster(this.value)">
+                        <!-- Generado dinámicamente -->
+                    </select>
                 </div>
                 <div class="dropdown-usuario-separador"></div>
                 <button type="button" class="dropdown-usuario-btn-cerrar" onclick="cerrarSesionDirecta()" role="menuitem">
@@ -1301,6 +1309,14 @@
                                 🍻 Trono Económico (Locales Promocionados)
                             </button>
                         </div>
+                        <div style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed rgba(212, 175, 55, 0.4); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <label for="selector-emblema-master-panel" style="font-size: 0.85rem; color: var(--oro-real); font-weight: bold;">
+                                🛡️ Emblema Personal del MASTER:
+                            </label>
+                            <select id="selector-emblema-master-panel" class="input-medieval" style="flex: 1; min-width: 220px;" onchange="cambiarEmblemaMaster(this.value)">
+                                <!-- Opciones sincronizadas -->
+                            </select>
+                        </div>
                     </div>
 
                     <!-- CIERRE Y PROTECCIÓN DEL JUEGO (EXCLUSIVO DE ADMINISTRACIÓN) -->
@@ -1412,9 +1428,9 @@
                     </div>
 
 
-                    <!-- PANEL DE CONFIGURACIÓN INTEGRACIÓN MAKE.COM & WHATSAPP AUTOMÁTICO -->
+                    <!-- PANEL DE CONFIGURACIÓN INTEGRACIÓN MAKE.COM & WHATSAPP AUTOMÁTICO (EXCLUSIVO MASTER) -->
                     <div id="seccion-configuracion-make"
-                        style="margin-top: 25px; background: rgba(15, 23, 42, 0.95); border: 2px solid var(--oro-real); padding: 20px; border-radius: 8px;">
+                        style="display:none; margin-top: 25px; background: rgba(15, 23, 42, 0.95); border: 2px solid var(--oro-real); padding: 20px; border-radius: 8px;">
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <h3 style="color: var(--oro-brillante); margin: 0; font-family: 'Cinzel', serif;">⚡

@@ -1230,6 +1230,33 @@ $('btn-howto-close').addEventListener('click', goMenu);
 $('btn-pause').addEventListener('click', pauseGame);
 $('btn-resume').addEventListener('click', resumeGame);
 $('btn-pause-menu').addEventListener('click', goMenu);
+
+function volverALokiTrono() {
+  audio.ui();
+  try {
+    if (window.parent && window.parent !== window) {
+      if (typeof window.parent.cerrarBotxitrono === 'function') {
+        window.parent.cerrarBotxitrono();
+        return;
+      }
+      if (typeof window.parent.cambiarPestana === 'function') {
+        window.parent.cambiarPestana('pestana-inicio');
+        return;
+      }
+    }
+  } catch (_) {
+    /* Si hay restricción cross-origin, navegación estándar */
+  }
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = '../';
+  }
+}
+
+if ($('btn-menu-back-app')) $('btn-menu-back-app').addEventListener('click', volverALokiTrono);
+if ($('btn-pause-back-app')) $('btn-pause-back-app').addEventListener('click', volverALokiTrono);
+
 if ($('btn-again')) $('btn-again').addEventListener('click', startGame);
 if (btnContinueLevel) btnContinueLevel.addEventListener('click', continueCurrentLevel);
 if (btnRestartMilestone) btnRestartMilestone.addEventListener('click', () => {

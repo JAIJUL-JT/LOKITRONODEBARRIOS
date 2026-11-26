@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#050506">
+    <meta name="description" content="BotxoTetrix: el Tetris medieval de Bilbao. Piezas de las Casas Feudales, murallas y vistas del Botxo nivel a nivel.">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BotxoTetrix">
+    <title>BotxoTetrix · El Tetris del Botxo</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Supabase JS para Tabla de Puntuaciones en tiempo real -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
+        window.__APP_CONFIG__.SUPABASE_URL = 'https://uswikdckptzivsurzrlc.supabase.co';
+        window.__APP_CONFIG__.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzd2lrZGNrcHR6aXZzdXJ6cmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODAwNTEsImV4cCI6MjEwNjU1NjA1MX0.3kovmMBfC_JCGKyJ_1s5iyxtkKyqVMIt77CfHnytLzI';
+    </script>
+</head>
+<body>
+    <main id="app">
+        <canvas id="game-canvas" aria-label="Tablero de BotxoTetrix"></canvas>
+        <div id="vignette" aria-hidden="true"></div>
+
+        <div id="hud" class="hidden">
+            <div class="hud-top">
+                <button id="btn-pause" class="hud-icon" type="button" aria-label="Pausar partida">⏸</button>
+                <div class="hud-stats">
+                    <div class="hud-item">
+                        <span class="hud-label">NIVEL</span>
+                        <span id="hud-level" class="hud-value">1</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">LÍNEAS</span>
+                        <span id="hud-lines" class="hud-value">0</span>
+                    </div>
+                    <div class="hud-item hud-item--score">
+                        <span class="hud-label">PUNTOS</span>
+                        <span id="hud-score" class="hud-value">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hud-side">
+                <div class="hud-next panel-glass">
+                    <span class="hud-label">SIGUIENTE</span>
+                    <canvas id="next-canvas" width="88" height="88" aria-label="Siguiente pieza"></canvas>
+                </div>
+                <div id="hud-casa" class="hud-casa panel-glass">
+                    <span class="hud-label">CASA</span>
+                    <span id="hud-casa-name" class="hud-casa-name">—</span>
+                </div>
+            </div>
+            <div id="level-banner" class="level-banner hidden" aria-live="polite">
+                <span id="level-eyebrow" class="level-eyebrow">NIVEL 1</span>
+                <span id="level-name" class="level-name">Puente de La Salve</span>
+                <span id="level-motto" class="level-motto">El Reino se alza sobre el Nervión</span>
+            </div>
+            <div class="touch-controls">
+                <div class="move-pad">
+                    <button id="btn-left" class="touch-btn touch-btn--move" type="button" aria-label="Mover a la izquierda">
+                        <span class="touch-arrow">◀</span>
+                    </button>
+                    <button id="btn-right" class="touch-btn touch-btn--move" type="button" aria-label="Mover a la derecha">
+                        <span class="touch-arrow">▶</span>
+                    </button>
+                </div>
+                <div class="action-cluster">
+                    <button id="btn-rotate" class="touch-btn touch-btn--action" type="button" aria-label="Rotar pieza">
+                        <span class="touch-arrow">↻</span>
+                        <span>ROTAR</span>
+                    </button>
+                    <button id="btn-down" class="touch-btn touch-btn--action" type="button" aria-label="Bajar pieza">
+                        <span class="touch-arrow">▼</span>
+                        <span>BAJAR</span>
+                    </button>
+                    <button id="btn-drop" class="touch-btn touch-btn--drop" type="button" aria-label="Caída dura">
+                        <span class="touch-arrow">⏬</span>
+                        <span>DROP</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <section id="menu-screen" class="overlay">
+            <div class="panel panel--menu">
+                <p class="eyebrow">LokiTrono de Barrios presenta</p>
+                <h1 class="game-title">BotxoTetrix</h1>
+                <p class="tagline">Apila las murallas de las Casas Feudales, completa líneas y conquista los escenarios de Bilbao nivel a nivel.</p>
+
+                <div class="menu-best">
+                    <span class="menu-best-label">RÉCORD</span>
+                    <strong id="menu-best-score">0</strong>
+                </div>
+
+                <div class="menu-actions">
+                    <button id="btn-play" class="btn btn--primary" type="button">¡A LA MURALLA!</button>
+                    <button id="btn-menu-scores" class="btn btn--secondary" type="button">🏆 Tabla de Puntuaciones</button>
+                    <button id="btn-howto" class="btn btn--secondary" type="button">Cómo jugar</button>
+                </div>
+
+                <div class="menu-footer">
+                    <button id="btn-sound" class="btn btn--ghost" type="button" aria-pressed="true">🔊 Sonido</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="howto-screen" class="overlay hidden">
+            <div class="panel">
+                <p class="eyebrow">Manual del Maestre de Murallas</p>
+                <h2>Cómo jugar</h2>
+                <ul class="howto-list">
+                    <li><b>Mueve</b> las piezas con ← → (o botones táctiles).</li>
+                    <li><b>Rota</b> con ↑, Z o X — la pieza no saldrá de la muralla.</li>
+                    <li><b>Baja</b> con ↓; <b>caída dura</b> con Espacio.</li>
+                    <li><b>Líneas completas</b> se derrumban: 100/300/500/800 puntos × nivel.</li>
+                    <li>Cada <b>10 líneas</b> sube el nivel: cae más rápido y cambia el paisaje bilbaíno.</li>
+                    <li>Cada pieza es una <b>Casa Feudal</b> de Bilbao: Indautxu, Santutxu, Abando…</li>
+                    <li><b>Pausa</b> con Esc o el botón ⏸.</li>
+                </ul>
+                <button id="btn-howto-back" class="btn btn--ghost" type="button">← Volver</button>
+            </div>
+        </section>
+
+        <section id="pause-screen" class="overlay hidden">
+            <div class="panel panel--pause">
+                <p class="eyebrow">La Corte aguarda</p>
+                <h2>Pausa</h2>
+                <div class="menu-actions">
+                    <button id="btn-resume" class="btn btn--primary" type="button">Continuar</button>
+                    <button id="btn-quit" class="btn btn--secondary" type="button">Abandonar partida</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="gameover-screen" class="overlay hidden">
+            <div class="panel panel--gameover">
+                <p class="eyebrow">Las murallas han caído</p>
+                <h2>Fin de la Partida</h2>
+                <div class="final-stats">
+                    <div><span class="hud-label">PUNTOS</span><strong id="final-score">0</strong></div>
+                    <div><span class="hud-label">LÍNEAS</span><strong id="final-lines">0</strong></div>
+                    <div><span class="hud-label">NIVEL</span><strong id="final-level">1</strong></div>
+                </div>
+                <div class="name-row">
+                    <label for="player-name" class="hud-label">NOMBRE DEL MAESTRE</label>
+                    <input id="player-name" class="input-medieval" type="text" maxlength="25" placeholder="Ej.: Aritza" autocomplete="nickname">
+                </div>
+                <div class="menu-actions">
+                    <button id="btn-save-score" class="btn btn--primary" type="button">🏆 Guardar en el Códice</button>
+                    <button id="btn-retry" class="btn btn--secondary" type="button">Otra muralla</button>
+                    <button id="btn-gameover-menu" class="btn btn--ghost" type="button">Menú</button>
+                </div>
+                <p id="save-status" class="save-status" aria-live="polite"></p>
+            </div>
+        </section>
+
+        <section id="scores-screen" class="overlay hidden">
+            <div class="panel panel--scores">
+                <div class="scores-header-row">
+                    <h2>🏆 Códice de Puntuaciones</h2>
+                    <span id="scores-live-badge" class="scores-live-badge">● EN VIVO</span>
+                </div>
+                <div class="scores-table-wrap">
+                    <table class="scores-table" aria-label="Tabla de puntuaciones de BotxoTetrix">
+                        <thead>
+                            <tr><th>#</th><th>Maestre</th><th>Puntos</th><th>Líneas</th><th>Nivel</th></tr>
+                        </thead>
+                        <tbody id="scores-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="scores-actions">
+                    <button id="btn-scores-refresh" class="btn btn--secondary" type="button">🔄 Actualizar</button>
+                    <button id="btn-scores-close" class="btn btn--primary" type="button">Volver al Menú</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

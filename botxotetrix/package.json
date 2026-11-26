@@ -1,0 +1,23 @@
+{
+  "name": "botxotetrix",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "BotxoTetrix: Tetris medieval de Bilbao. HTML5 Canvas + JS vanilla, sin build. Piezas = Casas Feudales, fondos de Bilbao por nivel.",
+  "scripts": {
+    "dev": "python3 -m http.server 3000",
+    "test": "node --test tests/",
+    "build": "echo \"No build step: BotxoTetrix es estático\""
+  },
+  "keywords": [
+    "lokitrono",
+    "botxotetrix",
+    "tetris",
+    "medieval",
+    "bilbao",
+    "canvas",
+    "juego",
+    "pwa"
+  ],
+  "license": "UNLICENSED"
+}

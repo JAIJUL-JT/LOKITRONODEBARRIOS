@@ -3,7 +3,7 @@
  * Cachea el app shell para que la aplicación pueda abrirse sin conexión.
  * Sube CACHE_VERSION cuando cambies cualquiera de los archivos del shell.
  */
-const CACHE_VERSION = 'lokitrono-app-v42';
+const CACHE_VERSION = 'lokitrono-app-v44';
 const CACHE_PREFIX = 'lokitrono-app-';
 const APP_SHELL = [
     './',
@@ -55,6 +55,7 @@ self.addEventListener('fetch', (event) => {
     if (url.origin !== self.location.origin) return;
     if (url.pathname.startsWith('/botxitrono/')) return;
     if (url.pathname.startsWith('/trivial/')) return;
+    if (url.pathname.startsWith('/botxotetrix/')) return;
     if (url.pathname.startsWith('/_vercel/')) return;
 
     if (request.mode === 'navigate') {

@@ -152,7 +152,8 @@ function puedeAccederPorPasaporte(seccion, usuario) {
     } else if (seccion === 'multimedia') {
         sellosRequeridos = 3;
         nombreSeccion = 'la Sala Multi-Media';
-    } else if (seccion === 'juegos' || seccion === 'pestana-botxitrono' || seccion === 'pestana-trivial' || seccion === 'tab-botxitrono' || seccion === 'tab-trivial') {
+    } else if (seccion === 'juegos' || seccion === 'pestana-botxitrono' || seccion === 'pestana-trivial' || seccion === 'tab-botxitrono' || seccion === 'tab-trivial'
+               || seccion === 'pestana-botxotetrix' || seccion === 'tab-botxotetrix') {
         sellosRequeridos = 4;
         nombreSeccion = 'los Mini-Juegos Feudales';
     } else if (seccion === 'pestana-evento-final' || seccion === 'tab-evento-final') {
@@ -480,6 +481,9 @@ function cambiarPestana(valor, subpestana) {
     }
     if (valor === 'pestana-botxitrono' || valor === 'tab-botxitrono') {
         cargarIframeBotxitronoPestana();
+    }
+    if (valor === 'pestana-botxotetrix' || valor === 'tab-botxotetrix') {
+        cargarIframeBotxoTetrix();
     }
     const sections = document.querySelectorAll('.tab-content');
     sections.forEach(section => {
@@ -11412,8 +11416,19 @@ function cargarIframeBotxitronoPestana() {
     }
 }
 
+function cargarIframeBotxoTetrix() {
+    const iframe = document.getElementById('botxotetrix-iframe');
+    if (!iframe) return;
+    const destino = iframe.getAttribute('data-src') || './botxotetrix/';
+    const actual = iframe.getAttribute('src');
+    if (!actual || actual === 'about:blank') {
+        iframe.setAttribute('src', destino);
+    }
+}
+
 window.cargarIframeTrivial = cargarIframeTrivial;
 window.cargarIframeBotxitronoPestana = cargarIframeBotxitronoPestana;
+window.cargarIframeBotxoTetrix = cargarIframeBotxoTetrix;
 
 // Integración de Botxitrono
 function abrirBotxitrono() {
@@ -11503,7 +11518,7 @@ function actualizarIndicadoresSubpestanasExtras() {
                 <div style="font-size:3rem;margin-bottom:10px;">🔒</div>
                 <h3 style="color:var(--oro-brillante);font-family:'Cinzel',serif;margin:0 0 10px;">Mini-Juegos Bloqueados</h3>
                 <p style="color:#d6d3d1;font-size:0.92rem;max-width:550px;margin:0 auto 16px;line-height:1.6;">
-                    Los juegos <strong>Botxitrono</strong> y <strong>El Trivial del Botxo</strong> requieren conseguir al menos <strong>4 sellos</strong> en tu Pasaporte Real para poder verlos y disfrutarlos.
+                    Los juegos <strong>Botxitrono</strong>, <strong>El Trivial del Botxo</strong> y <strong>BotxoTetrix</strong> requieren conseguir al menos <strong>4 sellos</strong> en tu Pasaporte Real para poder verlos y disfrutarlos.
                 </p>
                 <div style="display:inline-block;background:rgba(180,83,9,0.3);border:1px solid #b45309;color:#fde68a;padding:6px 14px;border-radius:20px;font-size:0.85rem;font-weight:bold;margin-bottom:14px;">
                     Sellos actuales: ${accesoJuegos.sellosActuales} / ${accesoJuegos.sellosRequeridos}

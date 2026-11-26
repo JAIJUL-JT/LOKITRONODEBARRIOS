@@ -1,0 +1,27 @@
+{
+  "name": "BotxoTetrix",
+  "short_name": "BotxoTetrix",
+  "description": "BotxoTetrix: el Tetris medieval de Bilbao. Piezas de las Casas Feudales, murallas y vistas del Botxo nivel a nivel.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050506",
+  "theme_color": "#050506",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

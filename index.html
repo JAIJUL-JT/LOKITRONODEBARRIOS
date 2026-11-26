@@ -50,7 +50,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Pirata+One:wght@400;700&family=Caveat:wght@400;700&family=Uncial+Antiqua&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261124f">
+    <link rel="stylesheet" href="css/style.css?v=20261124g">
     <link rel="stylesheet" href="css/app-bar.css?v=20261123">
     <link rel="stylesheet" href="css/medieval-theme.css?v=20261123">
 
@@ -137,7 +137,7 @@
     <script src="js/qrcode.min.js"></script>
     <script src="js/analytics.js?v=20261110" defer></script>
     <script src="js/consent.js" defer></script>
-    <script src="js/app.js?v=20261124i" defer></script>
+    <script src="js/app.js?v=20261124j" defer></script>
     <script src="js/dragon.js?v=20261113" defer></script>
 </head>
 
@@ -601,6 +601,24 @@
                                     </a>
                                 </div>
                             </div>
+
+                            <!-- Tarjeta BotxoTetrix -->
+                            <div style="background: rgba(0,0,0,0.5); border: 1px solid var(--oro-real); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <h3 style="color: var(--oro-brillante); margin: 0 0 8px; font-size: 1.25rem;">🧱 BotxoTetrix</h3>
+                                    <p style="color: #d6d3d1; font-size: 0.88rem; line-height: 1.5; margin: 0 0 14px;">
+                                        El Tetris medieval del Botxo: apila murallas de las Casas Feudales y conquista los escenarios de Bilbao nivel a nivel.
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button type="button" class="btn-cuervo" onclick="cambiarPestana('pestana-botxotetrix')" style="background: #1e3a8a; padding: 8px 12px; border: none; cursor: pointer; font-size: 0.85rem; width: 100%; text-align: center; color: inherit; font-family: inherit;">
+                                        Jugar
+                                    </button>
+                                    <a href="./botxotetrix/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.5); padding: 6px 12px; text-decoration: none; font-size: 0.8rem; width: 100%; text-align: center;">
+                                        ↗ Nueva pestaña
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -704,7 +722,7 @@
                                     </summary>
                                     <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin: 10px 0 0;">
                                         La sección <strong>Extras</strong> agrupa contenidos adicionales divididos en submenús:<br><br>
-                                        • <strong>🎮 MINI-JUEGOS:</strong> Botxitrono y Trivial del Botxo.<br>
+                                        • <strong>🎮 MINI-JUEGOS:</strong> Botxitrono, Trivial del Botxo y BotxoTetrix.<br>
                                         • <strong>🎬 MULTI-MEDIA:</strong> Ecos del Diskotrono y Danza de Dragones.<br>
                                         • <strong>📰 PapiroBLOG:</strong> Crónicas y boletín oficial del Reino.<br>
                                         • <strong>🏰 Lokitronistas:</strong> Defensores oficiales de cada barrio.<br>
@@ -819,6 +837,21 @@
                         </div>
                     </div>
                     <iframe id="botxitrono-tab-iframe" src="about:blank" data-src="./botxitrono/" title="Botxitrono" loading="lazy" style="width: 100%; height: 80vh; min-height: 560px; border: none; display: block;"></iframe>
+                </div>
+            </section>
+
+            <!-- PESTAÑA: BotxoTetrix (Tetris medieval del Botxo) -->
+            <section id="pestana-botxotetrix" class="tab-content tema-corte-admin" data-tab="tab-botxotetrix" style="display: none;">
+                <div class="panel-card" style="padding: 0; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid rgba(240, 210, 122, 0.3);">
+                        <h2 style="margin: 0; font-family: 'Cinzel', serif; color: var(--oro-brillante);">🧱 BotxoTetrix</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <a href="./botxotetrix/" target="_blank" rel="noopener noreferrer" class="btn-cuervo" style="background: #1e3a8a; padding: 6px 12px; text-decoration: none; font-size: 0.85rem;">
+                                ↗ Abrir en nueva pestaña
+                            </a>
+                        </div>
+                    </div>
+                    <iframe id="botxotetrix-iframe" src="about:blank" data-src="./botxotetrix/" title="BotxoTetrix" loading="lazy" style="width: 100%; height: 80vh; min-height: 560px; border: none; display: block;"></iframe>
                 </div>
             </section>
 
@@ -2716,7 +2749,7 @@
                             </summary>
                             <div style="margin-top: 10px; line-height: 1.6; color: #d6d3d1; font-size: 0.92rem; border-top: 1px dashed rgba(212,175,55,0.25); padding-top: 10px;">
                                 La sección <strong>Extras</strong> agrupa contenidos adicionales divididos en submenús:<br><br>
-                                • <strong>🎮 MINI-JUEGOS:</strong> Acceso a los juegos complementarios del reino: <em>Botxitrono</em> (el juego del botxo en versión digital) y <em>Trivial del Botxo</em> (preguntas sobre la cultura, historia y gastronomía bilbaína).<br>
+                                • <strong>🎮 MINI-JUEGOS:</strong> Acceso a los juegos complementarios del reino: <em>Botxitrono</em> (el juego del botxo en versión digital), <em>Trivial del Botxo</em> (preguntas sobre la cultura, historia y gastronomía bilbaína) y <em>BotxoTetrix</em> (el Tetris medieval de las Casas Feudales).<br>
                                 • <strong>🎬 MULTI-MEDIA:</strong> Contenidos audiovisuales del Reino: <em>Ecos del Diskotrono</em> (la banda sonora oficial de la app) y la <em>Danza de Dragones</em> (vídeo épico del juego).<br>
                                 • <strong>📰 PapiroBLOG:</strong> El boletín y crónica oficial del Reino, con bandos, recetas, entrevistas y resúmenes de cada jornada barrial.<br>
                                 • <strong>🏰 El Consejo:</strong> Consulta quiénes son los Consejeros del juego y los defensores oficiales de cada barrio, sus insignias y su palmarés en el juego.<br>

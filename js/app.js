@@ -3990,7 +3990,7 @@ function renderGalaFinal() {
     if (inputFecha && !inputFecha.value) inputFecha.value = config.fecha || '2026-10-20T20:30';
     if (inputPremio) inputPremio.value = config.premio || '';
 
-    // Acreditación Pase VIP Dorado en la Gala Final (Punto 3: 5 sellos o rol privilegiado)
+    // Acreditación Pase VIP Dorado en la Gala Final: exclusivo para el rol MASTER
     const acreditacionVip = document.getElementById('acreditacion-vip-gala');
     const textoVip = document.getElementById('acreditacion-vip-texto');
     const titularVip = document.getElementById('vip-tarjeta-titular');
@@ -3999,9 +3999,8 @@ function renderGalaFinal() {
     const fechaVip = document.getElementById('vip-tarjeta-fecha');
 
     if (acreditacionVip) {
-        const tienePrivilegio = tienePrivilegioAccesoLibre(currentUser);
-        const totalSellos = currentUser ? obtenerTotalSellosUsuario(currentUser.phone || currentUser.id || '') : 0;
-        const mereceVip = tienePrivilegio || totalSellos >= 5;
+        const esMaster = Boolean(currentUser && esRolMaster(currentUser.role));
+        const mereceVip = esMaster;
         acreditacionVip.style.display = mereceVip ? 'block' : 'none';
         if (mereceVip) {
             const nombreTitular = currentUser ? getTituloCompleto(currentUser) : 'Noble Maestre';
@@ -4012,13 +4011,8 @@ function renderGalaFinal() {
                 fechaVip.textContent = !isNaN(dateObj) ? dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '20 Oct 2026';
             }
             if (textoVip) {
-                if (tienePrivilegio) {
-                    if (rangoVip) rangoVip.textContent = `Acreditación de Honor · Rol: ${currentUser.role}`;
-                    textoVip.innerHTML = `Como miembro distinguido de la <strong>Corte Imperial</strong> (${currentUser.name || 'Noble Maestre'}), gozáis de <strong>Acreditación de Honor y Pase VIP Dorado</strong> para la Gran Gala Final.`;
-                } else {
-                    if (rangoVip) rangoVip.textContent = 'Acreditación Oficial · 5 Sellos Completados';
-                    textoVip.innerHTML = `¡Enhorabuena, noble Maestre <strong>${escaparHTML(currentUser.name || 'Maestre')}</strong>! Habéis completado los <strong>5 sellos del Pasaporte</strong> y conquistado el <strong>Pase VIP Dorado</strong> con acceso preferente a la Gran Gala.`;
-                }
+                if (rangoVip) rangoVip.textContent = `Acreditación de Honor · Rol: ${currentUser.role || 'MASTER'}`;
+                textoVip.innerHTML = `Como miembro distinguido de la <strong>Corte Imperial</strong> (${currentUser.name || 'Noble Maestre'}), gozáis de <strong>Acreditación de Honor y Pase VIP Dorado</strong> para la Gran Gala Final.`;
             }
         }
     }
@@ -4026,6 +4020,10 @@ function renderGalaFinal() {
 
 function imprimirPaseVipGala() {
     const usuario = getCurrentUser();
+    if (!usuario || !esRolMaster(usuario.role)) {
+        alert('Acceso restringido: El Pase VIP Dorado es exclusivo para el rol Master.');
+        return;
+    }
     const config = typeof getGalaFinalConfig === 'function' ? getGalaFinalConfig() : GALA_FINAL_DEFAULT;
     const nombre = usuario ? getTituloCompleto(usuario) : 'Noble Maestre';
     const rol = usuario ? (usuario.role || 'jugador') : 'jugador';
